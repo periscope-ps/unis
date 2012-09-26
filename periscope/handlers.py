@@ -37,12 +37,27 @@ from periscope.models import JSONSchemaModel
 import periscope.utils as utils
 from asyncmongo.errors import IntegrityError, TooManyConnections
 
+# Third-party imports
+import bson
+if hasattr(bson, 'dumps'):
+    # standalone bson
+    bson_encode = bson.dumps
+    bson_decode = bson.loads
+    bson_valid = None
+else:
+    # pymongo's bson  
+    bson_encode = bson.BSON.encode
+    bson_decode = bson.decode_all
+    bson_valid = bson.is_valid
+
+
 MIME = {
     'HTML': 'text/html',
     'JSON': 'application/json',
     'PLAIN': 'text/plain',
     'SSE': 'text/event-stream',
     'PSJSON': 'application/perfsonar+json',
+    'PSBSON': 'application/perfsonar+bson',
     'PSXML': 'application/perfsonar+xml',
 }
 
@@ -246,9 +261,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             allow_delete=True,
             tailable=False,
             model_class=None,
-            accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSXML']],
-            content_types_mime=[MIME['SSE'],
-                        MIME['PSJSON'], MIME['PSXML'], MIME['HTML']]):
+            accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']],
+            content_types_mime=[MIME['SSE'], MIME['PSJSON'],
+                                MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]):
         """
         Initializes handler for certain type of network resources.
 
@@ -753,11 +768,26 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         # Load the appropriate content type specific POST handler
         if self.content_type == MIME['PSJSON']:
             self.post_psjson()
+        elif self.content_type == MIME['PSBSON']:
+            self.post_psbson()
         else:
             self.send_error(500,
                 message="No POST method is implemented fot this content type")
             return
         return
+
+    def post_psbson(self):
+        """
+        Handles HTTP POST request with Content Type of PSJSON.
+        """
+        if bson_valid:
+            if not bson_valid(self.request.body):
+                self.send_error(400, message="not a bson object")
+                return
+
+        body = bson_decode(self.request.body)
+        self.request.body = json.dumps(body)
+        return self.post_psjson()
 
     def post_psjson(self):
         """
@@ -1031,6 +1061,8 @@ class CollectionHandler(NetworkResourceHandler):
         # Load the appropriate content type specific POST handler
         if self.content_type == MIME['PSJSON']:
             self.post_psjson()
+        elif self.content_type == MIME['PSBSON']:
+            self.post_psbson()
         else:
             self.send_error(500,
                 message="No POST method is implemented fot this content type")
@@ -1236,6 +1268,8 @@ class EventsHandler(NetworkResourceHandler):
         # Load the appropriate content type specific POST handler
         if self.content_type == MIME['PSJSON']:
             self.post_psjson()
+        elif self.content_type == MIME['PSBSON']:
+            self.post_psbson()
         else:
             self.send_error(500,
                 message="No POST method is implemented fot this content type")
@@ -1427,6 +1461,8 @@ class DataHandler(NetworkResourceHandler):
         #Load the appropriate content type specific POST handler
         if self.content_type == MIME['PSJSON']:
             self.post_psjson()
+        elif self.content_type == MIME['PSBSON']:
+            self.post_psbson()
         else:
             self.send_error(500,
                 message="No POST method is implemented for this content type")
