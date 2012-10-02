@@ -1,8 +1,10 @@
 """
 Main Periscope Application
 """
+import ssl
 import asyncmongo
 import pymongo
+import tornado.httpserver
 import tornado.web
 import tornado.ioloop
 import json
@@ -36,6 +38,7 @@ class PeriscopeApplication(tornado.web.Application):
         """
         Creates DBLayer instance.
         """
+
         if collection_name == None:
             return None
         
@@ -254,13 +257,20 @@ class PeriscopeApplication(tornado.web.Application):
 
 def main():
     """Run periscope"""
+    ssl_opts = None
     logger = settings.get_logger()
     logger.info('periscope.start')
     loop = tornado.ioloop.IOLoop.instance()
     # parse command line options
     tornado.options.parse_command_line()
     app = PeriscopeApplication()
-    app.listen(options.port, address=options.address)
+
+    if settings.ENABLE_SSL:
+        ssl_opts = settings.SSL_OPTIONS
+
+    http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_opts)
+    http_server.listen(options.port, address=options.address)
+
     loop.start()
     logger.info('periscope.end')
 

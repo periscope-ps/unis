@@ -1,6 +1,7 @@
 """
 General Perisocpe Settings.
 """
+import ssl
 import logging
 import os
 import sys
@@ -20,6 +21,13 @@ JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
 # Tornado settings.
 ######################################################################
 
+ENABLE_SSL=True
+SSL_OPTIONS= {
+    'certfile': os.path.join(PERISCOPE_ROOT, "ssl/server.pem"),
+    'keyfile': os.path.join(PERISCOPE_ROOT, "ssl/server.key"),
+    'cert_reqs': ssl.CERT_REQUIRED,
+    'ca_certs': os.path.join(PERISCOPE_ROOT, "ssl/genica.bundle")
+}   
 
 
 ######################################################################
