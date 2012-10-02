@@ -759,7 +759,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
     def post_psbson(self):
         """
-<<<<<<< HEAD
         Handles HTTP POST request with Content Type of PSBSON.
         """
         if bson_valid:
@@ -772,16 +771,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         except Exception as exp:
             self.send_error(400, message="decode: not a bson document")
 
-=======
-        Handles HTTP POST request with Content Type of PSJSON.
-        """
-        if bson_valid:
-            if not bson_valid(self.request.body):
-                self.send_error(400, message="not a bson object")
-                return
-
-        body = bson_decode(self.request.body)
->>>>>>> add support for accepting BSON
         self.request.body = json.dumps(body)
         return self.post_psjson()
 
