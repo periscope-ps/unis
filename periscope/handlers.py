@@ -778,14 +778,18 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
     def post_psbson(self):
         """
-        Handles HTTP POST request with Content Type of PSJSON.
+        Handles HTTP POST request with Content Type of PSBSON.
         """
         if bson_valid:
             if not bson_valid(self.request.body):
-                self.send_error(400, message="not a bson object")
+                self.send_error(400, message="validate: not a bson document")
                 return
 
-        body = bson_decode(self.request.body)
+        try:
+            body = bson_decode(self.request.body)
+        except Exception as exp:
+            self.send_error(400, message="decode: not a bson document")
+
         self.request.body = json.dumps(body)
         return self.post_psjson()
 
@@ -1238,6 +1242,7 @@ class MainHandler(tornado.web.RequestHandler):
         self._resources = resources
     
     def get(self):
+        print self.request.get_ssl_certificate()
         links = []
         for resource in self._resources:
             href = "%s://%s%s" % (self.request.protocol,
@@ -1613,4 +1618,5 @@ class DataHandler(NetworkResourceHandler):
         db_layer = self.application.get_db_layer(self._res_id, "ts", "ts",
                         True,  5000)
         query.pop("id", None)
-        self._cursor = db_layer.find(**options)        
+        self._cursor = db_layer.find(**options)
+

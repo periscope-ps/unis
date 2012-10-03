@@ -32,7 +32,7 @@ define("address", default="0.0.0.0", help="default binding IP address", type=str
 
 class PeriscopeApplication(tornado.web.Application):
     """Defines Periscope Application."""
-    
+
     def get_db_layer(self, collection_name, id_field_name,
             timestamp_field_name, is_capped_collection, capped_collection_size):
         """
@@ -67,7 +67,7 @@ class PeriscopeApplication(tornado.web.Application):
         )
         
         return db_layer
-    
+
     def make_resource_handler(self, name,
                     pattern,
                     base_url,
@@ -180,10 +180,26 @@ class PeriscopeApplication(tornado.web.Application):
         else:
             body=json.loads(response.body)
 
+    def make_auth_handler(self, name, pattern, base_url, handler_class, schema):
+        if type(handler_class) in [str, unicode]:
+            handler_class = load_class(handler_class)
+        handler = ( tornado.web.URLSpec(base_url + pattern, handler_class, name=name) )
+        return handler
+        
     def __init__(self):
         self._async_db = None
         self._sync_db = None
         handlers = []
+        
+        if settings.ENABLE_AUTH:
+            from periscope.auth import ABACAuthService
+
+            self._auth = ABACAuthService(settings.SSL_OPTIONS['certfile'],
+                                         settings.SSL_OPTIONS['keyfile'],
+                                         settings.AUTH_STORE_DIR)
+
+            for auth in settings.AuthResources:
+                handlers.append(self.make_auth_handler(**settings.AuthResources[auth]))
         
         for res in settings.Resources:
             handlers.append(self.make_resource_handler(**settings.Resources[res]))

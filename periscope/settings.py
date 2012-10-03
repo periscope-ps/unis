@@ -15,13 +15,18 @@ from tornado.options import define
 PERISCOPE_ROOT = os.path.dirname(os.path.abspath(__file__)) + os.sep
 sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
 
+GCF_PATH = "/opt/gcf/src/"
+sys.path.append(os.path.dirname(GCF_PATH))
+
+AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
+
 JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
 
 ######################################################################
 # Tornado settings.
 ######################################################################
 
-ENABLE_SSL=True
+ENABLE_SSL = True
 SSL_OPTIONS= {
     'certfile': os.path.join(PERISCOPE_ROOT, "ssl/server.pem"),
     'keyfile': os.path.join(PERISCOPE_ROOT, "ssl/server.key"),
@@ -40,6 +45,9 @@ MS_ENABLE = True
 ######################################################################
 # Periscope Application settings.
 ######################################################################
+
+# Enable GENI/ABAC auth support
+ENABLE_AUTH = True
 
 # Enable application wide debugging options
 DEBUG = True
@@ -142,6 +150,23 @@ SCHEMAS = {
     'metadata': 'http://unis.incntre.iu.edu/schema/20120709/metadata#',
     'data' : 'http://unis.incntre.iu.edu/schema/20120709/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20120709/datum#',
+}
+
+# Settings for the authentication handlers
+auth_cred_settings= {
+    "base_url": "",
+    "handler_class": "periscope.handlers.AuthCredHandler",
+    "name": "add_credential",
+    "pattern": "/add_credential$",
+    "schema": [MIME['PLAIN']]
+}
+
+auth_slice_settings= {
+    "base_url": "",
+    "handler_class": "periscope.handlers.AuthRegisterSliceHandler",
+    "name": "boot_slice",
+    "pattern": "/register_slice$",
+    "schema": [MIME['PLAIN']]
 }
 
 
@@ -423,6 +448,11 @@ Resources = {
     "event" : event,
     "data" : data,
     "datas" : datas,
+}
+
+AuthResources = {
+    "add_credential": auth_cred_settings,
+    "register_slice": auth_slice_settings
 }
 
 main_handler_settings = {
