@@ -7,7 +7,6 @@ import os
 import shutil
 import time
 import uuid
-import hashlib
 from datetime import datetime
 
 import ABAC
@@ -167,9 +166,7 @@ class ABACAuthService:
         user.id_write_cert(os.path.join(self.ABAC_STORE_DIR, user_filename))
         attr_filename = user.id_keyid() + "_has_" + attr.role_head().role_name()  + self.ATTR_FILE_SUFFIX
         attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
-        m2cert = M2Crypto.X509.load_cert_string(issuer_cert, M2Crypto.X509.FORMAT_PEM)
-        m2cert.save_pem(os.path.join(self.ABAC_STORE_DIR, "issuer_ID.pem"))
-    
+
     
     def query(self, req, slice_uuid, user_cert):
         # Given the request type, check for the appropriate proof.
@@ -188,7 +185,7 @@ class ABACAuthService:
         #out = self.ctx.context_principals()
         #for x in out[1]:
         #    print "%s " % x.string()
-        
+
         role = ABAC.Role(self.server_id.id_keyid(), str(self.SLICE_ADMIN_ROLE_PREFIX + slice_uuid))
         p = ABAC.Role(user_id.id_keyid())
 

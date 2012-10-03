@@ -1630,4 +1630,3 @@ class DataHandler(NetworkResourceHandler):
                         True,  5000)
         query.pop("id", None)
         self._cursor = db_layer.find(**options)
-
