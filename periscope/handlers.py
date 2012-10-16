@@ -1398,7 +1398,7 @@ class DataHandler(NetworkResourceHandler):
             self.post_psjson()
         else:
             self.send_error(500,
-                message="No POST method is implemented fot this content type")
+                message="No POST method is implemented for this content type")
             return
         return
     
@@ -1454,25 +1454,34 @@ class DataHandler(NetworkResourceHandler):
                         res_refs=res_refs, return_resources=False,last=True)
                 self.application.async_db[self._res_id].insert(body["data"], callback=callback)
             else:
-                self.send_error(400, message="The collection for this metadata ID does not exist")
+                self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return
         else:
+            col_names = self.application.sync_db.collection_names()
+            data={}
             for i in range(0,body.__len__()):
                 mid = body[i]['mid']
-                data = body[i]['data']
+                dataraw = body[i]['data']
+                if(mid in data.keys()):
+                    data[mid].extend(dataraw)
+                else :
+                    data[mid]=dataraw
+                   
+            mids = data.keys()
+            
+            for i in range(0,mids.__len__()):    
                 res_refs =[]
-                if body[i]['mid'] in self.application.sync_db.collection_names():
-                    if i+1 == body.__len__() :
+                if mids[i] in col_names:
+                    if i+1 == mids.__len__() :
                         callback = functools.partial(self.on_post,
                                                      res_refs=res_refs, return_resources=False,last=True)
-                        self.application.async_db[mid].insert(data, callback=callback)
+                        self.application.async_db[mids[i]].insert(data[mids[i]], callback=callback)
                     else :
                         callback = functools.partial(self.on_post,
                                                      res_refs=res_refs, return_resources=False,last=False)
-                        self.application.async_db[mid].insert(data, callback=callback)
-                    
+                        self.application.async_db[mids[i]].insert(data[mids[i]], callback=callback)                    
                 else:
-                    self.send_error(400, message="The collection for this metadata ID does not exist")
+                    self.send_error(400, message="The collection for metadata ID '%s' does not exist" % mids[i])
                     return
 
     @tornado.web.asynchronous
