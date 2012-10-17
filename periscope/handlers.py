@@ -35,7 +35,7 @@ from periscope.models import Topology
 from periscope.models import schemaLoader
 from periscope.models import JSONSchemaModel
 import periscope.utils as utils
-from asyncmongo.errors import IntegrityError
+from asyncmongo.errors import IntegrityError, TooManyConnections
 
 MIME = {
     'HTML': 'text/html',
@@ -1229,6 +1229,8 @@ class EventsHandler(NetworkResourceHandler):
                         str(error).replace("\"", "\\\""))
             return                
         self.set_status(201)
+        conn = self.application.async_db._pool.connection()
+        conn.close()
         self.finish()
 
     def verify_metadata(self,response, collection_size,post_body):
@@ -1433,6 +1435,8 @@ class DataHandler(NetworkResourceHandler):
                                     "%s/%s" % (self.request.full_url(), res_refs[0][self.Id]))
                 
                 self.set_status(201)
+                conn = self.application.async_db._pool.connection()
+                conn.close()
                 self.finish()   
                      
     def post_psjson(self):
@@ -1452,7 +1456,11 @@ class DataHandler(NetworkResourceHandler):
             if self._res_id in self.application.sync_db.collection_names():
                 callback = functools.partial(self.on_post,
                         res_refs=res_refs, return_resources=False,last=True)
-                self.application.async_db[self._res_id].insert(body["data"], callback=callback)
+                try:
+                    self.application.async_db[self._res_id].insert(body["data"], callback=callback)
+                except TooManyConnections:
+                    self.send_error(503, message="Too many DB connections")
+                    return
             else:
                 self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return
@@ -1472,14 +1480,17 @@ class DataHandler(NetworkResourceHandler):
             for i in range(0,mids.__len__()):    
                 res_refs =[]
                 if mids[i] in col_names:
-                    if i+1 == mids.__len__() :
+                    if i+1 == mids.__len__():
                         callback = functools.partial(self.on_post,
                                                      res_refs=res_refs, return_resources=False,last=True)
-                        self.application.async_db[mids[i]].insert(data[mids[i]], callback=callback)
-                    else :
+                    else:
                         callback = functools.partial(self.on_post,
                                                      res_refs=res_refs, return_resources=False,last=False)
-                        self.application.async_db[mids[i]].insert(data[mids[i]], callback=callback)                    
+                    try:
+                        self.application.async_db[mids[i]].insert(data[mids[i]], callback=callback)
+                    except TooManyConnections:
+                        self.send_error(503, message="Too many DB connections")
+                        return
                 else:
                     self.send_error(400, message="The collection for metadata ID '%s' does not exist" % mids[i])
                     return

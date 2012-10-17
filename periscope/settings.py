@@ -60,7 +60,7 @@ ASYNC_DB = {
     'port': DB_PORT,
     'mincached': 1,
     'maxcached': 10,
-    'maxconnections': 50,
+    'maxconnections': 200,
     'dbname': DB_NAME,
 }
 
