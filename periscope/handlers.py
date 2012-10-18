@@ -1511,6 +1511,9 @@ class DataHandler(NetworkResourceHandler):
         fields = parsed["fields"]
         fields["_id"] = 0
         limit = parsed["limit"]
+        if limit == None:
+            limit = 1000000000
+
         is_list = True #, not res_id
         if query:
             is_list = True
