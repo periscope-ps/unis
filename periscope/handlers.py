@@ -1229,8 +1229,8 @@ class EventsHandler(NetworkResourceHandler):
                         str(error).replace("\"", "\\\""))
             return                
         self.set_status(201)
-        pool = self.application.async_db._pool
-        pool.close()
+        #pool = self.application.async_db._pool
+        #pool.close()
         self.finish()
 
     def verify_metadata(self,response, collection_size,post_body):
@@ -1435,8 +1435,8 @@ class DataHandler(NetworkResourceHandler):
                                     "%s/%s" % (self.request.full_url(), res_refs[0][self.Id]))
                 
                 self.set_status(201)
-                pool = self.application.async_db._pool
-                pool.close()
+                #pool = self.application.async_db._pool
+                #pool.close()
                 self.finish()   
                      
     def post_psjson(self):
