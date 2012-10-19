@@ -1239,7 +1239,7 @@ class EventsHandler(NetworkResourceHandler):
         else:
             body=json.loads(response.body)
             if body["id"] not in self.application.sync_db.collection_names():
-                self.application.get_db_layer(body["id"],"id","ts",True,collection_size)
+                self.application.get_db_layer(body["id"],"ts","ts",True,collection_size)
                 self.set_header("Location",
                     "%s/data/%s" % (self.request.full_url(), body["id"]))
                 callback = functools.partial(self.on_post,

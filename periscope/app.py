@@ -44,13 +44,16 @@ class PeriscopeApplication(tornado.web.Application):
                 collection_name not in self.sync_db.collection_names():
             self.sync_db.create_collection(collection_name,
                             capped=True,
-                            size=capped_collection_size)
-        # Make indexes            
-        self.sync_db[collection_name].ensure_index([
-                (id_field_name, 1),
-                (timestamp_field_name, -1)
-            ],
-            unique=True)
+                            size=capped_collection_size,
+                            autoIndexId=False)
+        
+        # Make indexes if the collection is not capped
+        if id_field_name != timestamp_field_name:
+            self.sync_db[collection_name].ensure_index([
+                    (id_field_name, 1),
+                    (timestamp_field_name, -1)
+                ],
+                unique=True)            
         
         # Prepare the DBLayer
         db_layer = DBLayer(self.async_db,
