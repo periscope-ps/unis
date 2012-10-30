@@ -1083,6 +1083,7 @@ class CollectionHandler(NetworkResourceHandler):
                     "%s://%s%s" % (self.request.protocol, self.request.host, self.reverse_url(key)),
                     method = "POST",
                     body = dumps_mongo(collection[key]),
+                    request_timeout=180,
                     headers = {
                         "Cache-Control": "no-cache",
                         "Content-Type": MIME['PSJSON'],
