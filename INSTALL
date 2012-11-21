@@ -1,12 +1,16 @@
+Installing Periscope:
 
 Periscope can be easily install by:
     sudo python setup.py install
-    
+or
+    sudo python setup.py develop
+
 If you're planning to manually install Periscope by other methods, see the
 following sections for required packages.
 
 
-MongoDB:
+
+Installing MongoDB:
 Please note that Periscope uses mongodb
 
 You can find instructions how to download mongodb here:
@@ -21,28 +25,20 @@ If your server is located on host other than localhost, please edit settings.py
 
 
 
-Required Packages (Note ):
+Manual Installation notes:
+
+Required Packages (Note those packages are installed automatically by setup.py):
 - tornado>=2.3
 - pymongo==2.1.1  # Won't work the newer versions
 - asyncmongo  # see notes below
 - unittest2
-- netlogger==4.3.0  # see notes below
+- netlogger==4.3.0
 - validictory>=0.8.1
 - mock==0.8.0   # Won't work the newer versions
 - jsonpointer
 - argparse
 - httplib2
-- jsonpath    # see notes below
-
-
-Installation notes:
-
-Netlogger
-If you're using pip then only the old version of netlogger will be installed.
-Make sure to use easy_install.
-
-           sudo easy_install netlogger
-           
+- jsonpath
 
 Asyncmongo:
 Tailable cursors support is not merge to the main branch yet.
@@ -52,5 +48,72 @@ You need to download the development branch
     sudo python setup.py install
 
 
+
+Running Periscope:
+To run periscope
+    periscoped     # It runs on port 8888 by default
+or
+    periscoped --port=80
+    
+
+
+Running Periscope with nginx:
+
+If you're planning to run periscope in a production environment, it's a good 
+idea to load balance between mulitple instance of persicope on one server.
+The following is an example nginx configuratioin
+
+
+###########################nginx.conf##########################################
+
+user www-data;
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+    # multi_accept on;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+
+    access_log	/var/log/nginx/access.log;
+    client_max_body_size 100M;
+
+    upstream frontends {
+        server 127.0.0.1:8000;   # use periscoped --port=8000
+        server 127.0.0.1:8001;   # use periscoped --port=8001
+        server 127.0.0.1:8002;   # use periscoped --port=8002
+       
+    }
+    sendfile        on;
+    tcp_nopush      on;
+    send_timeout    10m;
+    keepalive_timeout  500;
+    tcp_nodelay        on;
+
+    gzip  on;
+    gzip_disable "MSIE [1-6]\.(?!.*SV1)";
+    
+    server {
+        listen 80;
+	location / {
+            proxy_read_timeout 600;
+            proxy_connect_timeout 600;
+            proxy_pass_header Server;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Scheme $scheme;
+            proxy_pass http://frontends;
+        }
+    }
+}
+
+
+############################################################################
 
 
