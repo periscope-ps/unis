@@ -62,12 +62,6 @@ APP_SETTINGS = {
 }
 
 ######################################################################
-# PRE/POST content processing module definitions.
-######################################################################
-
-PP_MODULES = [('periscope.gemini', 'Gemini')]
-
-######################################################################
 # Mongo Database settings
 ######################################################################
 DB_NAME = "periscope_db"
@@ -155,23 +149,6 @@ SCHEMAS = {
     'metadata': 'http://unis.incntre.iu.edu/schema/20120709/metadata#',
     'data' : 'http://unis.incntre.iu.edu/schema/20120709/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20120709/datum#',
-}
-
-# Settings for the authentication handlers
-auth_cred_settings= {
-    "base_url": "",
-    "handler_class": "periscope.handlers.AuthCredHandler",
-    "name": "add_credential",
-    "pattern": "/add_credential$",
-    "schema": [MIME['PLAIN']]
-}
-
-auth_slice_settings= {
-    "base_url": "",
-    "handler_class": "periscope.handlers.AuthRegisterSliceHandler",
-    "name": "boot_slice",
-    "pattern": "/register_slice$",
-    "schema": [MIME['PLAIN']]
 }
 
 # Default settings that apply to almost all network resources
@@ -452,11 +429,6 @@ Resources = {
     "event" : event,
     "data" : data,
     "datas" : datas,
-}
-
-AuthResources = {
-    "add_credential": auth_cred_settings,
-    "register_slice": auth_slice_settings
 }
 
 main_handler_settings = {

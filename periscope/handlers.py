@@ -683,9 +683,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             else:
                 if not response:
                     json_response = ""
-            
-            for pp in self.application._ppi_classes:
-                json_response = pp.post_get(json_response)
             self.write(json_response)
         else:
             # TODO (AH): HANDLE HTML, SSE and other formats

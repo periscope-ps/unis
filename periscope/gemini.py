@@ -7,7 +7,6 @@ from settings import MIME
 from settings import SCHEMAS
 from periscope.pp_interface import PP_Error
 from periscope.pp_interface import PP_INTERFACE as PPI
-from pp_interface import PP_INTERFACE as PPI
 
 class Gemini(PPI):
 
