@@ -152,24 +152,6 @@ SCHEMAS = {
     'datum' : 'http://unis.incntre.iu.edu/schema/20120709/datum#',
 }
 
-# Settings for the authentication handlers
-auth_cred_settings= {
-    "base_url": "",
-    "handler_class": "periscope.handlers.AuthCredHandler",
-    "name": "add_credential",
-    "pattern": "/add_credential$",
-    "schema": [MIME['PLAIN']]
-}
-
-auth_slice_settings= {
-    "base_url": "",
-    "handler_class": "periscope.handlers.AuthRegisterSliceHandler",
-    "name": "boot_slice",
-    "pattern": "/register_slice$",
-    "schema": [MIME['PLAIN']]
-}
-
-
 # Default settings that apply to almost all network resources
 # This is used to make writing `Resources` easier.
 default_resource_settings= {
@@ -450,11 +432,6 @@ Resources = {
     "datas" : datas,
 }
 
-AuthResources = {
-    "add_credential": auth_cred_settings,
-    "register_slice": auth_slice_settings
-}
-
 main_handler_settings = {
     "resources": ["links", "ports", "nodes", "services", "paths",
         "networks", "domains", "topologies", "events", "datas", "metadatas"],
@@ -462,4 +439,32 @@ main_handler_settings = {
     "base_url": "",
     "pattern": "/$",
     "handler_class": "periscope.handlers.MainHandler",
+}
+
+######################################################################
+# PRE/POST content processing module definitions.
+######################################################################
+
+PP_MODULES = [('periscope.gemini', 'Gemini')]
+
+# Settings for the GEMINI-specific authentication handlers
+auth_cred_settings= {
+    "base_url": "",
+    "handler_class": "periscope.gemini.AuthCredHandler",
+    "name": "add_credential",
+    "pattern": "/add_credential$",
+    "schema": [MIME['PLAIN']]
+}
+
+auth_slice_settings= {
+    "base_url": "",
+    "handler_class": "periscope.gemini.AuthRegisterSliceHandler",
+    "name": "boot_slice",
+    "pattern": "/register_slice$",
+    "schema": [MIME['PLAIN']]
+}
+
+AuthResources = {
+    "add_credential": auth_cred_settings,
+    "register_slice": auth_slice_settings
 }

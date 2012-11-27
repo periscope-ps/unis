@@ -26,6 +26,9 @@ else:
 
 from urllib import urlencode
 
+import settings
+from settings import MIME
+from settings import SCHEMAS
 from periscope.db import DBLayer
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
@@ -49,31 +52,6 @@ else:
     bson_encode = bson.BSON.encode
     bson_decode = bson.decode_all
     bson_valid = bson.is_valid
-
-
-MIME = {
-    'HTML': 'text/html',
-    'JSON': 'application/json',
-    'PLAIN': 'text/plain',
-    'SSE': 'text/event-stream',
-    'PSJSON': 'application/perfsonar+json',
-    'PSBSON': 'application/perfsonar+bson',
-    'PSXML': 'application/perfsonar+xml',
-}
-
-SCHEMAS = {
-    'networkresource': 'http://unis.incntre.iu.edu/schema/20120709/networkresource#',
-    'node': 'http://unis.incntre.iu.edu/schema/20120709/node#',
-    'domain': 'http://unis.incntre.iu.edu/schema/20120709/domain#',
-    'port': 'http://unis.incntre.iu.edu/schema/20120709/port#',
-    'link': 'http://unis.incntre.iu.edu/schema/20120709/link#',
-    'path': 'http://unis.incntre.iu.edu/schema/20120709/path#',
-    'network': 'http://unis.incntre.iu.edu/schema/20120709/network#',
-    'topology': 'http://unis.incntre.iu.edu/schema/20120709/topology#',
-    'blipp': 'http://unis.incntre.iu.edu/schema/20120709/blipp#',
-    'metadata': 'http://unis.incntre.iu.edu/schema/20120709/metadata#',
-    'service' : "http://unis.incntre.iu.edu/schema/20120709/service#"
-}
 
 # TODO (AH): cache common schemas locally
 # TODO (AH): This is a very ugly way of handling cache!
