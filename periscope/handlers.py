@@ -267,6 +267,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         
         allow_delete: User client can issue HTTP DELETE requests to this
                         resource.
+
         
         tailable: The underlying database collection is a capped collection.
         """
@@ -527,10 +528,16 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 query_ret.append(in_q)
             else:
                 query_ret.append({arg: process_value(arg, split[0])})
+
+        # do any PPI query updates
+        for pp in self.application._ppi_classes:
+            query_ret = pp.process_query(query_ret, self.application, self.request)
+
         if query_ret:
             query_ret = {"$and": query_ret}
         else:
             query_ret = {}
+
         ret_val = {"fields": fields, "limit": limit, "query": query_ret}
         return ret_val
 
@@ -676,6 +683,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             else:
                 if not response:
                     json_response = ""
+            
+            for pp in self.application._ppi_classes:
+                json_response = pp.post_get(json_response)
             self.write(json_response)
         else:
             # TODO (AH): HANDLE HTML, SSE and other formats
@@ -736,7 +746,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     def post(self, res_id=None):
         # Check if the schema for conetnt type is known to the server
         if self.accept_content_type not in self.schemas_single:
-            message = "Schema is not defiend fot content of type '%s'" % \
+            message = "Schema is not defined for content of type '%s'" % \
                         (self.accept_content_type)
             self.send_error(500, message=message)
             return
@@ -1152,6 +1162,9 @@ class CollectionHandler(NetworkResourceHandler):
                     method = "POST",
                     body = dumps_mongo(collection[key]),
                     request_timeout=180,
+                    validate_cert=False,
+                    client_cert=settings.SSL_OPTIONS['certfile'],
+                    client_key=settings.SSL_OPTIONS['keyfile'],
                     headers = {
                         "Cache-Control": "no-cache",
                         "Content-Type": MIME['PSJSON'],
@@ -1247,7 +1260,6 @@ class MainHandler(tornado.web.RequestHandler):
         self._resources = resources
     
     def get(self):
-        print self.request.get_ssl_certificate()
         links = []
         for resource in self._resources:
             href = "%s://%s%s" % (self.request.protocol,

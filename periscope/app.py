@@ -24,6 +24,7 @@ from periscope.handlers import CollectionHandler
 from periscope.handlers import MainHandler
 from periscope.db import DBLayer
 from periscope.utils import load_class
+from periscope.pp_interface import PP_INTERFACE as PPI
 
 # default port
 define("port", default=8888, help="run on the given port", type=int)
@@ -122,7 +123,7 @@ class PeriscopeApplication(tornado.web.Application):
         allow_put: allow HTTP PUT (True or False)
         
         allow_delete: allow HTTP DELETE (True or False)
-        
+
         accepted_mime: list of accepted MIME types
         
         content_types_mime: List of Content types that can be returned to the user
@@ -189,14 +190,26 @@ class PeriscopeApplication(tornado.web.Application):
     def __init__(self):
         self._async_db = None
         self._sync_db = None
+        self._ppi_classes = []
         handlers = []
-        
+
+        # import and initialize pre/post content processing modules
+        for pp in settings.PP_MODULES:
+            mod = __import__(pp[0], fromlist=pp[1])
+            c = getattr(mod, pp[1])
+            if issubclass(c, PPI):
+                self._ppi_classes.append(c())
+            else:
+                print "Not a valid PPI class: %s" % c.__name__
+
         if settings.ENABLE_AUTH:
             from periscope.auth import ABACAuthService
 
             self._auth = ABACAuthService(settings.SSL_OPTIONS['certfile'],
                                          settings.SSL_OPTIONS['keyfile'],
-                                         settings.AUTH_STORE_DIR)
+                                         settings.AUTH_STORE_DIR,
+                                         #self.get_db_layer("authNZ", "uuid", "ts", False, None))
+                                         self.sync_db["authNZ"])
 
             for auth in settings.AuthResources:
                 handlers.append(self.make_auth_handler(**settings.AuthResources[auth]))
