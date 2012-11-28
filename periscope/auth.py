@@ -5,8 +5,9 @@ import socket
 import ssl
 import os
 import shutil
-import tempfile
+import time
 import uuid
+import hashlib
 from datetime import datetime
 
 import ABAC
@@ -71,6 +72,31 @@ class ABACAuthService:
         expiration = cred.get_expiration()
         now = datetime.now(expiration.tzinfo)
         validity = int((expiration - now).total_seconds())
+
+        if (validity <= 0):
+            raise AbacError("Slice credential has expired")
+
+        # This assumes the credential is valid (you can call cred.verify
+        # with the CA roots, i.e. genica.bundle, to do it yourself).
+        slice_uuid = cred.get_gid_object().get_uuid()
+        if not slice_uuid:
+            slice_uuid = hashlib.md5(cred.get_gid_object().get_urn()).hexdigest()
+            slice_uuid = uuid.UUID(slice_uuid).hex
+        else:
+            slice_uuid = uuid.UUID(int=slice_uuid).hex
+
+        timestamp = int(time.time() * 1000000)
+        uuid_query = {"_id": slice_uuid}
+        res = self.db.find(uuid_query)
+        if res.count() == 0:
+            uuid_query = {"_id": slice_uuid,
+                          "ts": str(timestamp),
+                          "valid_until": str(timestamp+validity)
+                          }
+            self.db.insert(uuid_query)
+            self.auth_mem.append(uuid_query)
+        else:
+            raise AbacError("Slice already registered")
 
         # create the initial role (UNIS.rUA <- client)
         UA_role = self.USER_ADMIN_ROLE_PREFIX + slice_uuid
