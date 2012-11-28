@@ -1,12 +1,12 @@
 import uuid
 import tornado.web
 from netlogger import nllog
-from pp_interface import PP_Error
-from pp_interface import PP_INTERFACE as PPI
 
 import settings
 from settings import MIME
 from settings import SCHEMAS
+from periscope.pp_interface import PP_Error
+from periscope.pp_interface import PP_INTERFACE as PPI
 
 class Gemini(PPI):
 

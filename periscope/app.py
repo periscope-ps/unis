@@ -17,11 +17,11 @@ from tornado.httpclient import AsyncHTTPClient
 
 # before this import 'periscope' path name is NOT as defined!
 import settings
+from settings import MIME
+from settings import SCHEMAS
 from periscope.handlers import NetworkResourceHandler
 from periscope.handlers import CollectionHandler
 from periscope.handlers import MainHandler
-from periscope.handlers import MIME
-from periscope.handlers import SCHEMAS
 from periscope.db import DBLayer
 from periscope.utils import load_class
 
