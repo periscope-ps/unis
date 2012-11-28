@@ -163,6 +163,7 @@ class ABACAuthService:
 
         #self.ctx.dump_yap_db()
 
+
     def add_credential(self, cert, cred):
         # Users can post credentials, usually delegating a given
         # permission to a second principal.
@@ -179,6 +180,7 @@ class ABACAuthService:
         user.id_write_cert(os.path.join(self.ABAC_STORE_DIR, user_filename))
         attr_filename = user.id_keyid() + "_has_" + attr.role_head().role_name()  + self.ATTR_FILE_SUFFIX
         attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
+
 
     def query(self, cert, slice_uuid, req=None):
         # Given the request type, check for the appropriate proof.
