@@ -7,6 +7,7 @@ import os
 import shutil
 import time
 import uuid
+import hashlib
 from datetime import datetime
 
 import ABAC
