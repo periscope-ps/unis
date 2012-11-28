@@ -20,7 +20,15 @@ tail -n +$SKIP $THIS | tar -xz
 DIR=peri-tornado
 
 GENSOURCES_FILE="/etc/yum.repos.d/10gen.repo"
+
 GEN_REPO='[10gen]\nname=10gen Repository\nbaseurl=http://downloads-distro.mongodb.org/repo/redhat/os/x86_64\ngpgcheck=0\nenabled=1\n'
+
+ARCH=`uname -m`
+if [ $ARCH == 'i686' -o $ARCH == 'i386' ]
+  then
+    GEN_REPO='[10gen]\nname=10gen Repository\nbaseurl=http://downloads-distro.mongodb.org/repo/redhat/os/i686\ngpgcheck=0\nenabled=1\n'
+fi
+
 echo -e ${GEN_REPO} > ${GENSOURCES_FILE}
 yum -y install mongo-10gen mongo-10gen-server
 yum -y install python-setuptools
