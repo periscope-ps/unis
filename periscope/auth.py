@@ -204,4 +204,3 @@ class ABACAuthService:
         #    print "%s <- %s" % (c.head_string(), c.tail_string())
 
         return success
-
