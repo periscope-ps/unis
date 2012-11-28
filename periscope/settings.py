@@ -446,6 +446,7 @@ main_handler_settings = {
 ######################################################################
 
 PP_MODULES = [('periscope.gemini', 'Gemini')]
+#PP_MODULES = []
 
 # Settings for the GEMINI-specific authentication handlers
 auth_cred_settings= {

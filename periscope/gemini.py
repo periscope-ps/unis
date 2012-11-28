@@ -1,5 +1,7 @@
+import uuid
 import tornado.web
 from netlogger import nllog
+from pp_interface import PP_Error
 from pp_interface import PP_INTERFACE as PPI
 
 import settings
@@ -9,23 +11,66 @@ from settings import SCHEMAS
 class Gemini(PPI):
 
     def pre_get(self, obj, app=None, req=None):
-        return []
+        return obj
 
     def post_get(self, obj, app=None, req=None):
         return obj
 
+    def pre_post(self, obj, app=None, req=None):
+        # (EK) HACK: check and allow requests from the server itself
+        # make this more secure by checking key hash
+        cert = req.get_ssl_certificate(binary_form=False)
+        for item in cert['subject']:
+            for (key,value) in item:
+                if key == "commonName" and value == "server":
+                    return obj
+
+        uuids = self.__get_allowed_uuids(app, req)
+        if not len(uuids):
+            raise PP_Error("GEMINI: no registered slices for user")
+
+        if not isinstance(obj, list):
+            t_obj = [obj]
+        else:
+            t_obj = obj
+
+        for o in t_obj:
+            try:
+                o['properties']['geni']['slice_uuid']
+            except Exception:
+                raise PP_Error("GEMINI: no slice_uuid in one or more network objects")
+            if o['properties']['geni']['slice_uuid'] not in uuids:
+                raise PP_Error("GEMINI: one or more network objects is not allowed for user")
+
+        return obj
+
+    def post_post(self, obj, app=None, req=None):
+        return obj
+
     def process_query(self, obj, app=None, req=None):
+        uuids = self.__get_allowed_uuids(app, req)
+        if not len(uuids):
+            raise PP_Error("GEMINI: no registered slices for user")
+
+        new_q = []
+        for u in uuids:
+            new_q.append({'properties.geni.slice_uuid': u})
+        # return non-GENI slice stuff as well (well, objects without UUID anyway)
+        #new_q.append({'properties.geni.slice_uuid': {'$exists': False}}
+        new_q = {"$or": new_q}
+        obj.append(new_q)
+        return obj
+
+    def __get_allowed_uuids(self, app, req):
         auth = app._auth
         cert = req.get_ssl_certificate(binary_form=True)
-        
+
+        uuids = []
         for a in auth.auth_mem:
-            print a
+            if auth.query(cert, a['_id']) is True:
+                uuids.append(str(uuid.UUID(a['_id'])))
 
-        new_obj = {'properties.geni.slice_uuid': {'$exists': True}}
-        obj.append(new_obj)
-
-        print obj
-        return obj
+        return uuids
 
 
 class AuthCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):

@@ -547,7 +547,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             self._res_id = unicode(res_id)
         else:
             self._res_id = None
-        parsed = self._parse_get_arguments()
+        try:
+            parsed = self._parse_get_arguments()
+        except Exception, msg:
+            return self.send_error(403, message=msg)
         query = parsed["query"]
         fields = parsed["fields"]
         limit = parsed["limit"]
@@ -818,7 +821,16 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             except Exception as exp:
                 self.send_error(400, message="Not valid body '%s'." % exp)
                 return
-        
+
+        # PPI processing/checks
+        try:
+            for resource in resources:
+                for pp in self.application._ppi_classes:
+                    pp.pre_post(resource, self.application, self.request)
+        except Exception, msg:
+            self.send_error(400, message=msg)
+            return
+
         callback = functools.partial(self.on_post,
                     res_refs=res_refs, return_resources=True)
         self.dblayer.insert(resources, callback=callback)
@@ -1094,6 +1106,21 @@ class CollectionHandler(NetworkResourceHandler):
                 collection._validate()
         except Exception as exp:
             self.send_error(400, message="Not valid $schema '%s'." % exp)
+            return
+        
+        # (EK): make this cleaner and more efficient
+        try:
+            for collection in collections:
+                # check the top-level object
+                for pp in self.application._ppi_classes:
+                    pp.pre_post(collection, self.application, self.request)
+                # now check each resource in the collection
+                for key in self._collections.keys():
+                    if key in collection:
+                        for pp in self.application._ppi_classes:
+                            pp.pre_post(collection[key], self.application, self.request)
+        except Exception, msg:
+            self.send_error(400, message=msg)
             return
         
         self._cache = {}
@@ -1378,7 +1405,10 @@ class EventsHandler(NetworkResourceHandler):
         else:
             self._res_id = None
             
-        parsed = self._parse_get_arguments()
+        try:
+            parsed = self._parse_get_arguments()
+        except Exception, msg:
+            return self.send_error(403, message=msg)
         query = parsed["query"]
         fields = parsed["fields"]
         limit = parsed["limit"]
@@ -1554,7 +1584,10 @@ class DataHandler(NetworkResourceHandler):
             self.send_error(500, message="You need to specify the metadata ID in the URL while querying the data")
             return
         
-        parsed = self._parse_get_arguments()
+        try:
+            parsed = self._parse_get_arguments()
+        except Exception, msg:
+            return self.send_error(403, message=msg)
         query = parsed["query"]
         fields = parsed["fields"]
         fields["_id"] = 0

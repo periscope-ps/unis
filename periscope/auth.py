@@ -91,6 +91,7 @@ class ABACAuthService:
         attr = ABAC.Attribute(head, validity)
         attr.attribute_add_tail(tail);
         attr.attribute_bake()
+        self.ctx.load_attribute(attr)
 
         # save
         attr_filename = UA_role + self.ATTR_FILE_SUFFIX
@@ -105,6 +106,7 @@ class ABACAuthService:
         attr = ABAC.Attribute(head, validity)
         attr.attribute_add_tail(tail)
         attr.attribute_bake()
+        self.ctx.load_attribute(attr)
 
         # save
         attr_filename = SA_role + self.ATTR_FILE_SUFFIX
@@ -116,6 +118,7 @@ class ABACAuthService:
         attr = ABAC.Attribute(head, validity)
         attr.attribute_add_tail(tail)
         attr.attribute_bake()
+        self.ctx.load_attribute(attr)
         
         # save         
         attr_filename = self.ADMIN_ARE_SLICE_ADMINS + slice_uuid + self.ATTR_FILE_SUFFIX
@@ -166,16 +169,14 @@ class ABACAuthService:
         #out = self.ctx.context_principals()
         #for x in out[1]:
         #    print "%s " % x.string()
-
-        role = ABAC.Role(self.server_id.id_keyid(), self.SLICE_ADMIN_ROLE_PREFIX + slice_uuid)
+        
+        role = ABAC.Role(self.server_id.id_keyid(), str(self.SLICE_ADMIN_ROLE_PREFIX + slice_uuid))
         p = ABAC.Role(user_id.id_keyid())
 
+        self.ctx.set_no_partial_proof()
         (success, credentials) = self.ctx.query(role, p)
-        for c in credentials:
-            print "%s <- %s" % (c.head_string(), c.tail_string())
+        #for c in credentials:
+        #    print "%s <- %s" % (c.head_string(), c.tail_string())
 
-        if success:
-            return True
-       
-        return False
+        return success
 
