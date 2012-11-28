@@ -1,8 +1,6 @@
 import uuid
 import tornado.web
 from netlogger import nllog
-from pp_interface import PP_Error
-from pp_interface import PP_INTERFACE as PPI
 
 import settings
 from settings import MIME
