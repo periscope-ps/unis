@@ -1104,7 +1104,7 @@ class CollectionHandler(NetworkResourceHandler):
                     continue
                 for index in range(len(collection[key])):
                     if 'selfRef' in collection[key][index]:
-+                        collection[key][index] = {"href": collection[key][index]["selfRef"], "rel": "full"}
+                        collection[key][index] = {"href": collection[key][index]["selfRef"], "rel": "full"}
             coll_reps.append(dict(collection._to_mongoiter()))
         
         callback = functools.partial(self.on_post, res_refs=res_refs)
