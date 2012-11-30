@@ -413,6 +413,12 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             self.write(result)
             self.finish()
 
+    def set_default_headers(self):
+        # Headers to allow cross domains requests to UNIS
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', 'x-requested-with')
+    
+    
     def _parse_get_arguments(self):
         """Parses the HTTP GET areguments given by the user."""
         def convert_value_type(key, value, val_type):
