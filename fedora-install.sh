@@ -12,6 +12,21 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
+PYTHON_VERSION=`python --version 2>&1 | awk '{print $2}'`
+PV_MAJOR=${PYTHON_VERSION:0:1}
+PV_MINOR=${PYTHON_VERSION:2:1}
+
+if [ $PV_MAJOR != 2 ]; then
+   echo "Python version is ${PYTHON_VERSION}, periscope requires 2.6 or greater, but less than 3"
+   exit 1
+fi
+
+if [ $PV_MINOR -lt 6 ]; then
+   echo "Python version is ${PYTHON_VERSION}, periscope requires 2.6 or greater, but less than 3"
+   exit 1
+fi
+ 
+
 SKIP=`awk '/^__TARFILE_FOLLOWS__/ { print NR + 1; exit 0; }' $0`
 THIS=`pwd`/$0
 tail -n +$SKIP $THIS | tar -xz
