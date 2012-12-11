@@ -764,6 +764,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         Handles HTTP POST request with Content Type of PSJSON.
         """
         profile = self._validate_psjson_profile()
+
         if not profile:
             return
         try:
@@ -791,6 +792,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 item["selfRef"] = "%s/%s" % \
                     (self.request.full_url(), item[self.Id])
                 item["$schema"] = item.get("$schema", self.schemas_single[MIME['PSJSON']])
+                if item["$schema"] != self.schemas_single[self.accept_content_type]:
+                    self.send_error(400,
+                        message="Not valid body '%s'; expecting $schema: '%s'." % \
+                        (item["$schema"], self.schemas_single[self.accept_content_type]))
+                    return
                 item._validate()
                 res_ref = {}
                 res_ref[self.Id] = item[self.Id]
@@ -906,6 +912,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         
         resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         
+        if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
+            self.send_error(400,
+                message="Not valid body '%s'; expecting $schema: '%s'." % \
+                (item["$schema"], self.schemas_single[self.accept_content_type]))
+            return
         # Validate schema
         try:
             resource._validate()
@@ -1053,12 +1064,22 @@ class CollectionHandler(NetworkResourceHandler):
             self.send_error(400, message="malformatted request " + str(exp))
             return
         
+        for collection in collections:
+            print "Validating", type(collection)
+            collection._validate()
+                
         # Validate schema
         try:
             for collection in collections:
+                if collection.get("$schema", None) != \
+                    self.schemas_single[self.accept_content_type]:
+                     self.send_error(400,
+                     message="Not valid body '%s'; expecting $schema: '%s'." % \
+                     (collection.get("$schema", None), self.schemas_single[self.accept_content_type]))
+                     return
                 collection._validate()
         except Exception as exp:
-            self.send_error(400, message="Not valid body '%s'." % exp)
+            self.send_error(400, message="Not valid $schema '%s'." % exp)
             return
         
         self._cache = {}

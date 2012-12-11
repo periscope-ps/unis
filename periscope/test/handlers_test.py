@@ -921,6 +921,108 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         
         self.assertNotEqual(array_with_id_handler._status_code, 400)
     
+    
+    def test_post_psjson_bad_schema_body(self):
+        # Arrange
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None})
+        
+        goodsingle_dblayer_mock = Mock(spec=DBLayer)
+        badsinglee_dblayer_mock = Mock(spec=DBLayer)
+        good_array_dblayer_mock = Mock(spec=DBLayer)
+        bad_array_dblayer_mock = Mock(spec=DBLayer)
+        
+        valid_body = {
+            "$schema": schemas['networkresource'],
+            "id": "1",
+            "ts": 1330921125000000
+        }
+        notvalid_body = {
+            "$schema": schemas['node'],
+            "id": "2",
+            "ts": 1330921125000000
+        }
+        valid_array = [
+            {
+                "$schema": schemas['networkresource'],
+                "id": "3",
+                "ts": 1330921125000000
+            },
+            {
+                "$schema": schemas['networkresource'],
+                "id": "4",
+                "ts": 1330921125000000
+            }
+        ]
+        notvalid_array = [
+            {
+                "$schema": schemas['networkresource'],
+                "id": "5",
+                "ts": 1330921125000000
+            },
+            {
+                "$schema": schemas['node'],
+                "id": "6",
+                "ts": 1330921125000000
+            }
+        ]
+        psjson_header = "%s; profile=%s" % (MIME['PSJSON'], schemas['networkresource'])
+        
+        # Good single
+        goodsingle_request = Mock(name="aa", body=json.dumps(valid_body))
+        goodsingle_request.headers.get.return_value = psjson_header
+        goodsingle_request.full_url.return_value = "http://localhost/resources"
+        goodsingle_handler = NetworkResourceHandler(app,
+                            goodsingle_request,
+                            dblayer=goodsingle_dblayer_mock,
+                            model_class=Node,
+                            base_url="/tests",
+                            schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        
+        # Bad single
+        badsingle_request = Mock(name="aa", body=json.dumps(notvalid_body))
+        badsingle_request.headers.get.return_value = psjson_header
+        badsingle_request.full_url.return_value = "http://localhost/resources"
+        badsingle_handler = NetworkResourceHandler(app,
+                            badsingle_request,
+                            dblayer=badsinglee_dblayer_mock,
+                            model_class=Node,
+                            base_url="/tests",
+                            schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        
+        # Good Array request
+        good_array_request = Mock(body=json.dumps(valid_array))
+        good_array_request.headers.get.return_value = psjson_header
+        good_array_request.full_url.return_value = "http://localhost/resources"
+        good_array_handler = NetworkResourceHandler(app,
+                            good_array_request,
+                            dblayer=good_array_dblayer_mock,
+                            model_class=Node,
+                            base_url="/tests",
+                            schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        
+        # Bad Array request
+        bad_array_request = Mock(body=json.dumps(notvalid_array))
+        bad_array_request.headers.get.return_value = psjson_header
+        bad_array_request.full_url.return_value = "http://localhost/resources"
+        bad_array_handler = NetworkResourceHandler(app,
+                            bad_array_request,
+                            dblayer=bad_array_dblayer_mock,
+                            model_class=Node,
+                            base_url="/tests",
+                            schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        
+        # Act
+        goodsingle_handler.post_psjson()
+        badsingle_handler.post_psjson()
+        good_array_handler.post_psjson()
+        bad_array_handler.post_psjson()
+        
+        # Assert
+        self.assertEqual(goodsingle_handler._status_code, 200)
+        self.assertEqual(good_array_handler._status_code, 200)
+        self.assertEqual(badsingle_handler._status_code, 400)
+        self.assertEqual(bad_array_handler._status_code, 400)
+    
     def test_post_bad_url(self):
         # Arrange
         dblayer_mock = Mock(spec=DBLayer)
@@ -1262,6 +1364,35 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                 result["$schema"] = result.pop("\\$schema")
                 self.assertEqual(expected[name][counter], result)
                 counter += 1
+    def test_post_bad_body_schema(self):
+        # Arrange
+        self.sync_db[self.collection_name].create_index(
+                            [("id", 1), ("ts", 1)], unique=True)
+        dblayer = DBLayer(self.async_db, self.collection_name, capped=True)
+        topology = self._get_sample_topology()
+        topology['$schema'] = schemas['domain']
+        content_type = MIME['PSJSON'] + '; profile=' + schemas['topology']
+        handler = ("/topologies$", CollectionHandler,
+                   dict(collections=self.collections_settings,
+                        dblayer=dblayer,
+                        base_url="/topologies",
+                        model_class=Topology,
+                        schemas_single={MIME['PSJSON']: schemas['topology']}))
+        handlers = [handler]
+        handlers += self._make_handlers()
+        self._app.add_handlers(".*$", handlers)
+        # Act
+        response = self.fetch("/topologies",
+                            method="POST",
+                            body=json.dumps(topology), 
+                            headers={
+                                "Content-Type": content_type,
+                                "Cache-Control": "no-cache",
+                                "Accept": MIME['PSJSON'],
+                                "Connection": "close"})
+        # Assert
+        self.assertEqual(response.code, 400, msg=response.body)
+       
     
     def test_get(self):
         # Arrange
