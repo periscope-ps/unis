@@ -449,23 +449,23 @@ PP_MODULES = [('periscope.gemini', 'Gemini')]
 #PP_MODULES = []
 
 # Settings for the GEMINI-specific authentication handlers
-auth_cred_settings= {
+auth_user_settings= {
     "base_url": "",
-    "handler_class": "periscope.gemini.AuthCredHandler",
-    "name": "add_credential",
-    "pattern": "/add_credential$",
+    "handler_class": "periscope.gemini.AuthUserCredHandler",
+    "name": "cred_geniuser",
+    "pattern": "/credentials/geniuser",
     "schema": [MIME['PLAIN']]
 }
 
 auth_slice_settings= {
     "base_url": "",
-    "handler_class": "periscope.gemini.AuthRegisterSliceHandler",
-    "name": "boot_slice",
-    "pattern": "/register_slice$",
+    "handler_class": "periscope.gemini.AuthSliceCredHandler",
+    "name": "cred_genislice",
+    "pattern": "/credentials/genislice",
     "schema": [MIME['PLAIN']]
 }
 
 AuthResources = {
-    "add_credential": auth_cred_settings,
-    "register_slice": auth_slice_settings
+    "cred_geniuser": auth_user_settings,
+    "cred_genislice": auth_slice_settings
 }

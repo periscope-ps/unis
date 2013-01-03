@@ -73,7 +73,7 @@ class Gemini(PPI):
         return uuids
 
 
-class AuthCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
+class AuthUserCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
 
     def write_error(self, status_code, **kwargs):
         if self.settings.get("debug") and "exc_info" in kwargs:
@@ -99,7 +99,7 @@ class AuthCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
         auth.add_credential(cert, self.request.body)
     
 
-class AuthRegisterSliceHandler(tornado.web.RequestHandler, nllog.DoesLogging):
+class AuthSliceCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
 
     def write_error(self, status_code, **kwargs):
         if self.settings.get("debug") and "exc_info" in kwargs:
