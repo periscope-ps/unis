@@ -17,14 +17,10 @@ class Gemini(PPI):
         return obj
 
     def pre_post(self, obj, app=None, req=None):
-        # (EK) HACK: check and allow requests from the server itself
-        # make this more secure by checking key hash
-        cert = req.get_ssl_certificate(binary_form=False)
-        for item in cert['subject']:
-            for (key,value) in item:
-                if key == "commonName" and value == "server":
-                    return obj
+        if self.__is_server(req):
+            return obj
 
+        uuid = None
         uuids = self.__get_allowed_uuids(app, req)
         if not len(uuids):
             raise PP_Error("GEMINI: no registered slices for user")
@@ -36,10 +32,10 @@ class Gemini(PPI):
 
         for o in t_obj:
             try:
-                o['properties']['geni']['slice_uuid']
+                uuid = self.__get_uuid(o)
             except Exception:
-                raise PP_Error("GEMINI: no slice_uuid in one or more network objects")
-            if o['properties']['geni']['slice_uuid'] not in uuids:
+                raise
+            if uuid not in uuids:
                 raise PP_Error("GEMINI: one or more network objects is not allowed for user")
 
         return obj
@@ -48,6 +44,13 @@ class Gemini(PPI):
         return obj
 
     def process_query(self, obj, app=None, req=None):
+        if self.__is_server(req):
+            return obj
+
+        # some exceptions, data and events need to be secured differently
+        if req.uri.split('/')[1] in ['events', 'data']:
+            return obj
+
         uuids = self.__get_allowed_uuids(app, req)
         if not len(uuids):
             raise PP_Error("GEMINI: no registered slices for user")
@@ -55,11 +58,33 @@ class Gemini(PPI):
         new_q = []
         for u in uuids:
             new_q.append({'properties.geni.slice_uuid': u})
+            new_q.append({'parameters.geni.slice_uuid': u})
         # return non-GENI slice stuff as well (well, objects without UUID anyway)
         #new_q.append({'properties.geni.slice_uuid': {'$exists': False}}
         new_q = {"$or": new_q}
         obj.append(new_q)
         return obj
+
+    def __is_server(self, req):
+        # (EK) HACK: check and allow requests from the server itself
+        # make this more secure by checking key hash
+        cert = req.get_ssl_certificate(binary_form=False)
+        for item in cert['subject']:
+            for (key,value) in item:
+                return key == "commonName" and value == "server"
+
+    def __get_uuid(self, obj):
+        try:
+            return obj['properties']['geni']['slice_uuid']
+        except:
+            pass
+
+        try:
+            return obj['parameters']['geni']['slice_uuid']
+        except:
+            pass
+
+        raise PP_Error("GEMINI: no slice_uuid in one or more network objects")
 
     def __get_allowed_uuids(self, app, req):
         auth = app._auth

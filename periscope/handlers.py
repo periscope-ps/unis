@@ -1315,7 +1315,7 @@ class EventsHandler(NetworkResourceHandler):
         #pool.close()
         self.finish()
 
-    def verify_metadata(self,response, collection_size,post_body):
+    def verify_metadata(self, response, collection_size, post_body):
         if response.error:
             self.send_error(400, message="metadata is not found '%s'." % response.error)
         else:
@@ -1350,7 +1350,11 @@ class EventsHandler(NetworkResourceHandler):
                                      collection_size=body["collection_size"], post_body=body)
         
         http_client = AsyncHTTPClient()
-        http_client.fetch(body["metadata_URL"], callback)        
+        http_client.fetch(body["metadata_URL"],
+                          validate_cert=False,
+                          client_cert=settings.SSL_OPTIONS['certfile'],
+                          client_key=settings.SSL_OPTIONS['keyfile'],
+                          callback=callback)
 
     def del_stat_fields(self,generic):
         generic.pop("ns",None)
@@ -1538,6 +1542,18 @@ class DataHandler(NetworkResourceHandler):
         except Exception as exp:
             self.send_error(400, message="malformatted json request '%s'." % exp)
             return
+
+        ''' Let's not add properties into each /data object
+            Should protect the collection instead
+
+        try:
+            for pp in self.application._ppi_classes:
+                pp.pre_post(body, self.application, self.request)
+        except Exception, msg:
+            self.send_error(400, message=msg)
+            return
+        '''
+
         if self._res_id:
             res_refs =[]
             if self._res_id in self.application.sync_db.collection_names():
