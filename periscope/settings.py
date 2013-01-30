@@ -38,9 +38,14 @@ SSL_OPTIONS = {
 ######################################################################
 # Measurement Store settings.
 ######################################################################
-UNIS_URL = "http://unis.incntre.iu.edu:8888"
+UNIS_URL = "https://unis.incntre.iu.edu:8443"
 #UNIS_URL = "http://localhost:8888"
 MS_ENABLE = True
+
+MS_CLIENT_CERT = "/usr/local/etc/certs/ms_cert.pem"
+MS_CLIENT_KEY = "/usr/local/etc/certs/ms_key.pem"
+GEMINI_NODE_INFO = "/usr/local/etc/node.info"
+
 
 ######################################################################
 # Periscope Application settings.
@@ -468,3 +473,18 @@ AuthResources = {
     "cred_geniuser": auth_user_settings,
     "cred_genislice": auth_slice_settings
 }
+
+
+if GEMINI_NODE_INFO is not None:
+    logger = get_logger()
+    nconf = {}
+    with open(GEMINI_NODE_INFO, 'r') as cfile:
+        for line in cfile:
+            name, var = line.partition("=")[::2]
+            nconf[name.strip()] = str(var).rstrip()
+
+        try:
+            AUTH_UUID = nconf['auth_uuid']
+        except Exception as e:
+            AUTH_UUID = None
+            logger.warn("read_settings", msg="Could not find auth_uuid in node configuration")

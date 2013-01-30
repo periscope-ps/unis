@@ -175,7 +175,7 @@ class PeriscopeApplication(tornado.web.Application):
 
     def MS_registered(self,response):
         if response.error:
-            print "Couldn't start MS: ERROR", response.error
+            print "Couldn't start MS: ERROR", response.error, response.body
             import sys
             sys.exit()
         else:
@@ -248,6 +248,9 @@ class PeriscopeApplication(tornado.web.Application):
                                                     }
                                        }                  
                        } 
+
+            if settings.ENABLE_AUTH:
+                service['properties'].update({"geni": {"slice_uuid": settings.AUTH_UUID}})
             
             if 'localhost' in settings.UNIS_URL or "127.0.0.1" in settings.UNIS_URL:
                 self.sync_db["services"].insert(service)
@@ -260,6 +263,9 @@ class PeriscopeApplication(tornado.web.Application):
                 http_client.fetch(service_url,
                                   method="POST",
                                   body=json.dumps(service),
+                                  validate_cert=False,
+                                  client_cert=settings.MS_CLIENT_CERT,
+                                  client_key=settings.MS_CLIENT_KEY,
                                   headers={
                                            "Content-Type": content_type,
                                            "Cache-Control": "no-cache",
