@@ -88,7 +88,8 @@ class ABACAuthService:
         # matter if this is longer than the lifetime of the slice.
         expiration = cred.get_expiration()
         now = datetime.now(expiration.tzinfo)
-        validity = int((expiration - now).total_seconds())
+        td = expiration - now
+        validity = int(td.seconds + td.days * 24 * 3600)
 
         if (validity <= 0):
             raise AbacError("Slice credential has expired")
@@ -170,17 +171,21 @@ class ABACAuthService:
         # permission to a second principal.
 
         # (EK): should do some verification before blindly accepting
-        user = ABAC.ID_chunk(cert)
-        self.ctx.load_id(user)
-        
-        attr = ABAC.Attribute_chunk(cred)
-        self.ctx.load_attribute(attr)
-
-        # save new attribute and identity to file
-        user_filename = user.id_keyid() + self.PRIN_FILE_SUFFIX
-        user.id_write_cert(os.path.join(self.ABAC_STORE_DIR, user_filename))
-        attr_filename = user.id_keyid() + "_has_" + attr.role_head().role_name()  + self.ATTR_FILE_SUFFIX
-        attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
+        try:
+            user = ABAC.ID_chunk(cert)
+            self.ctx.load_id(user)
+            
+            attr = ABAC.Attribute_chunk(cred)
+            self.ctx.load_attribute(attr)
+            
+            # save new attribute and identity to file
+            user_filename = user.id_keyid() + self.PRIN_FILE_SUFFIX
+            user.id_write_cert(os.path.join(self.ABAC_STORE_DIR, user_filename))
+            attr_filename = user.id_keyid() + "_has_" + attr.role_head().role_name()  + self.ATTR_FILE_SUFFIX
+            attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
+        except Exception, msg:
+            print msg
+            return
 
 
     def query(self, cert, slice_uuid, req=None):

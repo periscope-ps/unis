@@ -66,12 +66,10 @@ class Gemini(PPI):
         return obj
 
     def __is_server(self, req):
-        # (EK) HACK: check and allow requests from the server itself
-        # make this more secure by checking key hash
-        cert = req.get_ssl_certificate(binary_form=False)
-        for item in cert['subject']:
-            for (key,value) in item:
-                return key == "commonName" and value == "server"
+        if req.remote_ip in ('127.0.1.1', '127.0.0.1'):
+            return True
+        else:
+            return False
 
     def __get_uuid(self, obj):
         try:
