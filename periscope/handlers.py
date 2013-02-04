@@ -1319,6 +1319,7 @@ class EventsHandler(NetworkResourceHandler):
         if response.error:
             self.send_error(400, message="metadata is not found '%s'." % response.error)
         else:
+            # (EK): FIX: body came back as an array in some cases, why?
             body=json.loads(response.body)
             if body["id"] not in self.application.sync_db.collection_names():
                 self.application.get_db_layer(body["id"],"ts","ts",True,collection_size)
@@ -1352,8 +1353,8 @@ class EventsHandler(NetworkResourceHandler):
         http_client = AsyncHTTPClient()
         http_client.fetch(body["metadata_URL"],
                           validate_cert=False,
-                          client_cert=settings.SSL_OPTIONS['certfile'],
-                          client_key=settings.SSL_OPTIONS['keyfile'],
+                          client_cert=settings.MS_CLIENT_CERT,
+                          client_key=settings.MS_CLIENT_KEY,
                           callback=callback)
 
     def del_stat_fields(self,generic):
