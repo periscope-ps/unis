@@ -227,7 +227,7 @@ class PeriscopeApplication(tornado.web.Application):
             service = {
                        u"id": u"ms_" + socket.gethostname(),
                        u"\$schema": unicode(SCHEMAS["service"]),
-                       u"accessPoint": u"http://%s:8888/" % socket.gethostname(),
+                       u"accessPoint": u"https://%s:8888/" % socket.gethostname(),
                        u"name": u"ms_" + socket.gethostname(),
                        u"status": u"ON",
                        u"serviceType": u"ps:tools:ms",
@@ -249,7 +249,7 @@ class PeriscopeApplication(tornado.web.Application):
                                        }                  
                        } 
 
-            if settings.ENABLE_AUTH:
+            if settings.AUTH_UUID:
                 service['properties'].update({"geni": {"slice_uuid": settings.AUTH_UUID}})
             
             if 'localhost' in settings.UNIS_URL or "127.0.0.1" in settings.UNIS_URL:

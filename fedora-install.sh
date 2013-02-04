@@ -57,6 +57,8 @@ yum -y install libnl-devel
 cd ${DIR}
 python ./setup.py install 
 
+install -D periscope/ssl/* /usr/local/etc/certs/
+
 exit 0
 
 __TARFILE_FOLLOWS__
