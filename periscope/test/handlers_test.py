@@ -824,7 +824,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     def test_post_psjson(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None})
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, _ppi_classes=[])
         
         bad_dblayer_mock = Mock(spec=DBLayer)
         with_id_dblayer_mock = Mock(spec=DBLayer)
@@ -924,7 +924,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     def test_post_psjson_bad_schema_body(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None})
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, _ppi_classes=[])
         
         goodsingle_dblayer_mock = Mock(spec=DBLayer)
         badsinglee_dblayer_mock = Mock(spec=DBLayer)

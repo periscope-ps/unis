@@ -530,8 +530,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 query_ret.append({arg: process_value(arg, split[0])})
 
         # do any PPI query updates
-        for pp in self.application._ppi_classes:
-            query_ret = pp.process_query(query_ret, self.application, self.request)
+        if getattr(self.application, '_ppi_classes', None):
+            for pp in self.application._ppi_classes:
+                query_ret = pp.process_query(query_ret, self.application, self.request)
 
         if query_ret:
             query_ret = {"$and": query_ret}
@@ -830,13 +831,15 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 return
 
         # PPI processing/checks
-        try:
-            for resource in resources:
-                for pp in self.application._ppi_classes:
-                    pp.pre_post(resource, self.application, self.request)
-        except Exception, msg:
-            self.send_error(400, message=msg)
-            return
+        if getattr(self.application, '_ppi_classes', None):
+            try:
+                for index in range(len(resources)):
+                    for pp in self.application._ppi_classes:
+                        pp.pre_post(resources[index], self.application, self.request)
+            except Exception, msg:
+                print msg
+                self.send_error(400, message=msg)
+                return
 
         callback = functools.partial(self.on_post,
                     res_refs=res_refs, return_resources=True)
@@ -1116,19 +1119,20 @@ class CollectionHandler(NetworkResourceHandler):
             return
         
         # (EK): make this cleaner and more efficient
-        try:
-            for collection in collections:
-                # check the top-level object
-                for pp in self.application._ppi_classes:
-                    pp.pre_post(collection, self.application, self.request)
-                # now check each resource in the collection
-                for key in self._collections.keys():
-                    if key in collection:
-                        for pp in self.application._ppi_classes:
-                            pp.pre_post(collection[key], self.application, self.request)
-        except Exception, msg:
-            self.send_error(400, message=msg)
-            return
+        if getattr(self.application, '_ppi_classes', None):
+            try:
+                for collection in collections:
+                    # check the top-level object
+                    for pp in self.application._ppi_classes:
+                        pp.pre_post(collection, self.application, self.request)
+                        # now check each resource in the collection
+                        for key in self._collections.keys():
+                            if key in collection:
+                                for pp in self.application._ppi_classes:
+                                    pp.pre_post(collection[key], self.application, self.request)
+            except Exception, msg:
+                self.send_error(400, message=msg)
+                return
         
         self._cache = {}
         coll_reps = []
