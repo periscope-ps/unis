@@ -1,4 +1,4 @@
-Installing Periscope:
+===== Installing Periscope =====
 
 Periscope can be easily install by:
     sudo python setup.py install
@@ -8,9 +8,52 @@ or
 If you're planning to manually install Periscope by other methods, see the
 following sections for required packages.
 
+===== Auth Notes =====
+
+UNIS and the MS may enable SSL as well as ABAC authorization support, see
+settings.py for details.
+
+SSL dependencies should already be met by setup above.  If in doubt, verify that
+python-ssl and M2Crypto are installed.
+
+For ABAC auth (ENABLE_AUTH=True), two additional dependencies are required:
+
+1. GCF/Omni libraries available from http://trac.gpolab.bbn.com/gcf/wiki/GettingGcf
+
+Once the GCF tarball is extracted, set GCF_PATH in settings.py as appropriate.
+
+2. ABAC python install
+
+The ABAC libraries and installation instructions are available at:
+
+http://abac.deterlab.net
+
+and
+
+http://abac.deterlab.net/browser/doc/INSTALL?rev=mei_rt2
+
+You also need to build strongswan and Yap as dependencies as outlined in the
+link above.
+
+To allow the use of proxy certificates, ensure the following is done before
+starting Periscope:
+
+1. Edit /usr/local/etc/strongswan.conf to include
+
+libstrongswan {
+        x509 {
+                enforce_critical = no
+        }
+} 
+
+2. Set OPENSSL_ALLOW_PROXY_CERTS=1 in the environment, e.g.:
+
+export OPENSSL_ALLOW_PROXY_CERTS=1
+or
+setenv OPENSSL_ALLOW_PROXY_CERTS 1
 
 
-Installing MongoDB:
+===== Installing MongoDB =====
 Please note that Periscope uses mongodb
 
 You can find instructions how to download mongodb here:
