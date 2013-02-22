@@ -34,12 +34,6 @@ SSL_OPTIONS = {
     'ca_certs': os.path.join(PERISCOPE_ROOT, "ssl/genica.bundle")
 }
 
-with open(SSL_OPTIONS['certfile']) as f:
-    from M2Crypto import X509
-    cert_pem = f.read()
-    f.close()
-    SERVER_CERT_FINGERPRINT = X509.load_cert_string(cert_pem, X509.FORMAT_PEM).get_fingerprint('sha1')
-
 ######################################################################
 # Measurement Store settings.
 ######################################################################
@@ -493,3 +487,11 @@ if GEMINI_NODE_INFO is not None:
         except Exception as e:
             AUTH_UUID = None
             logger.warn("read_settings", msg="Could not find auth_uuid in node configuration")
+
+try:
+    from M2Crypto import X509
+    SERVER_CERT_FINGERPRINT = X509.load_cert(SSL_OPTIONS['certfile'], X509.FORMAT_PEM).get_fingerprint('sha1')
+except Exception as e:
+    SERVER_CERT_FINGERPRINT = ''
+    logger = get_logger()
+    logger.warn("read_settings", msg="Could not open SSL CERTFILE: %s" % e)

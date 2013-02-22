@@ -40,6 +40,7 @@ setup(
         "argparse",
         "httplib2",
         "jsonpath",
+	"M2Crypto"
     ],
     dependency_links=[
         "http://github.com/ahassany/asyncmongo/tarball/getmore_ioloop#egg=asyncmongo-1.2.1",
