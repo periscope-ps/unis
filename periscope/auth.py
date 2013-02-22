@@ -8,6 +8,7 @@ import shutil
 import time
 import uuid
 import hashlib
+from M2Crypto import X509
 from datetime import datetime
 
 import ABAC
@@ -172,6 +173,7 @@ class ABACAuthService:
 
         # (EK): should do some verification before blindly accepting
         try:
+            #check = X509.load_cert_string(cred, X509.FORMAT_DER)
             user = ABAC.ID_chunk(cert)
             self.ctx.load_id(user)
             
@@ -184,8 +186,7 @@ class ABACAuthService:
             attr_filename = user.id_keyid() + "_has_" + attr.role_head().role_name()  + self.ATTR_FILE_SUFFIX
             attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
         except Exception, msg:
-            print msg
-            return
+            raise
 
 
     def query(self, cert, slice_uuid, req=None):

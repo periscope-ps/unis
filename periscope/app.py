@@ -198,7 +198,10 @@ class PeriscopeApplication(tornado.web.Application):
             mod = __import__(pp[0], fromlist=pp[1])
             c = getattr(mod, pp[1])
             if issubclass(c, PPI):
-                self._ppi_classes.append(c())
+                if not settings.ENABLE_AUTH and c.pp_type is PPI.PP_TYPES[PPI.PP_AUTH]:
+                    pass
+                else:
+                    self._ppi_classes.append(c())
             else:
                 print "Not a valid PPI class: %s" % c.__name__
 

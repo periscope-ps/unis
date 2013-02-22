@@ -1,4 +1,5 @@
 import uuid
+from M2Crypto import X509
 import tornado.web
 from netlogger import nllog
 
@@ -9,6 +10,8 @@ from periscope.pp_interface import PP_Error
 from periscope.pp_interface import PP_INTERFACE as PPI
 
 class Gemini(PPI):
+
+    pp_type = PPI.PP_TYPES[PPI.PP_AUTH]
 
     def pre_get(self, obj, app=None, req=None):
         return obj
@@ -22,8 +25,10 @@ class Gemini(PPI):
 
         uuid = None
         uuids = self.__get_allowed_uuids(app, req)
-        if not len(uuids):
-            raise PP_Error("GEMINI: no registered slices for user")
+
+        ## allow any "authenticated" user
+        #if not len(uuids):
+        #    raise PP_Error("GEMINI: no registered slices for user")
 
         if not isinstance(obj, list):
             t_obj = [obj]
@@ -35,7 +40,9 @@ class Gemini(PPI):
                 uuid = self.__get_uuid(o)
             except Exception:
                 raise
-            if uuid not in uuids:
+            if uuid is None:
+                pass
+            elif uuid not in uuids:
                 raise PP_Error("GEMINI: one or more network objects is not allowed for user")
 
         return obj
@@ -52,21 +59,32 @@ class Gemini(PPI):
             return obj
 
         uuids = self.__get_allowed_uuids(app, req)
-        if not len(uuids):
-            raise PP_Error("GEMINI: no registered slices for user")
 
-        new_q = []
-        for u in uuids:
-            new_q.append({'properties.geni.slice_uuid': u})
-            new_q.append({'parameters.geni.slice_uuid': u})
-        # return non-GENI slice stuff as well (well, objects without UUID anyway)
-        #new_q.append({'properties.geni.slice_uuid': {'$exists': False}}
-        new_q = {"$or": new_q}
-        obj.append(new_q)
+        ## allow any "authenticated" user
+        #if not len(uuids):
+        #    raise PP_Error("GEMINI: no registered slices for user")
+
+        if len(uuids):
+            new_q = []
+            for u in uuids:
+                new_q.append({'properties.geni.slice_uuid': u})
+                new_q.append({'parameters.geni.slice_uuid': u})
+            new_q.append({'properties.geni.slice_uuid': {'$exists': False}})
+            new_q.append({'parameters.geni.slice_uuid': {'$exists': False}})
+            obj.append({"$or": new_q})
+        else:
+            # return non-GENI UUID marked objects
+            new_q = []
+            new_q.append({'properties.geni.slice_uuid': {'$exists': False}})
+            new_q.append({'parameters.geni.slice_uuid': {'$exists': False}})
+            obj.append({"$and": new_q})
+
         return obj
 
     def __is_server(self, req):
-        if req.remote_ip in ('127.0.1.1', '127.0.0.1'):
+        cert = req.get_ssl_certificate(binary_form=True)
+        x509 = X509.load_cert_string(cert, X509.FORMAT_DER)
+        if x509.get_fingerprint('sha1') == settings.SERVER_CERT_FINGERPRINT:
             return True
         else:
             return False
@@ -82,7 +100,9 @@ class Gemini(PPI):
         except:
             pass
 
-        raise PP_Error("GEMINI: no slice_uuid in one or more network objects")
+        # Allow objects with no UUIDs
+        #raise PP_Error("GEMINI: no slice_uuid in one or more network objects")
+        return None
 
     def __get_allowed_uuids(self, app, req):
         auth = app._auth

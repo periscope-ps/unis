@@ -32,8 +32,13 @@ SSL_OPTIONS = {
     'keyfile': os.path.join(PERISCOPE_ROOT, "ssl/server.key"),
     'cert_reqs': ssl.CERT_REQUIRED,
     'ca_certs': os.path.join(PERISCOPE_ROOT, "ssl/genica.bundle")
-}   
+}
 
+with open(SSL_OPTIONS['certfile']) as f:
+    from M2Crypto import X509
+    cert_pem = f.read()
+    f.close()
+    SERVER_CERT_FINGERPRINT = X509.load_cert_string(cert_pem, X509.FORMAT_PEM).get_fingerprint('sha1')
 
 ######################################################################
 # Measurement Store settings.

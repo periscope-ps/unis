@@ -529,15 +529,20 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             else:
                 query_ret.append({arg: process_value(arg, split[0])})
 
-        # do any PPI query updates
+        if query_ret:
+            query_ret = {"list": True, "query": {"$and": query_ret}}
+        else:
+            query_ret = {"list": False, "query": {}}
+
+        # do any PPI query updates if there was an original query
         if getattr(self.application, '_ppi_classes', None):
             for pp in self.application._ppi_classes:
-                query_ret = pp.process_query(query_ret, self.application, self.request)
-
-        if query_ret:
-            query_ret = {"$and": query_ret}
-        else:
-            query_ret = {}
+                ret = []
+                ret = pp.process_query(ret, self.application, self.request)
+                if query_ret["list"]:
+                    for item in query_ret["query"]["$and"]:
+                        ret.append(item)
+                query_ret["query"].update({"$and": ret})
 
         ret_val = {"fields": fields, "limit": limit, "query": query_ret}
         return ret_val
@@ -563,13 +568,15 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         fields = parsed["fields"]
         limit = parsed["limit"]
         is_list = not res_id
-        if query:
+
+        if query["list"]:
             is_list = True
         if is_list:
-            query["status"] = {"$ne": "DELETED"}
+            query["query"]["status"] = {"$ne": "DELETED"}
+
         callback = functools.partial(self._get_on_response,
-                            new=True, is_list=is_list, query=query)
-        self._find(query, callback, fields=fields, limit=limit)
+                            new=True, is_list=is_list, query=query["query"])
+        self._find(query["query"], callback, fields=fields, limit=limit)
 
     def _find(self, query, callback, fields=None, limit=None):
         """Query the database.
@@ -666,6 +673,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         accept = self.accept_content_type
         self.set_header("Content-Type",
                     accept + "; profile=" + self.schemas_single[accept])
+
         if accept == MIME['PSJSON'] or accept == MIME['JSON']:
             json_response = dumps_mongo(response,
                                 indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
@@ -833,9 +841,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         # PPI processing/checks
         if getattr(self.application, '_ppi_classes', None):
             try:
-                for index in range(len(resources)):
+                for resource in resources:
                     for pp in self.application._ppi_classes:
-                        pp.pre_post(resources[index], self.application, self.request)
+                        pp.pre_post(resource, self.application, self.request)
             except Exception, msg:
                 print msg
                 self.send_error(400, message=msg)
@@ -1427,7 +1435,7 @@ class EventsHandler(NetworkResourceHandler):
             parsed = self._parse_get_arguments()
         except Exception, msg:
             return self.send_error(403, message=msg)
-        query = parsed["query"]
+        query = parsed["query"]["query"]
         fields = parsed["fields"]
         limit = parsed["limit"]
         is_list = not res_id
@@ -1618,7 +1626,7 @@ class DataHandler(NetworkResourceHandler):
             parsed = self._parse_get_arguments()
         except Exception, msg:
             return self.send_error(403, message=msg)
-        query = parsed["query"]
+        query = parsed["query"]["query"]
         fields = parsed["fields"]
         fields["_id"] = 0
         limit = parsed["limit"]

@@ -9,6 +9,11 @@ class PP_Error(Exception):
 class PP_INTERFACE:
     __metaclass__ = ABCMeta
 
+    PP_AUTH = 0
+    PP_TYPES = ['AUTH']
+
+    pp_type = ''
+
     @abstractmethod
     def pre_get(obj, app=None, req=None):
         return obj
