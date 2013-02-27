@@ -69,15 +69,13 @@ class Gemini(PPI):
             for u in uuids:
                 new_q.append({'properties.geni.slice_uuid': u})
                 new_q.append({'parameters.geni.slice_uuid': u})
-            new_q.append({'properties.geni.slice_uuid': {'$exists': False}})
-            new_q.append({'parameters.geni.slice_uuid': {'$exists': False}})
+                new_q.append({'properties.geni.slice_uuid': {'$exists': False},
+                              'parameters.geni.slice_uuid': {'$exists': False}})
             obj.append({"$or": new_q})
         else:
             # return non-GENI UUID marked objects
-            new_q = []
-            new_q.append({'properties.geni.slice_uuid': {'$exists': False}})
-            new_q.append({'parameters.geni.slice_uuid': {'$exists': False}})
-            obj.append({"$and": new_q})
+            obj.append({'properties.geni.slice_uuid': {'$exists': False},
+                        'parameters.geni.slice_uuid': {'$exists': False}})
 
         return obj
 
