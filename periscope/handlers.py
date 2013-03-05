@@ -795,7 +795,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         Handles HTTP POST request with Content Type of PSJSON.
         """
         profile = self._validate_psjson_profile()
-
+        run_validate = True
+        if self.get_argument("validate", None) == 'false':
+            run_validate = False
+            
         if not profile:
             return
         try:
@@ -828,7 +831,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                         message="Not valid body '%s'; expecting $schema: '%s'." % \
                         (item["$schema"], self.schemas_single[self.accept_content_type]))
                     return
-                item._validate()
+                if run_validate == True:
+                    item._validate()
                 res_ref = {}
                 res_ref[self.Id] = item[self.Id]
                 res_ref[self.timestamp] = item[self.timestamp]
@@ -845,7 +849,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     for pp in self.application._ppi_classes:
                         pp.pre_post(resource, self.application, self.request)
             except Exception, msg:
-                print msg
                 self.send_error(400, message=msg)
                 return
 
@@ -1087,6 +1090,12 @@ class CollectionHandler(NetworkResourceHandler):
         Handles HTTP POST request with Content Type of PSJSON.
         """
         profile = self._validate_psjson_profile()
+        run_validate = True
+        complete_links = True
+        if self.get_argument("validate", None) == 'false':
+            run_validate = False
+        if self.get_argument("complete_links", None) == 'false':
+            complete_links = False
         if not profile:
             return
         try:
@@ -1107,9 +1116,6 @@ class CollectionHandler(NetworkResourceHandler):
         except Exception as exp:
             self.send_error(400, message="malformatted request " + str(exp))
             return
-        
-        for collection in collections:
-            collection._validate()
                 
         # Validate schema
         try:
@@ -1120,7 +1126,8 @@ class CollectionHandler(NetworkResourceHandler):
                      message="Not valid body '%s'; expecting $schema: '%s'." % \
                      (collection.get("$schema", None), self.schemas_single[self.accept_content_type]))
                      return
-                collection._validate()
+                if run_validate == True:
+                    collection._validate()
         except Exception as exp:
             self.send_error(400, message="Not valid $schema '%s'." % exp)
             return
@@ -1147,7 +1154,10 @@ class CollectionHandler(NetworkResourceHandler):
             collection["selfRef"] = "%s/%s" % (self.request.full_url(), collection[self.Id])
                     
             # Convert JSONPath and JSONPointer Links to Hyper Links
-            ret = self._complete_href_links(collection, collection)
+            if complete_links:
+                ret = self._complete_href_links(collection, collection)
+            else:
+                ret = collections
             # Check if something went wrong
             if ret < 0:
                 return
@@ -1163,10 +1173,15 @@ class CollectionHandler(NetworkResourceHandler):
             http_client = AsyncHTTPClient()
             
             # Async calls to insert all the resources included in the request
+            args = "?"
+            
+            args += 'validate=%s' % str(run_validate).lower()
+            args += '&complete_links=%s' % str(complete_links).lower()
+            
             responses = yield [
                 gen.Task(
                     http_client.fetch,
-                    "%s://%s%s" % (self.request.protocol, self.request.host, self.reverse_url(key)),
+                    "%s://%s%s%s"  % (self.request.protocol, self.request.host, self.reverse_url(key), args),
                     method = "POST",
                     body = dumps_mongo(collection[key]),
                     request_timeout=180,
