@@ -1109,7 +1109,6 @@ class CollectionHandler(NetworkResourceHandler):
             return
         
         for collection in collections:
-            print "Validating", type(collection)
             collection._validate()
                 
         # Validate schema
