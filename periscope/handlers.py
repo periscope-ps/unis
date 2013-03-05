@@ -1175,8 +1175,8 @@ class CollectionHandler(NetworkResourceHandler):
             # Async calls to insert all the resources included in the request
             args = "?"
             
-            args += 'validate=%s' % str(run_validate).lower()
-            args += '&complete_links=%s' % str(complete_links).lower()
+            args += 'validate=false'
+            args += '&complete_links=false'
             
             responses = yield [
                 gen.Task(
