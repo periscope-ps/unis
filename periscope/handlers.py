@@ -1151,7 +1151,7 @@ class CollectionHandler(NetworkResourceHandler):
         self._cache = {}
         coll_reps = []
         for collection in collections:
-            collection["selfRef"] = "%s/%s" % (self.request.full_url(), collection[self.Id])
+            collection["selfRef"] = "%s/%s" % (self.request.full_url().split('?')[0], collection[self.Id])
                     
             # Convert JSONPath and JSONPointer Links to Hyper Links
             if complete_links:
