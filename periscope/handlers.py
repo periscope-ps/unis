@@ -824,7 +824,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             try:
                 item = resources[index]
                 item["selfRef"] = "%s/%s" % \
-                    (self.request.full_url(), item[self.Id])
+                    (self.request.full_url().split('?')[0], item[self.Id])
                 item["$schema"] = item.get("$schema", self.schemas_single[MIME['PSJSON']])
                 if item["$schema"] != self.schemas_single[self.accept_content_type]:
                     self.send_error(400,
@@ -883,7 +883,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 " ;profile="+ self.schemas_single[accept])
             if len(res_refs) == 1:
                 self.set_header("Location",
-                    "%s/%s" % (self.request.full_url(), res_refs[0][self.Id]))
+                    "%s/%s" % (self.request.full_url().split('?')[0], res_refs[0][self.Id]))
             self.set_status(201)
             self.finish()
 
@@ -898,7 +898,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 unescaped.append(ObjectDict._from_mongo(res))
             
             if len(unescaped) == 1:
-                location = self.request.full_url()
+                location = self.request.full_url().split('?')[0]
                 if not location.endswith(unescaped[0][self.Id]):
                     location = location + "/" + unescaped[0][self.Id]
                 self.set_header("Location", location)
@@ -1350,7 +1350,7 @@ class EventsHandler(NetworkResourceHandler):
             if body["id"] not in self.application.sync_db.collection_names():
                 self.application.get_db_layer(body["id"],"ts","ts",True,collection_size)
                 self.set_header("Location",
-                    "%s/data/%s" % (self.request.full_url(), body["id"]))
+                    "%s/data/%s" % (self.request.full_url().split('?')[0], body["id"]))
                 callback = functools.partial(self.on_post,
                                              res_refs=None, return_resources=True)
                 post_body["ts"] = int(time.time() * 1000000)
@@ -1550,7 +1550,7 @@ class DataHandler(NetworkResourceHandler):
                                 " ;profile="+ self.schemas_single[accept])
                 if len(res_refs) == 1:
                     self.set_header("Location",
-                                    "%s/%s" % (self.request.full_url(), res_refs[0][self.Id]))
+                                    "%s/%s" % (self.request.full_url().split('?')[0], res_refs[0][self.Id]))
                 
                 self.set_status(201)
                 #pool = self.application.async_db._pool
