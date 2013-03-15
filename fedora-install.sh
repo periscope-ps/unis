@@ -2,7 +2,7 @@
 #
 # Self-extracting bash script that installs UNIS and the MS
 #
-# create self extracting tarball like this (from parent dir): 
+# create self extracting tarball like this (from parent dir):
 # 'tar zc peri-tornado | cat peri-tornado/ubuntu-install.sh - > peri-tornado.sh'
 # Supports: Debian based distributions
 # Depends: python 2.6
@@ -25,7 +25,7 @@ if [ $PV_MINOR -lt 6 ]; then
    echo "Python version is ${PYTHON_VERSION}, periscope requires 2.6 or greater, but less than 3"
    exit 1
 fi
- 
+
 
 SKIP=`awk '/^__TARFILE_FOLLOWS__/ { print NR + 1; exit 0; }' $0`
 THIS=`pwd`/$0
@@ -53,10 +53,12 @@ yum -y install python-setuptools
 #sudo python setup.py install
 #cd ..
 
+yum -y install m2crypto
 yum -y install libnl-devel
 cd ${DIR}
-python ./setup.py install 
+python ./setup.py install
 
+mkdir -p /usr/local/etc/certs/
 install -D periscope/ssl/* /usr/local/etc/certs/
 
 exit 0
