@@ -571,6 +571,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
         if query["list"]:
             is_list = True
+        if is_list == False:
+            limit = 1
         if is_list:
             query["query"]["status"] = {"$ne": "DELETED"}
 

@@ -153,6 +153,7 @@ SCHEMAS = {
     'metadata': 'http://unis.incntre.iu.edu/schema/20120709/metadata#',
     'data' : 'http://unis.incntre.iu.edu/schema/20120709/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20120709/datum#',
+    'measurement': 'http://unis.incntre.iu.edu/schema/20130416/measurement#',
 }
 
 # Default settings that apply to almost all network resources
@@ -392,6 +393,25 @@ data = dict(default_resource_settings.items() + \
         }.items()
 )
 
+measurements = dict(default_resource_settings.items() + \
+        {
+            "name": "measurements",
+            "pattern": "/measurements$",
+            "model_class": "periscope.models.Measurement",
+            "collection_name": "measurements",
+            "schema": {MIME['PSJSON']: SCHEMAS["measurement"]},
+        }.items()
+)
+measurement = dict(default_resource_settings.items() + \
+        {
+            "name": "measurement",
+            "pattern": "/measurements/(?P<res_id>[^\/]*)$",
+            "model_class": "periscope.models.Measurement",
+            "collection_name": "measurements",
+            "schema": {MIME['PSJSON']: SCHEMAS["measurement"]},
+        }.items()
+)
+
 collections = {
     "links": link,
     "ports": port,
@@ -401,6 +421,7 @@ collections = {
     "networks": network,
     "domains": domain,
     "topologies": topology,
+    "measurements": measurement,
 }
 
 topologies["collections"] = collections
@@ -433,11 +454,13 @@ Resources = {
     "event" : event,
     "data" : data,
     "datas" : datas,
+    "measurements": measurements,
+    "measurement" : measurement,
 }
 
 main_handler_settings = {
     "resources": ["links", "ports", "nodes", "services", "paths",
-        "networks", "domains", "topologies", "events", "datas", "metadatas"],
+        "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements"],
     "name": "main",
     "base_url": "",
     "pattern": "/$",

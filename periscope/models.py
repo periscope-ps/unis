@@ -34,6 +34,7 @@ SCHEMAS = {
     'metadata': 'http://unis.incntre.iu.edu/schema/20120709/metadata#',
     'data' : 'http://unis.incntre.iu.edu/schema/20120709/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20120709/datum#',
+    'measurement': 'http://unis.incntre.iu.edu/schema/20130416/measurement#',
 }
 
 
@@ -517,3 +518,4 @@ Domain = schemaLoader.get_class(SCHEMAS["domain"], extends=NetworkResource)
 Topology = schemaLoader.get_class(SCHEMAS["topology"], extends=NetworkResource)
 Event = schemaLoader.get_class(SCHEMAS["datum"], extends=NetworkResource)
 Data = schemaLoader.get_class(SCHEMAS["data"], extends=NetworkResource)
+Measurement = schemaLoader.get_class(SCHEMAS['measurement'], extends=NetworkResource)
