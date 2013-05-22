@@ -1,6 +1,8 @@
 import uuid
 from M2Crypto import X509
 import tornado.web
+import traceback
+import time
 from netlogger import nllog
 
 import settings
@@ -105,9 +107,12 @@ class Gemini(PPI):
     def __get_allowed_uuids(self, app, req):
         auth = app._auth
         cert = req.get_ssl_certificate(binary_form=True)
+        now = int(time.time() * 1000000)
 
         uuids = []
         for a in auth.auth_mem:
+            if int(a['valid_until']) <= int(now):
+                auth.auth_mem.remove(a)
             if auth.query(cert, a['_id']) is True:
                 uuids.append(str(uuid.UUID(a['_id'])))
 
@@ -133,11 +138,16 @@ class AuthUserCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
             self.finish()
 
     def post(self, res_id=None):
-        # add checks
-        cert = self.request.get_ssl_certificate(binary_form=True)
-        
-        auth = self.application._auth
-        auth.add_credential(cert, self.request.body)
+        if self.request.body:
+            auth = self.application._auth
+            try:
+                cert = self.request.get_ssl_certificate(binary_form=True)
+                auth.add_credential(cert, self.request.body)
+            except Exception, msg:
+                self.send_error(400, message=msg)
+                return
+        else:
+            self.send_error(400, message="Message body is empty!")
     
 
 class AuthSliceCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):

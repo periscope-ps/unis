@@ -39,7 +39,7 @@ class ABACAuthService:
 
         # a few constants
         self.ABAC_STORE_DIR = store
-        self.ATTR_FILE_SUFFIX = "_attr.der"
+        self.ATTR_FILE_SUFFIX = "_attr.xml"
         self.PRIN_FILE_SUFFIX = "_ID.pem"
 
         # hardcode some basic roles for now
@@ -50,21 +50,18 @@ class ABACAuthService:
         # setup the ABAC context
         self.ctx = ABAC.Context()
         self.server_id = ABAC.ID(server_cert)
-        self.server_id.id_load_privkey_file(server_key)            
-        self.ctx.load_id(self.server_id)
+        self.server_id.load_privkey(server_key)
+        self.ctx.load_id_file(server_cert)
 
         # Load local attribute and principal store (*_attr.der and *_ID.der).
         # If storing this on mongo, you will still need to write them to tmp
         # files to use the libabac routines (as far as I can tell).
         self.ctx.load_directory(self.ABAC_STORE_DIR)
-
-        #out = self.ctx.context_principals()
-        #for x in out[1]:
-        #    print "principal: %s " % x.string()
-
-        #out = self.ctx.context_credentials()
-        #for x in out[1]:
-        #print "credential: %s " % x.string()
+        
+        #out = self.ctx.credentials()
+        #for x in out:
+            #print "credential: %s <- %s" % (x.head().string(), x.tail().string())
+            #print "issuer: \n%s" % x.issuer_cert()
 
     def bootstrap_slice_credential(self, cert, geni_slice_cred):
         # given the slice credential we can create the principal if it doesn't 
@@ -73,14 +70,22 @@ class ABACAuthService:
         cred = GENICredential(string=geni_slice_cred)
         
         # now load the cert from the client SSL context)
-        user_id = ABAC.ID_chunk(cert)
-        self.ctx.load_id(user_id)
+        try:
+            cert = ssl.DER_cert_to_PEM_cert(cert)
+            user = ABAC.ID_chunk(cert)
+            self.ctx.load_id_chunk(cert)
+        except Exception, e:
+            raise AbacError("Could not read user cert: %s" % e)
 
         # make sure the requesting cert matches the credential owner
-        der_cert = ssl.PEM_cert_to_DER_cert(cred.get_gid_caller().save_to_string())
-        req_id = ABAC.ID_chunk(der_cert)
+        try:
+            req_cert = cred.get_gid_caller().save_to_string()
+            #(cert,sep,rest) = req_cert.partition("-----END CERTIFICATE-----")
+            req_id = ABAC.ID_chunk(req_cert)
+        except Exception, e:
+            raise AbacError("Could not read user cert: %s" % e)
 
-        if (req_id.id_keyid() != user_id.id_keyid()):
+        if (req_id.keyid() != user.keyid()):
             raise AbacError("Client cert does not match credential owner!")
         
         # Validity could be something else, here we're taking the slice certificate's
@@ -98,8 +103,10 @@ class ABACAuthService:
         # This assumes the credential is valid (you can call cred.verify
         # with the CA roots, i.e. genica.bundle, to do it yourself).
         slice_uuid = cred.get_gid_object().get_uuid()
+        slice_urn = cred.get_gid_object().get_urn()
+        owner_urn = cred.get_gid_caller().get_urn()
         if not slice_uuid:
-            slice_uuid = hashlib.md5(cred.get_gid_object().get_urn()).hexdigest()
+            slice_uuid = hashlib.md5(slice_urn).hexdigest()
             slice_uuid = uuid.UUID(slice_uuid).hex
         else:
             slice_uuid = uuid.UUID(int=slice_uuid).hex
@@ -109,107 +116,111 @@ class ABACAuthService:
         res = self.db.find(uuid_query)
         if res.count() == 0:
             uuid_query = {"_id": slice_uuid,
+                          "target_urn": slice_urn,
+                          "owner_urn": owner_urn,
+                          "owner_keyid": user.keyid(),
                           "ts": str(timestamp),
-                          "valid_until": str(timestamp+validity)
+                          "valid_until": str(timestamp+(validity*1000000))
                           }
             self.db.insert(uuid_query)
             self.auth_mem.append(uuid_query)
         else:
-            raise AbacError("Slice already registered")
+            # slice already registered
+            pass
+
+        # save the user cert from credential to keystore
+        cert_filename = user.keyid() + self.PRIN_FILE_SUFFIX
+        user.write_cert_file(os.path.join(self.ABAC_STORE_DIR, cert_filename))
 
         # create the initial role (UNIS.rUA <- client)
         UA_role = self.USER_ADMIN_ROLE_PREFIX + slice_uuid
-        head = ABAC.Role(self.server_id.id_keyid(), UA_role)
-
-        # save the user cert from credential to keystore
-        user_uuid = cred.get_gid_caller().get_subject()
-        cert_filename = user_uuid + self.PRIN_FILE_SUFFIX
-        cred.get_gid_caller().save_to_file(os.path.join(self.ABAC_STORE_DIR, cert_filename))
-
-        # now setup the attribute
-        attr = ABAC.Attribute(head, validity)
-        tail = ABAC.Role(user_id.id_keyid())
-        attr.attribute_add_tail(tail);
-        attr.attribute_bake()
-        self.ctx.load_attribute(attr)
-
+        attr = ABAC.Attribute(self.server_id, UA_role, validity)
+        attr.principal(user.keyid())
+        attr.bake()
+        self.ctx.load_attribute_chunk(attr.cert_chunk())
+        
         # save
         attr_filename = UA_role + self.ATTR_FILE_SUFFIX
-        attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
+        attr.write_file(os.path.join(self.ABAC_STORE_DIR, attr_filename))
 
-        # create linked role (UNIS.rSA <- UNIS.rUA.rSA)
+        # create linked role (UNIS.rSA <- UNIS.rUA.rSA) 
         SA_role = self.SLICE_ADMIN_ROLE_PREFIX + slice_uuid
-        head = ABAC.Role(self.server_id.id_keyid(), SA_role)
-        tail = ABAC.Role(self.server_id.id_keyid(), UA_role, SA_role)
-        
-        # now setup the attribute
-        attr = ABAC.Attribute(head, validity)
-        attr.attribute_add_tail(tail)
-        attr.attribute_bake()
-        self.ctx.load_attribute(attr)
+        attr = ABAC.Attribute(self.server_id, SA_role, validity)
+        #attr.principal(self.server_id.keyid())
+        attr.linking_role(self.server_id.keyid(), UA_role, SA_role)
+        attr.bake()
+        self.ctx.load_attribute_chunk(attr.cert_chunk())
 
         # save
         attr_filename = SA_role + self.ATTR_FILE_SUFFIX
-        attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
+        attr.write_file(os.path.join(self.ABAC_STORE_DIR, attr_filename))
 
-        # everyone who's an admin user is a slice admin
-        head = ABAC.Role(self.server_id.id_keyid(), SA_role)
-        tail = ABAC.Role(self.server_id.id_keyid(), UA_role)
-        attr = ABAC.Attribute(head, validity)
-        attr.attribute_add_tail(tail)
-        attr.attribute_bake()
-        self.ctx.load_attribute(attr)
+        # all users are slice admins (UNIS.rSA <- UNIS.rUA)
+        attr = ABAC.Attribute(self.server_id, SA_role, validity)
+        #attr.principal(self.server_id.keyid())
+        attr.role(self.server_id.keyid(), UA_role)
+        attr.bake()
+        self.ctx.load_attribute_chunk(attr.cert_chunk())
         
-        # save         
+        # save
         attr_filename = self.ADMIN_ARE_SLICE_ADMINS + slice_uuid + self.ATTR_FILE_SUFFIX
-        attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
-
-        #self.ctx.dump_yap_db()
+        attr.write_file(os.path.join(self.ABAC_STORE_DIR, attr_filename))
+        
+        return
 
 
     def add_credential(self, cert, cred):
         # Users can post credentials, usually delegating a given
         # permission to a second principal.
 
-        # (EK): should do some verification before blindly accepting
         try:
-            #check = X509.load_cert_string(cred, X509.FORMAT_DER)
+            cert = ssl.DER_cert_to_PEM_cert(cert)
             user = ABAC.ID_chunk(cert)
-            self.ctx.load_id(user)
+        except Exception, e:
+            raise AbacError("Could not load user cert: %s" % e)
+
+        try:
+            tmpctx = ABAC.Context()
+            tmpctx.load_id_chunk(cert)
+            tmpctx.load_attribute_chunk(cred)            
+            creds = tmpctx.credentials()
+
+            if not len(creds):
+                raise AbacError("Error loading credential with given client cert")
             
-            attr = ABAC.Attribute_chunk(cred)
-            self.ctx.load_attribute(attr)
+            #cred_issuer = ABAC.ID_chunk(creds[0].issuer_cert())
+            #if user.keyid() != cred_issuer.keyid():
+            #    raise AbacError("Client cert does not match credential issuer!")
             
+            self.ctx.load_id_chunk(cert)
+            self.ctx.load_attribute_chunk(cred)            
+
             # save new attribute and identity to file
-            user_filename = user.id_keyid() + self.PRIN_FILE_SUFFIX
-            user.id_write_cert(os.path.join(self.ABAC_STORE_DIR, user_filename))
-            attr_filename = user.id_keyid() + "_has_" + attr.role_head().role_name()  + self.ATTR_FILE_SUFFIX
-            attr.attribute_write_cert(os.path.join(self.ABAC_STORE_DIR, attr_filename))
-        except Exception, msg:
-            raise
+            user.write_cert_file(os.path.join(self.ABAC_STORE_DIR, user.keyid() + self.PRIN_FILE_SUFFIX))
+            attr_filename = user.keyid() + "_has_" + creds[0].head().role_name() + self.ATTR_FILE_SUFFIX
+            f = open(os.path.join(self.ABAC_STORE_DIR, attr_filename), 'w')
+            f.write(cred)
+            f.close()            
+        except Exception, e:
+            raise AbacError("Could not load attribute cert: %s" % e)
 
 
     def query(self, cert, slice_uuid, req=None):
-        # Given the request type, check for the appropriate proof.
-        # You'll need some way to map between request (post to node,
-        # get on domain, etc) to a specific role that needs satisfying.
+        try:
+            cert = ssl.DER_cert_to_PEM_cert(cert)
+            user = ABAC.ID_chunk(cert)
+        except Exception, e:
+            raise AbacError("Could not load user cert: %s" % e)
         
-        # The slice uuid and other uuids will probably also need to be
-        # derived from the request. The user cert usually comes from the
-        # connection framework.
+        #out = self.ctx.credentials()
+        #for x in out:
+        #    print "%s <- %s" % (x.head().string(), x.tail().string())
 
-        user_id = ABAC.ID_chunk(cert)
-        
-        #out = self.ctx.context_principals()
-        #for x in out[1]:
-        #    print "%s " % x.string()
+        role_str = self.server_id.keyid() + "." + str(self.SLICE_ADMIN_ROLE_PREFIX + slice_uuid)
+        (success, credentials) = self.ctx.query(role_str, user.keyid())
 
-        role = ABAC.Role(self.server_id.id_keyid(), str(self.SLICE_ADMIN_ROLE_PREFIX + slice_uuid))
-        p = ABAC.Role(user_id.id_keyid())
-
-        self.ctx.set_no_partial_proof()
-        (success, credentials) = self.ctx.query(role, p)
+        #print ">>>>", success
         #for c in credentials:
-        #    print "%s <- %s" % (c.head_string(), c.tail_string())
+        #    print "%s <- %s" % (c.head().string(), c.tail().string())
 
         return success
