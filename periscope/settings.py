@@ -14,6 +14,8 @@ from tornado.options import define
 ######################################################################
 PERISCOPE_ROOT = os.path.dirname(os.path.abspath(__file__)) + os.sep
 sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
+#SCHEMA_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache")
+SCHEMA_CACHE_DIR = None
 
 GCF_PATH = "/opt/gcf/src/"
 sys.path.append(os.path.dirname(GCF_PATH))
@@ -26,7 +28,7 @@ JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
 # Tornado settings.
 ######################################################################
 
-ENABLE_SSL = True
+ENABLE_SSL = False
 SSL_OPTIONS = {
     'certfile': os.path.join(PERISCOPE_ROOT, "ssl/server.pem"),
     'keyfile': os.path.join(PERISCOPE_ROOT, "ssl/server.key"),
@@ -37,13 +39,13 @@ SSL_OPTIONS = {
 ######################################################################
 # Measurement Store settings.
 ######################################################################
-UNIS_URL = "https://unis.incntre.iu.edu:8443"
-#UNIS_URL = "http://localhost:8888"
+#UNIS_URL = "https://unis.incntre.iu.edu:8443"
+UNIS_URL = "http://localhost:8888"
 MS_ENABLE = True
 
 MS_CLIENT_CERT = "/usr/local/etc/certs/ms_cert.pem"
 MS_CLIENT_KEY = "/usr/local/etc/certs/ms_key.pem"
-GEMINI_NODE_INFO = "/usr/local/etc/node.info"
+GEMINI_NODE_INFO = None
 
 
 ######################################################################
@@ -51,7 +53,7 @@ GEMINI_NODE_INFO = "/usr/local/etc/node.info"
 ######################################################################
 
 # Enable GENI/ABAC auth support
-ENABLE_AUTH = True
+ENABLE_AUTH = False
 
 # Enable application wide debugging options
 DEBUG = True
@@ -510,6 +512,8 @@ if GEMINI_NODE_INFO is not None:
         except Exception as e:
             AUTH_UUID = None
             logger.warn("read_settings", msg="Could not find auth_uuid in node configuration")
+else:
+    AUTH_UUID = None
 
 try:
     from M2Crypto import X509

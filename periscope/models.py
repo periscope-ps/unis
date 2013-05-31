@@ -12,13 +12,16 @@ import validictory
 import functools
 import httplib2
 from periscope.utils import json_schema_merge_extends
-from settings import JSON_SCHEMAS_ROOT
+from settings import JSON_SCHEMAS_ROOT,SCHEMA_CACHE_DIR
 
 import pymongo
 if pymongo.version_tuple[1] > 1:
     from bson.objectid import ObjectId
 else:
     from pymongo.objectid import ObjectId
+
+if not SCHEMA_CACHE_DIR:
+    SCHEMA_CACHE_DIR=".cache"
 
 SCHEMAS = {
     'networkresource': 'http://unis.incntre.iu.edu/schema/20120709/networkresource#',
@@ -464,7 +467,7 @@ CACHE = {
     "http://json-schema.org/draft-03/json-ref#": JSON_REF_SCHEMA,
 }
 
-http_client = httplib2.Http(".cache")
+http_client = httplib2.Http(SCHEMA_CACHE_DIR)
 schemaLoader = SchemasHTTPLib2(http_client, cache=CACHE)
 
 JSONSchema = schemaLoader.get_class(
