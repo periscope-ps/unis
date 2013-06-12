@@ -964,6 +964,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 message="Not valid body '%s'; expecting $schema: '%s'." % \
                 (item["$schema"], self.schemas_single[self.accept_content_type]))
             return
+
+        if 'selfRef' not in resource:
+            resource['selfRef'] = "%s/%s" % \
+                (self.request.full_url().split('?')[0], resource[self.Id])
+
         # Validate schema
         try:
             resource._validate()
