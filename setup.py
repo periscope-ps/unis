@@ -25,7 +25,7 @@ setup(
     author_email="ahassany@indiana.edu",
     license="http://www.apache.org/licenses/LICENSE-2.0",
     url="https://github.com/periscope-ps/periscope",
-    description="Periscope is the implementation of both Unified Network Informatin Service (UNIS) and Measurement Store (MS).",
+    description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
     include_package_data = True,
     
     install_requires=[
@@ -36,7 +36,7 @@ setup(
         "netlogger>=4.3.0",
         "validictory>=validictory-0.8.1",
         "mock==0.8.0",
-        "jsonpointer==0.2",
+        "jsonpointer>=0.2",
         "argparse",
         "httplib2",
         "jsonpath",

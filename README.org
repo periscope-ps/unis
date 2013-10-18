@@ -42,6 +42,10 @@ Either of which will start it running on port 8888.
 
 You may encounter problems related to AUTH or GEMINI specific files, I'll try to cover these.
 
+*** For Redhat, create RPM...
+python setup.py bdist_rpm --requires python,python-setuptools,python-httplib2,python-mock,python-tornado,python-unittest2,\
+validictory,asyncmongo,jsonpath,jsonpointer,mongodb-server,m2crypto
+
 *** m2crypto issue
 If you see something like
 #+BEGIN_SRC
