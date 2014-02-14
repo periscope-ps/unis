@@ -12,7 +12,7 @@ import validictory
 import functools
 import httplib2
 from periscope.utils import json_schema_merge_extends
-from settings import JSON_SCHEMAS_ROOT,SCHEMA_CACHE_DIR
+from settings import JSON_SCHEMAS_ROOT,SCHEMA_CACHE_DIR,SCHEMAS
 
 import pymongo
 if pymongo.version_tuple[1] > 1:
@@ -22,24 +22,6 @@ else:
 
 if not SCHEMA_CACHE_DIR:
     SCHEMA_CACHE_DIR=".cache"
-
-SCHEMAS = {
-    'networkresource': 'http://unis.incntre.iu.edu/schema/20120709/networkresource#',
-    'node': 'http://unis.incntre.iu.edu/schema/20120709/node#',
-    'domain': 'http://unis.incntre.iu.edu/schema/20120709/domain#',
-    'port': 'http://unis.incntre.iu.edu/schema/20120709/port#',
-    'link': 'http://unis.incntre.iu.edu/schema/20120709/link#',
-    'network': 'http://unis.incntre.iu.edu/schema/20120709/network#',
-    'topology': 'http://unis.incntre.iu.edu/schema/20120709/topology#',
-    'service': 'http://unis.incntre.iu.edu/schema/20120709/service#',
-    'path': 'http://unis.incntre.iu.edu/schema/20120709/path#',
-    'blipp': 'http://unis.incntre.iu.edu/schema/20120709/blipp#',
-    'metadata': 'http://unis.incntre.iu.edu/schema/20120709/metadata#',
-    'data' : 'http://unis.incntre.iu.edu/schema/20120709/data#',
-    'datum' : 'http://unis.incntre.iu.edu/schema/20120709/datum#',
-    'measurement': 'http://unis.incntre.iu.edu/schema/20130416/measurement#',
-}
-
 
 class HyperLinkNotFound(Exception):
     pass

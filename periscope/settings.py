@@ -155,7 +155,7 @@ SCHEMAS = {
     'metadata': 'http://unis.incntre.iu.edu/schema/20120709/metadata#',
     'data' : 'http://unis.incntre.iu.edu/schema/20120709/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20120709/datum#',
-    'measurement': 'http://unis.incntre.iu.edu/schema/20130416/measurement#',
+    'measurement': 'http://unis.incntre.iu.edu/schema/20140214/measurement#',
 }
 
 # Default settings that apply to almost all network resources
