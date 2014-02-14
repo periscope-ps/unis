@@ -225,16 +225,22 @@ class PeriscopeApplication(tornado.web.Application):
                     default_host="localhost", **settings.APP_SETTINGS)
         
         
-        if settings.MS_ENABLE :   
+        if settings.MS_ENABLE :
+            import time
+            if settings.ENABLE_SSL:
+                http_str = "https"
+            else:
+                http_str = "http"
             callback = functools.partial(self.MS_registered)
             service = {
                        u"id": u"ms_" + socket.gethostname(),
+                       u"ts": int(time.time() * 1e6),
                        u"\$schema": unicode(SCHEMAS["service"]),
-                       u"accessPoint": u"https://%s:8888/" % socket.gethostname(),
+                       u"accessPoint": u"%s://%s:%d/" % (http_str, socket.getfqdn(), options.port),
                        u"name": u"ms_" + socket.gethostname(),
                        u"status": u"ON",
                        u"serviceType": u"ps:tools:ms",
-                       u"ttl": 1000,
+                       u"ttl": 600,
                        #u"description": u"sample MS service",
                        u"runningOn": {
                                       u"href": u"%s/nodes/%s" % (settings.UNIS_URL, socket.gethostname()),
@@ -246,11 +252,10 @@ class PeriscopeApplication(tornado.web.Application):
                                                            u"max_collection_size": 20000
                                                            },
                                        u"summary": {
-                                                    u"metadata": [
-                                                                  ]
+                                                    u"metadata": []
                                                     }
                                        }                  
-                       } 
+                       }
 
             if settings.AUTH_UUID:
                 service['properties'].update({"geni": {"slice_uuid": settings.AUTH_UUID}})
