@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/data#",
+    "description": "Measurement data",
+    "name": "Data",
+    "type": "object",
+    "properties": {
+        "meta": {
+            "required": false,
+            "type": [
+                "string",
+                {
+                    "$ref": "http://json-schema.org/draft-03/links#"
+                }
+            ]
+        },
+        "data": {
+            "required": true,
+            "type": "array",
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/datum#"
+                    }
+                ]
+            }
+        }
+    }
+}

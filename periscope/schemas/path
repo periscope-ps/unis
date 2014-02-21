@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/path#",
+    "description": "A connected Path between two Network resources",
+    "name": "Path",
+    "type": "object",
+    "additionalProperties": true,
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20120709/networkresource#"
+    },
+    "properties": {
+        "directed": {
+            "default": true,
+            "required": true,
+            "type": "boolean"
+        },
+        "hops": {
+            "description": "A series of connected networkresources that forms a single path",
+            "required": true,
+            "type": "array",
+            "minItems": 1,
+            "items": 
+		{
+                	"$ref": "http://json-schema.org/draft-03/links#"
+	        }
+	     
+        }
+    }
+}

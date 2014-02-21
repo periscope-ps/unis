@@ -1,0 +1,87 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/link#",
+    "description": "Link between two Network resources",
+    "name": "Link",
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20120709/networkresource#"
+    },
+    "type": [
+        {
+            "type": "object",
+            "properties": {
+                "directed": {
+                    "required": true,
+                    "type": "boolean",
+                    "enum": [
+                        false
+                    ]
+                },
+                "capacity": {
+                    "description": "Link's capacity in bytes",
+                    "required": false,
+                    "type": "number"
+                },
+                "endpoints": {
+                    "required": true,
+                    "type": [
+                        {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": {
+                                "type": [
+                                    {
+                                        "$ref": "http://json-schema.org/draft-03/links#"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "object",
+            "properties": {
+                "directed": {
+                    "required": true,
+                    "type": "boolean",
+                    "enum": [
+                        true
+                    ]
+                },
+                "capacity": {
+                    "description": "Link's capacity in bytes",
+                    "required": false,
+                    "type": "number"
+                },
+                "endpoints": {
+                    "required": true,
+                    "type": [
+                        {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "source": {
+                                    "type": [
+                                        {
+                                            "$ref": "http://json-schema.org/draft-03/links#"
+                                        }
+                                    ]
+                                },
+                                "sink": {
+                                    "type": [
+                                        {
+                                            "$ref": "http://json-schema.org/draft-03/links#"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

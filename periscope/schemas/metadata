@@ -1,0 +1,75 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/metadata#",
+    "description": "Metadata",
+    "name": "Metadata",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "$schema": {
+            "default": "http://unis.incntre.iu.edu/schema/20120709/metadata#",
+            "format": "uri",
+            "required": false,
+            "type": "string"
+        },
+        "id": {
+            "description": "Metadata ID",
+            "minLength": 1,
+            "required": true,
+            "type": "string"
+        },
+        "selfRef": {
+            "description": "Self hyperlink reference for the metadata",
+            "format": "uri",
+            "required": false,
+            "type": "string"
+        },
+        "ts": {
+            "type": "integer",
+            "description": "64-bit Integer timestamp of the last update on this metadata",
+            "required": false
+        },
+        "subject": {
+            "required": true,
+            "description": "the subject of this metadata",
+            "type": [
+                {
+                    "$ref": "http://json-schema.org/draft-03/links#"
+                }
+            ]
+        },
+        "parameters": {
+            "required": false,
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "datumSchema": {
+                    "default": "http://unis.incntre.iu.edu/schema/20120709/datum#",
+                    "format": "uri",
+                    "required": false,
+                    "type": "string"
+                }
+            }
+        },
+        "eventType": {
+            "required": true,
+            "type": "string"
+        },
+	"measurement": {
+	    "description": "Hyperlink to the measurement or other data source that produced the data described by this metadata",
+	    "type": "string",
+	    "format": "uri",
+	    "required": false
+	}
+    },
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "{$schema}"
+        },
+        {
+            "rel": "self",
+            "href": "selfRef"
+        }
+    ]
+}

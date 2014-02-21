@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/service#",
+    "description": "Service",
+    "name": "Service",
+    "type": "object",
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20120709/networkresource#"
+    },
+    "properties": {
+        "accessPoint": {
+            "description": "Service Access point",
+            "required": false,
+            "type": "string"
+        },
+        "serviceType": {
+            "required": true,
+            "type": "string"
+        },
+        "ttl": {
+            "required": false,
+            "type": "integer"
+        },
+        "runningOn": {
+            "description": "The network resource(s) that the service is running on",
+            "required": false,
+            "type": [
+                {       	
+	            "$ref": "http://json-schema.org/draft-03/links#"
+                }
+            ]
+        }
+    }
+}

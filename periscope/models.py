@@ -12,7 +12,7 @@ import validictory
 import functools
 import httplib2
 from periscope.utils import json_schema_merge_extends
-from settings import JSON_SCHEMAS_ROOT,SCHEMA_CACHE_DIR,SCHEMAS
+from settings import JSON_SCHEMAS_ROOT,SCHEMA_CACHE_DIR,SCHEMAS,UNIS_SCHEMAS_USE_LOCAL
 
 import pymongo
 if pymongo.version_tuple[1] > 1:
@@ -448,6 +448,14 @@ CACHE = {
     "http://json-schema.org/draft-03/links#": HYPER_LINKS_SCHEMA,
     "http://json-schema.org/draft-03/json-ref#": JSON_REF_SCHEMA,
 }
+
+# Load a locally stored copy of the schemas if requested
+if UNIS_SCHEMAS_USE_LOCAL:
+    for s in SCHEMAS.iterkeys():
+        try:
+            CACHE[SCHEMAS[s]] = json.loads(open(JSON_SCHEMAS_ROOT + "/" + s).read())
+        except:
+            pass
 
 http_client = httplib2.Http(SCHEMA_CACHE_DIR)
 schemaLoader = SchemasHTTPLib2(http_client, cache=CACHE)

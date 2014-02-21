@@ -1,0 +1,82 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/measurement#",
+    "description": "A measurement object",
+    "name": "Measurement",
+    "type": "object",
+    "additionalProperties": true,
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20120709/networkresource#"
+    },
+    "properties": {
+	"service": {
+	    "type": "string",
+	    "format": "uri",
+	    "description": "Service which will be taking this measurement"
+	},
+	"configuration": {
+	    "required": true,
+	    "type": "object",
+	    "properties": {
+		"$schema": {
+		    "type": "string",
+		    "format": "uri",
+		    "required": false
+		}
+	    },
+	    "additionalProperties": true
+	},
+	"scheduled_times": {
+	    "required": false,
+	    "type": "array",
+	    "items": {
+		"type": "object",
+                "properties": {
+                    "start": {
+                        "required": true,
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end": {
+                        "required": true,
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+	    }
+	},
+	"eventTypes": {
+	    "description": "A list of eventTypes which this measurement produces",
+	    "required": true,
+	    "type": "array",
+	    "items": {
+		"type": "string"
+	    }
+	},
+	"resources": {
+	    "description": "A list of resources that this measurement uses or affects",
+	    "required": false,
+	    "type": "array",
+	    "items": {
+		"type": "object",
+		"properties": {
+		    "ref": {
+			"description": "Hyperlink reference to the resource",
+			"format": "uri",
+			"required": true,
+			"type": "string"
+		    },
+		    "usage": {
+			"type": "object",
+			"description": "A resource has different ways it can be used, this tells in what ways this measurement uses this resource",
+			"additionalProperties": {
+			    "type": "number",
+			    "minimum": 0,
+			    "maximum": 100
+			}
+		    }
+		}
+	    }
+	}
+    }
+}

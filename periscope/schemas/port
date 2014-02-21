@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/port#",
+    "description": "An abstract port",
+    "name": "Port",
+    "type": "object",
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20120709/networkresource#"
+    },
+    "properties": {
+        "address": {
+            "description": "A port can have only one address, if there is more then those to be considered virtual ports",
+            "name": "Address",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "description": "The address type: ipv4, ipv6, mac, etc... . AH: Need to define the range of address types",
+                    "type": "string"
+                },
+                "address": {
+                    "description": "The address. AH: Need to define the validation based on address types",
+                    "type": "string"
+                }
+            }
+        },
+        "capacity": {
+            "description": "Ports capacity in bytes",
+            "required": false,
+            "type": "number"
+        },
+        "index": {
+            "description": "port's index",
+            "required": false,
+            "type": "string"
+        },
+        "type": {
+            "description": "port type",
+            "required": false,
+            "type": "string"
+        },
+        "rules": {
+            "description": "Forwarding rules. (AH) need to define a schema.",
+            "required": false,
+            "type": "array"
+        }
+    }
+}

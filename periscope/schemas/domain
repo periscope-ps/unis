@@ -1,0 +1,97 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/domain#",
+    "description": "Domain",
+    "name": "Domain",
+    "type": "object",
+    "additionalProperties": true,
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20120709/networkresource#"
+    },
+    "properties": {
+        "ports": {
+            "required": false,
+            "type": "array",
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/port#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "nodes": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/node#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "links": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/link#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "paths": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/path#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "networks": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/network#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "domains": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/domain#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        }
+    }
+}

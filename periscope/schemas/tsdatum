@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/tsdatum#",
+    "description": "Single piece of time-series measurement data",
+    "name": "Datum",
+    "type": "object",
+    "additionalProperties": true,
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20120709/datum#"
+    },
+    "properties": {
+        "v": {
+            "type": "number",
+            "required": true,
+            "description": "Value"
+        }
+    }
+}

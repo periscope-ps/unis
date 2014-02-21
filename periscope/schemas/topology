@@ -1,0 +1,244 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/topology#",
+    "description": "Topology",
+    "name": "Topology",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "$schema": {
+            "default": "http://unis.incntre.iu.edu/schema/20120709/topology#",
+            "description": "The schema of the this file. (AH) maybe this isn't needed and can be embedded in the HTTP header",
+            "format": "uri",
+            "required": false,
+            "type": "string"
+        },
+        "id": {
+            "description": "UNIS unique ID",
+            "minLength": 1,
+            "required": true,
+            "type": "string"
+        },
+        "selfRef": {
+            "description": "Self hyperlink reference for the topology",
+            "format": "uri",
+            "required": false,
+            "type": "string"
+        },
+        "ts": {
+            "type": "integer",
+            "description": "64-bit Integer timestamp of the last update on this topology",
+            "required": false
+        },
+        "urn": {
+            "required": false,
+            "type": "string",
+            "format": "uri"
+        },
+        "name": {
+            "description": "Topology's name",
+            "required": false,
+            "type": "string"
+        },
+        "description": {
+            "description": "Topology's description",
+            "required": false,
+            "type": "string"
+        },
+        "status": {
+            "description": "Topology current status.",
+            "required": false,
+            "type": "string",
+            "default": "UNKNOWN"
+        },
+        "lifetimes": {
+            "required": false,
+            "additionalProperties": true,
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "start": {
+                        "required": true,
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end": {
+                        "required": true,
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        },
+        "location": {
+            "description": "Topology's location",
+            "required": false,
+            "type": "object",
+            "properties": {
+                "continent": {
+                    "required": false,
+                    "type": "string"
+                },
+                "country": {
+                    "required": false,
+                    "type": "string"
+                },
+                "zipcode": {
+                    "required": false,
+                    "type": "string"
+                },
+                "state": {
+                    "required": false,
+                    "type": "string"
+                },
+                "institution": {
+                    "required": false,
+                    "type": "string"
+                },
+                "city": {
+                    "required": false,
+                    "type": "string"
+                },
+                "streetAddress": {
+                    "required": false,
+                    "type": "string"
+                },
+                "floor": {
+                    "required": false,
+                    "type": "string"
+                },
+                "room": {
+                    "required": false,
+                    "type": "string"
+                },
+                "cage": {
+                    "required": false,
+                    "type": "string"
+                },
+                "rack": {
+                    "required": false,
+                    "type": "string"
+                },
+                "shelf": {
+                    "required": false,
+                    "type": "string"
+                },
+                "latitude": {
+                    "required": false,
+                    "type": "number"
+                },
+                "logitude": {
+                    "required": false,
+                    "type": "number"
+                }
+            }
+        },
+        "properties": {
+            "description": "Additionl properties. (AH): need a better way to define it",
+            "type": "object",
+            "additionalProperties": true,
+            "required": false
+        },
+        "relations": {
+            "description": "Define any relation that this Topology is related with to any other networkresource",
+            "required": false,
+            "type": "object",
+            "patternProperties": {
+                ".*$": {
+                    "required": true,
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                }
+            }
+        },
+        "ports": {
+            "required": false,
+            "type": "array",
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/port#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "nodes": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/node#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "links": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/link#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "paths": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/path#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "networks": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/network#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "domains": {
+            "type": "array",
+            "required": false,
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/domain#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        }
+    }
+}

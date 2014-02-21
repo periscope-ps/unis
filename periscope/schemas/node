@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/node#",
+    "description": "Node",
+    "name": "Node",
+    "type": "object",
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20120709/networkresource#"
+    },
+    "properties": {
+        "ports": {
+            "description": "Ports attached to he node.",
+            "required": false,
+            "type": "array",
+            "items": {
+                "type": [
+                    {
+                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/port#"
+                    },
+                    {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                ]
+            }
+        },
+        "rules": {
+            "description": "Forwarding rules. (AH) need to define a schema.",
+            "required": false,
+            "type": "array"
+        }
+    }
+}

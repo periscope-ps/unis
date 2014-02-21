@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/datum#",
+    "description": "Single piece of measurement data",
+    "name": "Datum",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+        "ts": {
+            "type": "number",
+            "required": true,
+            "description": "64bit int timestamp"
+        }
+    }
+}

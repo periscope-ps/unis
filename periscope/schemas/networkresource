@@ -1,0 +1,189 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20120709/networkresource#",
+    "description": "Generic schema for Network Resource.",
+    "name": "NetworkResource",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+        "$schema": {
+            "default": "http://unis.incntre.iu.edu/schema/20120709/networkresource#",
+            "description": "The schema of the this file. (AH) maybe this isn't needed and can be embedded in the HTTP header",
+            "format": "uri",
+            "required": false,
+            "type": "string"
+        },
+        "id": {
+            "description": "UNIS unique ID",
+            "minLength": 1,
+            "required": true,
+            "type": "string"
+        },
+        "selfRef": {
+            "description": "Self hyperlink reference for the resource",
+            "format": "uri",
+            "required": false,
+            "type": "string"
+        },
+        "ts": {
+            "type": "integer",
+            "description": "64-bit Integer timestamp of the last update on this network resource",
+            "required": false
+        },
+        "urn": {
+            "required": false,
+            "type": "string",
+            "format": "uri"
+        },
+        "name": {
+            "description": "Network Resource's name",
+            "required": false,
+            "type": "string"
+        },
+        "description": {
+            "description": "Network Resource's description",
+            "required": false,
+            "type": "string"
+        },
+        "status": {
+            "description": "Network resource current status.",
+            "required": false,
+            "type": "string",
+            "default": "UNKNOWN"
+        },
+        "lifetimes": {
+            "required": false,
+            "additionalProperties": true,
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "start": {
+                        "required": true,
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end": {
+                        "required": true,
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        },
+        "location": {
+            "description": "Network Resource's location",
+            "required": false,
+            "type": "object",
+            "properties": {
+                "continent": {
+                    "required": false,
+                    "type": "string"
+                },
+                "country": {
+                    "required": false,
+                    "type": "string"
+                },
+                "zipcode": {
+                    "required": false,
+                    "type": "string"
+                },
+                "state": {
+                    "required": false,
+                    "type": "string"
+                },
+                "institution": {
+                    "required": false,
+                    "type": "string"
+                },
+                "city": {
+                    "required": false,
+                    "type": "string"
+                },
+                "streetAddress": {
+                    "required": false,
+                    "type": "string"
+                },
+                "floor": {
+                    "required": false,
+                    "type": "string"
+                },
+                "room": {
+                    "required": false,
+                    "type": "string"
+                },
+                "cage": {
+                    "required": false,
+                    "type": "string"
+                },
+                "rack": {
+                    "required": false,
+                    "type": "string"
+                },
+                "shelf": {
+                    "required": false,
+                    "type": "string"
+                },
+                "latitude": {
+                    "required": false,
+                    "type": "number"
+                },
+                "logitude": {
+                    "required": false,
+                    "type": "number"
+                }
+            }
+        },
+        "properties": {
+            "description": "Additionl properties. (AH): need a better way to define it",
+            "type": "object",
+            "additionalProperties": true,
+            "required": false
+        },
+        "relations": {
+            "description": "Define any relation that this netowrkobject is related with to any other networkresource",
+            "required": false,
+            "type": "object",
+            "patternProperties": {
+                ".*$": {
+                    "required": true,
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "http://json-schema.org/draft-03/links#"
+                    }
+                }
+            }
+        }
+    },
+    "links": [
+        {
+            "rel": "instances",
+            "href": "resources"
+        },
+        {
+            "rel": "describedby",
+            "href": "{$schema}"
+        },
+        {
+            "rel": "self",
+            "href": "{id}"
+        },
+        {
+            "rel": "destroy",
+            "href": "{id}",
+            "method": "DELETE"
+        },
+        {
+            "rel": "create",
+            "href": "resources",
+            "method": "POST"
+        },
+        {
+            "rel": "update",
+            "href": "{id}",
+            "method": "PUT"
+        }
+    ]
+}
