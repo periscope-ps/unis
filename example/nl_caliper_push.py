@@ -2,7 +2,7 @@ from newblipp.unis_client import *
 from newblipp.ms_client import *
 
 meta = {"parameters": {"collectionInterval": 1,
-                       "datumSchema": "http://unis.incntre.iu.edu/schema/20120709/datum#"},
+                       "datumSchema": "http://unis.incntre.iu.edu/schema/20140214/datum#"},
 
         "id": "1234",
         "eventType": "nl:tools:calipers:summary:write",

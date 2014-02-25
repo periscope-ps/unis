@@ -23,7 +23,7 @@ sys.path.append(os.path.dirname(GCF_PATH))
 AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
 
 JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
-UNIS_SCHEMAS_USE_LOCAL = True
+UNIS_SCHEMAS_USE_LOCAL = False
 
 ######################################################################
 # Tornado settings.
@@ -143,19 +143,19 @@ MIME = {
 }
 
 SCHEMAS = {
-    'networkresource': 'http://unis.incntre.iu.edu/schema/20120709/networkresource#',
-    'node': 'http://unis.incntre.iu.edu/schema/20120709/node#',
-    'domain': 'http://unis.incntre.iu.edu/schema/20120709/domain#',
-    'port': 'http://unis.incntre.iu.edu/schema/20120709/port#',
-    'link': 'http://unis.incntre.iu.edu/schema/20120709/link#',
-    'path': 'http://unis.incntre.iu.edu/schema/20120709/path#',
-    'network': 'http://unis.incntre.iu.edu/schema/20120709/network#',
-    'topology': 'http://unis.incntre.iu.edu/schema/20120709/topology#',
-    'service': 'http://unis.incntre.iu.edu/schema/20120709/service#',
-    'blipp': 'http://unis.incntre.iu.edu/schema/20120709/blipp#',
-    'metadata': 'http://unis.incntre.iu.edu/schema/20120709/metadata#',
-    'data' : 'http://unis.incntre.iu.edu/schema/20120709/data#',
-    'datum' : 'http://unis.incntre.iu.edu/schema/20120709/datum#',
+    'networkresource': 'http://unis.incntre.iu.edu/schema/20140214/networkresource#',
+    'node': 'http://unis.incntre.iu.edu/schema/20140214/node#',
+    'domain': 'http://unis.incntre.iu.edu/schema/20140214/domain#',
+    'port': 'http://unis.incntre.iu.edu/schema/20140214/port#',
+    'link': 'http://unis.incntre.iu.edu/schema/20140214/link#',
+    'path': 'http://unis.incntre.iu.edu/schema/20140214/path#',
+    'network': 'http://unis.incntre.iu.edu/schema/20140214/network#',
+    'topology': 'http://unis.incntre.iu.edu/schema/20140214/topology#',
+    'service': 'http://unis.incntre.iu.edu/schema/20140214/service#',
+    'blipp': 'http://unis.incntre.iu.edu/schema/20140214/blipp#',
+    'metadata': 'http://unis.incntre.iu.edu/schema/20140214/metadata#',
+    'data' : 'http://unis.incntre.iu.edu/schema/20140214/data#',
+    'datum' : 'http://unis.incntre.iu.edu/schema/20140214/datum#',
     'measurement': 'http://unis.incntre.iu.edu/schema/20140214/measurement#',
 }
 

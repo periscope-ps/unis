@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20120709/datum#",
+    "id": "http://unis.incntre.iu.edu/schema/20140214/datum#",
     "description": "Single piece of measurement data",
     "name": "Datum",
     "type": "object",

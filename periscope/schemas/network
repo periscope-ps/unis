@@ -1,11 +1,11 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20120709/network#",
+    "id": "http://unis.incntre.iu.edu/schema/20140214/network#",
     "description": "Network",
     "name": "Network",
     "type": "object",
     "extends": {
-        "$ref": "http://unis.incntre.iu.edu/schema/20120709/node#"
+        "$ref": "http://unis.incntre.iu.edu/schema/20140214/node#"
     },
     "properties": {
         "nodes": {
@@ -14,7 +14,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/node#"
+                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/node#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -28,7 +28,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20120709/link#"
+                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/link#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"

@@ -35,13 +35,13 @@ MIME = {
     }
 
 schemas = {
-    'networkresource': 'http://unis.incntre.iu.edu/schema/20120709/networkresource#',
-    'node': 'http://unis.incntre.iu.edu/schema/20120709/node#',
-    'port': 'http://unis.incntre.iu.edu/schema/20120709/port#',
-    'link': 'http://unis.incntre.iu.edu/schema/20120709/link#',
-    'service': 'http://unis.incntre.iu.edu/schema/20120709/service#',
-    'domain': 'http://unis.incntre.iu.edu/schema/20120709/domain#',
-    'topology': 'http://unis.incntre.iu.edu/schema/20120709/topology#',
+    'networkresource': 'http://unis.incntre.iu.edu/schema/20140214/networkresource#',
+    'node': 'http://unis.incntre.iu.edu/schema/20140214/node#',
+    'port': 'http://unis.incntre.iu.edu/schema/20140214/port#',
+    'link': 'http://unis.incntre.iu.edu/schema/20140214/link#',
+    'service': 'http://unis.incntre.iu.edu/schema/20140214/service#',
+    'domain': 'http://unis.incntre.iu.edu/schema/20140214/domain#',
+    'topology': 'http://unis.incntre.iu.edu/schema/20140214/topology#',
 }
 
 class SSEHandlerTest(PeriscopeHTTPTestCase):
@@ -544,7 +544,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         
         psjson_request = Mock()
         psjson_request.headers.get.return_value = MIME['PSJSON'] + \
-                    "; profile=http://unis.incntre.iu.edu/schema/20120709/networkresoruce"
+                    "; profile=http://unis.incntre.iu.edu/schema/20140214/networkresoruce"
         psjson_handler = NetworkResourceHandler(app,
                             psjson_request,
                             dblayer=dblayer_mock,
@@ -1057,7 +1057,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                         schemas_single={MIME['PSJSON']: schemas['networkresource']}))
         self._app.add_handlers(".*$", [handler])
         request = {"id": "1"}
-        content_type = MIME['PSJSON'] + ' ; profile=http://unis.incntre.iu.edu/schema/20120709/domain#'
+        content_type = MIME['PSJSON'] + ' ; profile=http://unis.incntre.iu.edu/schema/20140214/domain#'
         # Act
         response = self.fetch("/tests",
                             method="POST",
@@ -1260,10 +1260,10 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
     def _get_sample_topology(self):
         """Returns sample topology for testing"""
         topology = {
-            u"$schema": u"http://unis.incntre.iu.edu/schema/20120709/topology#",
+            u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/topology#",
             u"nodes": [
                 {
-                    u"$schema": u"http://unis.incntre.iu.edu/schema/20120709/node#",
+                    u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/node#",
                     u"description": u"LAMP node",
                     u"ports": [
                         {
@@ -1278,7 +1278,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                     }
                 },
                 {
-                    u"$schema": u"http://unis.incntre.iu.edu/schema/20120709/node#",
+                    u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/node#",
                     u"description": u"LAMP node",
                     u"ports": [
                         {
@@ -1295,12 +1295,12 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
             ],
             u"ports": [
                 {
-                    u"$schema": u"http://unis.incntre.iu.edu/schema/20120709/port#",
+                    u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/port#",
                     u"address": {u"address": u"10.10.1.1", u"type": u"ipv4"},
                     u"name": u"eth1",
                 },
                 {
-                    u"$schema": u"http://unis.incntre.iu.edu/schema/20120709/port#",
+                    u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/port#",
                     u"address": {u"address": u"10.10.1.3", u"type": u"ipv4"},
                     u"name": u"eth3",
                 }
@@ -1397,7 +1397,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
     def test_get(self):
         # Arrange
         topology = {
-            "\$schema": "http://unis.incntre.iu.edu/schema/20120709/topology#",
+            "\$schema": "http://unis.incntre.iu.edu/schema/20140214/topology#",
             "id": "4fa32f84f473537ce5000005",
             "selfRef": "http://localhost:10001/4fa32f84f473537ce5000005",
             "ts": 1336094596464475,
@@ -1552,7 +1552,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
     def test_complete_href_links_jsonpoitner(self):
         # Arrange
         topology = {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/topology#",
+            "$schema": "http://unis.incntre.iu.edu/schema/20140214/topology#",
             "id": "4fa32f84f473537ce5000005",
             "ts": 1336094596464475,
             "ports": [
@@ -1560,14 +1560,14 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                     "selfRef": "http://example.com/ports/1"
                 }, 
                 {
-                    "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+                    "$schema": "http://unis.incntre.iu.edu/schema/20140214/port#",
                     "urn": "urn:ogf:network:domain=example.com:port=2",
                     "name": "port2",
                 }
             ], 
             "nodes": [
                 {
-                    "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+                    "$schema": "http://unis.incntre.iu.edu/schema/20140214/node#",
                     "id": 1,
                     "name": "node1",
                     "ports": [
@@ -1616,7 +1616,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
     def test_complete_href_links_jsonpath(self):
         # Arrange
         topology = {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/topology#",
+            "$schema": "http://unis.incntre.iu.edu/schema/20140214/topology#",
             "id": "4fa32f84f473537ce5000005",
             "ts": 1336094596464475,
             "ports": [
@@ -1624,14 +1624,14 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                     "selfRef": "http://example.com/ports/1"
                 }, 
                 {
-                    "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+                    "$schema": "http://unis.incntre.iu.edu/schema/20140214/port#",
                     "urn": "urn:ogf:network:domain=example.com:port=2",
                     "name": "port2",
                 }
             ], 
             "nodes": [
                 {
-                    "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+                    "$schema": "http://unis.incntre.iu.edu/schema/20140214/node#",
                     "id": 1,
                     "name": "node1",
                     "ports": [

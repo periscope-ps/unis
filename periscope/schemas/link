@@ -1,10 +1,10 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20120709/link#",
+    "id": "http://unis.incntre.iu.edu/schema/20140214/link#",
     "description": "Link between two Network resources",
     "name": "Link",
     "extends": {
-        "$ref": "http://unis.incntre.iu.edu/schema/20120709/networkresource#"
+        "$ref": "http://unis.incntre.iu.edu/schema/20140214/networkresource#"
     },
     "type": [
         {

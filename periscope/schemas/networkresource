@@ -1,13 +1,13 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20120709/networkresource#",
+    "id": "http://unis.incntre.iu.edu/schema/20140214/networkresource#",
     "description": "Generic schema for Network Resource.",
     "name": "NetworkResource",
     "type": "object",
     "additionalProperties": true,
     "properties": {
         "$schema": {
-            "default": "http://unis.incntre.iu.edu/schema/20120709/networkresource#",
+            "default": "http://unis.incntre.iu.edu/schema/20140214/networkresource#",
             "description": "The schema of the this file. (AH) maybe this isn't needed and can be embedded in the HTTP header",
             "format": "uri",
             "required": false,
