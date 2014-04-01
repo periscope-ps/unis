@@ -37,6 +37,11 @@ SSL_OPTIONS = {
     'ca_certs': os.path.join(PERISCOPE_ROOT, "ssl/genica.bundle")
 }
 
+CLIENT_SSL_OPTIONS = {
+    'certfile': "/usr/local/etc/certs/ms_cert.pem"
+    'keyfile': "/usr/local/etc/certs/ms_key.pem"
+}
+
 ######################################################################
 # Measurement Store settings.
 ######################################################################

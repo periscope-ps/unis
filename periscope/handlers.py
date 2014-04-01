@@ -1193,8 +1193,8 @@ class CollectionHandler(NetworkResourceHandler):
                     body = dumps_mongo(collection[key]),
                     request_timeout=180,
                     validate_cert=False,
-                    client_cert=settings.SSL_OPTIONS['certfile'],
-                    client_key=settings.SSL_OPTIONS['keyfile'],
+                    client_cert= settings.CLIENT_SSL_OPTIONS['certfile'],
+                    client_key= settings.CLIENT_SSL_OPTIONS['keyfile'],
                     headers = {
                         "Cache-Control": "no-cache",
                         "Content-Type": MIME['PSJSON'],
