@@ -38,7 +38,7 @@ SSL_OPTIONS = {
 }
 
 CLIENT_SSL_OPTIONS = {
-    'certfile': "/usr/local/etc/certs/ms_cert.pem"
+    'certfile': "/usr/local/etc/certs/ms_cert.pem",
     'keyfile': "/usr/local/etc/certs/ms_key.pem"
 }
 
