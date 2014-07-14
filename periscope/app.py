@@ -22,6 +22,7 @@ from settings import SCHEMAS
 from periscope.handlers import NetworkResourceHandler
 from periscope.handlers import CollectionHandler
 from periscope.handlers import MainHandler
+from periscope.handlers import MeasurementsSubscribeHandler
 from periscope.db import DBLayer
 from periscope.utils import load_class
 from periscope.pp_interface import PP_INTERFACE as PPI
@@ -221,6 +222,9 @@ class PeriscopeApplication(tornado.web.Application):
             handlers.append(self.make_resource_handler(**settings.Resources[res]))
         
         handlers.append(self._make_main_handler(**settings.main_handler_settings))
+        
+        handlers.append((tornado.web.URLSpec(r'/measurementssubscribe', MeasurementsSubscribeHandler, name='MeasurementsSubscribeHandler')))
+        
         tornado.web.Application.__init__(self, handlers,
                     default_host="localhost", **settings.APP_SETTINGS)
         
@@ -312,7 +316,8 @@ def main():
         ssl_opts = settings.SSL_OPTIONS
 
     http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_opts)
-    http_server.listen(options.port, address=options.address)
+    #http_server.listen(options.port, address=options.address)
+    http_server.listen(options.port)
 
     loop.start()
     logger.info('periscope.end')

@@ -26,6 +26,9 @@ else:
 
 from urllib import urlencode
 
+import tornadoredis
+import tornado.websocket
+
 import settings
 from settings import MIME
 from settings import SCHEMAS
@@ -66,6 +69,8 @@ CACHE = {
     },
 }
 
+trc = tornadoredis.Client()
+trc.connect()
 
 class SSEHandler(tornado.web.RequestHandler):
     """
@@ -857,6 +862,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         callback = functools.partial(self.on_post,
                     res_refs=res_refs, return_resources=True)
         self.dblayer.insert(resources, callback=callback)
+        
+        trc.publish(resources[0]["\$schema"], tornado.escape.json_encode(resources))
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True):
         """
@@ -1051,7 +1058,38 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return
         self.finish()
 
+class MeasurementsSubscribeHandler(tornado.websocket.WebSocketHandler):
+    def __init__(self, *args, **kwargs):
+        super(MeasurementsSubscribeHandler, self).__init__(*args, **kwargs)
+        self.listen()
+        
+    def open(self):
+        pass
+        
+    @tornado.gen.engine
+    def listen(self):
+        self.client = tornadoredis.Client()
+        self.client.connect()
+        yield tornado.gen.Task(self.client.subscribe, 'http://unis.incntre.iu.edu/schema/20140214/measurement#')
+        self.client.listen(self.deliver)
+        
+    def deliver(self, msg):
+        if msg.kind == 'message':
+            self.write_message(str(msg.body))
+        if msg.kind == 'disconnect':
+            # Do not try to reconnect, just send a message back
+            # to the client and close the client connection
+            self.write_message('The connection terminated '
+                               'due to a Redis server error.')
+            self.close()
 
+    def on_message(self, msg):
+        pass
+
+    def on_close(self):
+        if self.client.subscribed:
+            self.client.unsubscribe('http://unis.incntre.iu.edu/schema/20140214/measurement#')
+            self.client.disconnect()
 
 class CollectionHandler(NetworkResourceHandler):
     def initialize(self, collections, *args, **kwargs):
