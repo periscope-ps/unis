@@ -23,6 +23,7 @@ from periscope.handlers import NetworkResourceHandler
 from periscope.handlers import CollectionHandler
 from periscope.handlers import MainHandler
 from periscope.handlers import MeasurementsSubscribeHandler
+from periscope.handlers import SubscriptionHandler
 from periscope.db import DBLayer
 from periscope.utils import load_class
 from periscope.pp_interface import PP_INTERFACE as PPI
@@ -174,6 +175,12 @@ class PeriscopeApplication(tornado.web.Application):
         )
         return main_handler
 
+    def _make_subscription_handler(self, name, pattern, base_url, handler_class):
+        if type(handler_class) in [str, unicode]:
+            handler_class = load_class(handler_class)
+        subscription_handler = (tornado.web.URLSpec(base_url + pattern, handler_class, name=name))
+        return subscription_handler
+
     def MS_registered(self,response):
         if response.error:
             print "Couldn't start MS: ERROR", response.error, response.body
@@ -220,7 +227,10 @@ class PeriscopeApplication(tornado.web.Application):
         
         for res in settings.Resources:
             handlers.append(self.make_resource_handler(**settings.Resources[res]))
-        
+
+        for sub in settings.Subscriptions:
+            handlers.append(self._make_subscription_handler(**settings.Subscriptions[sub]))
+ 
         handlers.append(self._make_main_handler(**settings.main_handler_settings))
         
         handlers.append((tornado.web.URLSpec(r'/measurementssubscribe', MeasurementsSubscribeHandler, name='MeasurementsSubscribeHandler')))

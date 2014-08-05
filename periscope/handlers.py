@@ -862,8 +862,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         callback = functools.partial(self.on_post,
                     res_refs=res_refs, return_resources=True)
         self.dblayer.insert(resources, callback=callback)
-        
-        trc.publish(resources[0]["\$schema"], tornado.escape.json_encode(resources))
+
+        for res in resources:
+            trc.publish(res["\$schema"], tornado.escape.json_encode(res))
+            trc.publish(res["\$schema"] + "/" + res["id"], tornado.escape.json_encode(res))
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True):
         """
@@ -990,6 +992,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return_resource=True)
         self.dblayer.insert(dict(resource._to_mongoiter()), callback=callback)
 
+        trc.publish(resource["\$schema"], tornado.escape.json_encode(resource))
+        trc.publish(resource["\$schema"] + "/" + res["id"], tornado.escape.json_encode(resource))
+
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
         """
         HTTP PUT callback to send the results to the client.
@@ -1057,6 +1062,45 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             self.send_error(400, message=message)
             return
         self.finish()
+
+class SubscriptionHandler(tornado.websocket.WebSocketHandler):
+    def __init__(self, *args, **kwargs):
+        super(SubscriptionHandler, self).__init__(*args, **kwargs)
+
+    def open(self, resource_type = None, resource_id = None):
+        if resource_type in settings.SCHEMAS:
+            channel = settings.SCHEMAS[resource_type]
+            if resource_id is not None:
+                channel += "/" + resource_id
+        
+            self.channel = channel
+            self.listen()
+        else:
+            self.write_message('Connection failed: Bad resource type or ID')
+        
+        
+    @tornado.gen.engine
+    def listen(self):
+        self.client = tornadoredis.Client()
+        self.client.connect()
+        yield tornado.gen.Task(self.client.subscribe, self.channel)
+        self.client.listen(self.deliver)
+        
+    def on_message(self, msg):
+        pass
+
+    def deliver(self, msg):
+        if msg.kind == 'message':
+            self.write_message(str(msg.body))
+        if msg.kind == 'disconnect':
+            self.write_message('This connection terminated '
+                               'due to a Redis server error.')
+            self.close()
+    
+    def on_close(self):
+        if self.client.subscribed:
+            self.client.unsubscribe(self.channel)
+            self.client.disconnect()
 
 class MeasurementsSubscribeHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
@@ -1258,8 +1302,7 @@ class CollectionHandler(NetworkResourceHandler):
         
         callback = functools.partial(self.on_post, res_refs=res_refs)
         self.dblayer.insert(coll_reps, callback=callback)
-            
-
+        
     def set_self_ref(self, resource):
         """Assignes a selfRef to a resource"""
         fullname = utils.class_fullname(resource)
