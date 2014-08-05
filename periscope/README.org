@@ -12,8 +12,8 @@ on either the client or server.
 *** API
 The RESTful API for subscribing to messages from UNIS or the MS follows
 the structure of the non-subscription based API calls.  Any resource with
-a schema may be subscribed to by using the schema name as the =--reference=,
-specific resources can be subscribed to using a =--reference= and an =--id=.
+a schema may be subscribed to by using the schema name as the =reference=,
+specific resources can be subscribed to using a =reference= and an =id=.
 
 | Action    | Noun             | Example                | Description                                     |
 |-----------+------------------+------------------------+-------------------------------------------------|
