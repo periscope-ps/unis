@@ -1,6 +1,6 @@
 * Node.js Implementation of PubSub with UNIS
 Included in this directory is an example of a nodejs connection to the
-UNIS and MS pubsub mechanism.  This example requires the =--ws= module
+UNIS and MS pubsub mechanism.  This example requires the =ws= module
 installed.
 
 #+BEGIN_SRC
@@ -13,7 +13,7 @@ Start up the server.
 $ node node_server.js
 #+END_SRC
 
-Now navigate to =--http://localhost:8080= on a web browser.  Back in 
+Now navigate to =http://localhost:8080= on a web browser.  Back in 
 the terminal, push data into the UNIS server either by using =--curl=
 or by using the included testing script
 #+BEGIN_SRC
@@ -21,4 +21,4 @@ $ sudo python test_pubsub.py
 #+END_SRC
 
 If all goes well, there will be a message appearing on the webpage for
-each =--measurement= resource added to UNIS.
+each =measurement= resource added to UNIS.
