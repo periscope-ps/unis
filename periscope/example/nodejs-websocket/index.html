@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>UNIS Pub/Sub test</title>
+    <style>
+      .break {
+      height: 5px;
+      }
+      .clear {
+      clear: both;
+      }
+    </style>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script>
+      $(document).ready(init);
+
+      function init() {
+        function status_message(message) {
+          var messageBox = $( "<span>" );
+	  messageBox.html(message);
+	  $("#connectionStatus").append(messageBox);
+        }
+	
+	function show_message(message) {
+	  var messageBox = $( "<span>" );
+	  messageBox.html(message);
+	  $("#output").append(messageBox);
+	}
+	
+        function add_line(field) {
+	  if (field == "status") {
+	    $("#connectionStatus").append($("<div class='break'/>"));
+	  }
+	  else {
+	    $("#output").append($("<div class='break'/>"));
+	  }
+	}
+	  
+	  
+	var hostURL = "ws://localhost:7171";
+	var socket = new WebSocket(hostURL);
+	  
+// Setup the callback functions for opening a connection, closing
+// a connection, and when a message is recieved.
+	socket.onopen = function(event) {
+	  status_message("Connection established...");
+	  add_line("status");
+        };
+    
+// onmessage is the function most likely implemented on a pubsub
+// interface, it handles incoming published messages.
+        socket.onmessage = function(event) {
+	  show_message("&nbsp;" + event.data);
+          add_line();
+	};
+	  
+	socket.onclose = function() {
+	  add_line("status");
+	  status_message("Connection closed.");
+	  add_line("status");
+	};
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Test</h1>
+    <div id="connectionStatus" style="float:left; width: 700px">
+      
+    </div>
+    <div id="output" style="float:right; width: 1200px">
+      
+    </div>
+    <div class="cleardiv"></div>
+  </body>
+</html>
