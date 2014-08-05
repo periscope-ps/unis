@@ -420,6 +420,20 @@ measurement = dict(default_resource_settings.items() + \
         }.items()
 )
 
+itemSubscription = {
+    "base_url"      : "",
+    "name"          : "itemSubscription",
+    "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)/(?P<resource_id>[^\/]*)$",
+    "handler_class" : "periscope.handlers.SubscriptionHandler"
+}
+
+catSubscription = {
+    "base_url"      : "",
+    "name"          : "categorySubscription",
+    "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)$",
+    "handler_class" : "periscope.handlers.SubscriptionHandler"
+}
+
 collections = {
     "links": link,
     "ports": port,
@@ -464,6 +478,11 @@ Resources = {
     "datas" : datas,
     "measurements": measurements,
     "measurement" : measurement,
+}
+
+Subscriptions = {
+    "itemSubscription" : itemSubscription,
+    "catSubscription"  : catSubscription,
 }
 
 main_handler_settings = {
