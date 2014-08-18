@@ -3,6 +3,26 @@ Below are a few temporary notes on the implementation of new features
 for the unis runtime.
 
 ** PubSub
+*** Install
+Run the setup script in top level of the repository.
+#+BEGIN_SRC
+$ python setup.py build
+$ python setup.py install
+#+END_SRC
+
+*** Run
+You can attempt to run it as a daemon
+#+BEGIN_SRC
+$ periscoped
+#+END_SRC
+
+or to run it straight from the repository
+#+BEGIN_SRC
+$ python periscope/app.py
+#+END_SRC
+
+Either of which will start it running on port 8888.
+
 *** Implementation
 The pubsub mechanism in unis taps into a Redis server in order to
 track channel based subscriptions from clients.  These subscriptions
