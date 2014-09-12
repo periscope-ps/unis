@@ -1067,17 +1067,35 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
         super(SubscriptionHandler, self).__init__(*args, **kwargs)
 
-    def open(self, resource_type = None, resource_id = None):
-        if resource_type in settings.SCHEMAS:
-            channel = settings.SCHEMAS[resource_type]
-            if resource_id is not None:
-                channel += "/" + resource_id
-        
-            self.channel = channel
-            self.listen()
+    def open(self, resource_type = None, resource_id = None, query = None):
+        if resource_type is not None:
+            if resource_type in settings.SCHEMAS:
+                channel = settings.SCHEMAS[resource_type]
+                if resource_id is not None:
+                    channel += "/" + resource_id
+                    
+                self.channel = channel
         else:
-            self.write_message('Connection failed: Bad resource type or ID')
-        
+            # TODO: Add channel functionality to arbitrary queries
+            #       Filters should be indexed by uid
+            #       and maintained locally at the Redis level.
+            #       In the future, these filters will need to be
+            #       synced with any other unis instances (possibly) via
+            #       Redis' sharding functionality.
+            
+            #query = self.get_argument("query")
+            #if query == "":
+            #    self.write_message('Connection failed: Bad resource type or ID')
+            #    return
+            #else:
+            #    jsonQuery = json.loads(query)
+            #    self.channel = self.GenerateChannel(jsonQuery)
+            #    #AddChannelToFilter(channel)
+            
+            self.write_message('Arbitrary Queries not supported at this time')
+            return
+
+        self.listen()
         
     @tornado.gen.engine
     def listen(self):
@@ -1101,39 +1119,12 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         if self.client.subscribed:
             self.client.unsubscribe(self.channel)
             self.client.disconnect()
+    
+    def check_origin(self, origin):
+        return True
 
-class MeasurementsSubscribeHandler(tornado.websocket.WebSocketHandler):
-    def __init__(self, *args, **kwargs):
-        super(MeasurementsSubscribeHandler, self).__init__(*args, **kwargs)
-        self.listen()
-        
-    def open(self):
+    def GenerateChannel(query):
         pass
-        
-    @tornado.gen.engine
-    def listen(self):
-        self.client = tornadoredis.Client()
-        self.client.connect()
-        yield tornado.gen.Task(self.client.subscribe, 'http://unis.incntre.iu.edu/schema/20140214/measurement#')
-        self.client.listen(self.deliver)
-        
-    def deliver(self, msg):
-        if msg.kind == 'message':
-            self.write_message(str(msg.body))
-        if msg.kind == 'disconnect':
-            # Do not try to reconnect, just send a message back
-            # to the client and close the client connection
-            self.write_message('The connection terminated '
-                               'due to a Redis server error.')
-            self.close()
-
-    def on_message(self, msg):
-        pass
-
-    def on_close(self):
-        if self.client.subscribed:
-            self.client.unsubscribe('http://unis.incntre.iu.edu/schema/20140214/measurement#')
-            self.client.disconnect()
 
 class CollectionHandler(NetworkResourceHandler):
     def initialize(self, collections, *args, **kwargs):

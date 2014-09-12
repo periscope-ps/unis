@@ -22,7 +22,6 @@ from settings import SCHEMAS
 from periscope.handlers import NetworkResourceHandler
 from periscope.handlers import CollectionHandler
 from periscope.handlers import MainHandler
-from periscope.handlers import MeasurementsSubscribeHandler
 from periscope.handlers import SubscriptionHandler
 from periscope.db import DBLayer
 from periscope.utils import load_class
@@ -232,8 +231,6 @@ class PeriscopeApplication(tornado.web.Application):
             handlers.append(self._make_subscription_handler(**settings.Subscriptions[sub]))
  
         handlers.append(self._make_main_handler(**settings.main_handler_settings))
-        
-        handlers.append((tornado.web.URLSpec(r'/measurementssubscribe', MeasurementsSubscribeHandler, name='MeasurementsSubscribeHandler')))
         
         tornado.web.Application.__init__(self, handlers,
                     default_host="localhost", **settings.APP_SETTINGS)
