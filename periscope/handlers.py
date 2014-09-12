@@ -1120,6 +1120,9 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
             self.client.unsubscribe(self.channel)
             self.client.disconnect()
     
+    def check_origin(self, origin):
+        return True
+
     def GenerateChannel(query):
         pass
 
