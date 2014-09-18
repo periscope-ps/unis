@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
 #SCHEMA_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache")
 SCHEMA_CACHE_DIR = None
 
-GCF_PATH = "/opt/gcf/src/"
+GCF_PATH = "/opt/gcf/src/gcf/"
 sys.path.append(os.path.dirname(GCF_PATH))
 
 AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
@@ -29,7 +29,7 @@ UNIS_SCHEMAS_USE_LOCAL = False
 # Tornado settings.
 ######################################################################
 
-ENABLE_SSL = False
+ENABLE_SSL = True
 SSL_OPTIONS = {
     'certfile': os.path.join(PERISCOPE_ROOT, "ssl/server.pem"),
     'keyfile': os.path.join(PERISCOPE_ROOT, "ssl/server.key"),
@@ -59,7 +59,7 @@ GEMINI_NODE_INFO = None
 ######################################################################
 
 # Enable GENI/ABAC auth support
-ENABLE_AUTH = False
+ENABLE_AUTH = True
 
 # Enable application wide debugging options
 DEBUG = True

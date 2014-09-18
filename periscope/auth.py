@@ -8,11 +8,13 @@ import shutil
 import time
 import uuid
 import hashlib
+from lxml import etree
 from M2Crypto import X509
 from datetime import datetime
 
 import ABAC
 from sfa.trust.credential import Credential as GENICredential
+from sfa.trust.abac_credential import ABACCredential
 
 class AbacError(Exception):
     def __init__(self, msg):
@@ -63,12 +65,34 @@ class ABACAuthService:
             #print "credential: %s <- %s" % (x.head().string(), x.tail().string())
             #print "issuer: \n%s" % x.issuer_cert()
 
-    def bootstrap_slice_credential(self, cert, geni_slice_cred):
+    def bootstrap_slice_credential(self, cert, xml_creds):
+        slice_cred = None
+        sf_cred = None
+
+        root = etree.XML(xml_creds)
+        if root.tag == "unis-credentials":        
+            test = root.find("slice-credential")
+            if test is not None:
+                slice_cred = etree.tostring(test.find("signed-credential"))
+            else:
+                raise AbacError("Could not find slice credential")
+            test = root.find("sf-credential")
+            if test is not None:
+                sf_cred = etree.tostring(test.find("signed-credential"))
+            else:
+                raise AbacError("Could not find speaks-for credential")
+        else:
+            slice_cred = xml_creds
+
         # given the slice credential we can create the principal if it doesn't 
         # exist already, and then add the necessary admin permissions for that
         # slice uuid/urn or domain.
-        cred = GENICredential(string=geni_slice_cred)
-        
+        slice_cred = GENICredential(string=slice_cred)
+        if (sf_cred):
+            sf_cred = ABACCredential(string=sf_cred)
+            print sf_cred.get_signature().get_issuer_gid().save_to_string()
+            print sf_cred.dump_string()
+
         # now load the cert from the client SSL context)
         try:
             cert = ssl.DER_cert_to_PEM_cert(cert)
@@ -79,7 +103,7 @@ class ABACAuthService:
 
         # make sure the requesting cert matches the credential owner
         try:
-            req_cert = cred.get_gid_caller().save_to_string()
+            req_cert = slice_cred.get_gid_caller().save_to_string()
             #(cert,sep,rest) = req_cert.partition("-----END CERTIFICATE-----")
             req_id = ABAC.ID_chunk(req_cert)
         except Exception, e:
@@ -92,7 +116,7 @@ class ABACAuthService:
         # expiration date (not the credential's). Since the exp date and the role is
         # tied to the UUID of the slice (and not the URN which is reusable), it shouldn't
         # matter if this is longer than the lifetime of the slice.
-        expiration = cred.get_expiration()
+        expiration = slice_cred.get_expiration()
         now = datetime.now(expiration.tzinfo)
         td = expiration - now
         validity = int(td.seconds + td.days * 24 * 3600)
@@ -102,9 +126,9 @@ class ABACAuthService:
 
         # This assumes the credential is valid (you can call cred.verify
         # with the CA roots, i.e. genica.bundle, to do it yourself).
-        slice_uuid = cred.get_gid_object().get_uuid()
-        slice_urn = cred.get_gid_object().get_urn()
-        owner_urn = cred.get_gid_caller().get_urn()
+        slice_uuid = slice_cred.get_gid_object().get_uuid()
+        slice_urn = slice_cred.get_gid_object().get_urn()
+        owner_urn = slice_cred.get_gid_caller().get_urn()
         if not slice_uuid:
             slice_uuid = hashlib.md5(slice_urn).hexdigest()
             slice_uuid = uuid.UUID(slice_uuid).hex
