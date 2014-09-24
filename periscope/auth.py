@@ -68,30 +68,41 @@ class ABACAuthService:
     def bootstrap_slice_credential(self, cert, xml_creds):
         slice_cred = None
         sf_cred = None
+        puser = None
 
         root = etree.XML(xml_creds)
         if root.tag == "unis-credentials":        
             test = root.find("slice-credential")
             if test is not None:
-                slice_cred = etree.tostring(test.find("signed-credential"))
+                slice_cred = etree.tostring(test.find("signed-credential"), xml_declaration=True, encoding="UTF-8")
             else:
                 raise AbacError("Could not find slice credential")
             test = root.find("sf-credential")
             if test is not None:
-                sf_cred = etree.tostring(test.find("signed-credential"))
+                sf_cred = etree.tostring(test.find("signed-credential"), xml_declaration=True, encoding="UTF-8")
             else:
                 raise AbacError("Could not find speaks-for credential")
         else:
             slice_cred = xml_creds
 
-        # given the slice credential we can create the principal if it doesn't 
-        # exist already, and then add the necessary admin permissions for that
-        # slice uuid/urn or domain.
         slice_cred = GENICredential(string=slice_cred)
         if (sf_cred):
-            sf_cred = ABACCredential(string=sf_cred)
-            print sf_cred.get_signature().get_issuer_gid().save_to_string()
-            print sf_cred.dump_string()
+            try:
+                # XX: libabac segfaults on the GENI abac creds for some reason
+                # XX: will use ABACCredential instead
+                #tmpctx = ABAC.Context()
+                #tmpctx.load_id_chunk(cert)
+                #ret = tmpctx.load_attribute_chunk(tmpcred)
+                #if ret < 0:
+                #    raise AbacError("Could not read the speaks-for cert given client cert")
+
+                sf_cred = ABACCredential(string=sf_cred)
+                sf_cert = sf_cred.get_signature().get_issuer_gid().save_to_string()
+                sf_user = ABAC.ID_chunk(sf_cert)
+                self.ctx.load_id_chunk(sf_cert)
+                print sf_cred.dump_string()
+            except Exception, e:
+                raise AbacError("Could not read the speaks-for cert: %s" % e)
 
         # now load the cert from the client SSL context)
         try:
@@ -104,13 +115,22 @@ class ABACAuthService:
         # make sure the requesting cert matches the credential owner
         try:
             req_cert = slice_cred.get_gid_caller().save_to_string()
-            #(cert,sep,rest) = req_cert.partition("-----END CERTIFICATE-----")
             req_id = ABAC.ID_chunk(req_cert)
         except Exception, e:
             raise AbacError("Could not read user cert: %s" % e)
 
-        if (req_id.keyid() != user.keyid()):
-            raise AbacError("Client cert does not match credential owner!")
+        if (sf_cred):
+            sf_req = sf_cred.get_tails()[0]
+            if (sf_req != user.keyid()):
+                raise AbacError("Client cert does not match speaks-for credential user!")
+            
+            if (req_id.keyid() != sf_user.keyid()):
+                raise AbacError("Credential owner does not match user we're speaking for!")
+            puser = sf_user
+        else:
+            if (req_id.keyid() != user.keyid()):
+                raise AbacError("Client cert does not match credential owner!")
+            puser = user
         
         # Validity could be something else, here we're taking the slice certificate's
         # expiration date (not the credential's). Since the exp date and the role is
@@ -153,13 +173,13 @@ class ABACAuthService:
             pass
 
         # save the user cert from credential to keystore
-        cert_filename = user.keyid() + self.PRIN_FILE_SUFFIX
-        user.write_cert_file(os.path.join(self.ABAC_STORE_DIR, cert_filename))
+        cert_filename = puser.keyid() + self.PRIN_FILE_SUFFIX
+        puser.write_cert_file(os.path.join(self.ABAC_STORE_DIR, cert_filename))
 
         # create the initial role (UNIS.rUA <- client)
         UA_role = self.USER_ADMIN_ROLE_PREFIX + slice_uuid
         attr = ABAC.Attribute(self.server_id, UA_role, validity)
-        attr.principal(user.keyid())
+        attr.principal(puser.keyid())
         attr.bake()
         self.ctx.load_attribute_chunk(attr.cert_chunk())
         
@@ -191,7 +211,6 @@ class ABACAuthService:
         attr.write_file(os.path.join(self.ABAC_STORE_DIR, attr_filename))
         
         return
-
 
     def add_credential(self, cert, cred):
         # Users can post credentials, usually delegating a given
