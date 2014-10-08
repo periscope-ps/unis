@@ -30,6 +30,7 @@ setup(
     
     install_requires=[
         "tornado",
+        "tornado-redis",
         "pymongo",
         "asyncmongo",
         "unittest2",
