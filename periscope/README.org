@@ -1,32 +1,45 @@
-* UNIS Implementation Notes
-Below are a few temporary notes on the implementation of new features
-for the unis runtime.
+* UNIS PubSub Implementation
+Below are installation instructions and notes on the publisher/subscriber implementation for the UNIS runtime.
 
 ** PubSub
+
+*** Dependencies
+Redis is used to implement the publisher subscriber pattern
+#+BEGIN_SRC
+$ sudo yum install redis
+$ sudo redis-server&
+#+END_SRC
+
+The tornado-redis module allows UNIS to communicate with redis
+#+BEGIN_SRC
+$ sudo easy_install pip
+$ sudo pip install tornado-redis
+#+END_SRC
+
 *** Install
 Run the setup script in top level of the repository.
 #+BEGIN_SRC
-$ python setup.py build
-$ python setup.py install
+$ sudo python setup.py build
+$ sudo python setup.py install
 #+END_SRC
 
 *** Run
-You can attempt to run it as a daemon
+You can run UNIS as a daemon
 #+BEGIN_SRC
-$ periscoped
+$ sudo periscoped
 #+END_SRC
 
-or to run it straight from the repository
+or run UNIS straight from the repository
 #+BEGIN_SRC
-$ python periscope/app.py
+$ sudo python periscope/app.py
 #+END_SRC
 
-Either of which will start it running on port 8888.
+Either of which will start UNIS running on port 8888.
 
 *** Implementation
-The pubsub mechanism in unis taps into a Redis server in order to
+The pubsub mechanism in UNIS taps into a Redis server in order to
 track channel based subscriptions from clients.  These subscriptions
-run through a RESTful API and are independant of implementation details
+run through a RESTful API and are independent of implementation details
 on either the client or server.
 
 *** API
