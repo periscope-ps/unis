@@ -15,7 +15,7 @@ def make_geniuser_req(sf_cred, role, pcert):
     slice_req = """<?xml version="1.0" encoding="utf-8"?>
 <unis-credentials>
   <role>%s</role>
-  <proxy-credential>%s</proxy-credential>
+  <subject-cert>%s</subject-cert>
   <sf-credential>%s</sf-credential>
 </unis-credentials>"""
     return slice_req % (role, pcert, sf_cred)
