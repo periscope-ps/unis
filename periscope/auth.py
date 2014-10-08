@@ -89,7 +89,7 @@ class ABACAuthService:
         except Exception, e:
             raise AbacError("Could not read the speaks-for cert: %s" % e)
         
-        if (sf_req != user.keyid()):
+        if (str(sf_req) != str(user.keyid())):
             raise AbacError("Client cert does not match speaks-for credential user!")
         
         return sf_user
@@ -242,11 +242,11 @@ class ABACAuthService:
                 role = test.text
             else:
                 raise AbacError("Could not find role element")
-            test = root.find("proxy-cert")
+            test = root.find("subject-cert")
             if test is not None:
                 pcert = test.text
             else:
-                raise AbacError("Could not find speaks-for credential")
+                raise AbacError("Could not find subject certificate (i.e., proxy cert)")
             test = root.find("sf-credential")
             if test is not None:
                 sf_cred = etree.tostring(test.find("signed-credential"), xml_declaration=True, encoding="UTF-8")
@@ -270,7 +270,7 @@ class ABACAuthService:
             # make sure who we're speaking for can actually access
             # the slice we're adding a role for
             slice_uuid = role.replace(self.SLICE_ADMIN_ROLE_PREFIX, "")
-            ret = self.query(suser.cert_chunk(), slice_uuid, cert_format="PEM")
+            ret = self.query_role(suser.cert_chunk(), slice_uuid, cert_format="PEM")
             if not ret:
                 raise AbacError("Speaks-for user does not have access to requested slice")
 
@@ -318,7 +318,7 @@ class ABACAuthService:
         else:
             raise AbacError("Unrecognized request")
 
-    def query(self, cert, slice_uuid, req=None, cert_format="DER"):
+    def query_role(self, cert, slice_uuid, req=None, cert_format="DER"):
         try:
             if cert_format == "DER":
                 cert = ssl.DER_cert_to_PEM_cert(cert)
@@ -338,3 +338,24 @@ class ABACAuthService:
         #    print "%s <- %s" % (c.head().string(), c.tail().string())
 
         return success
+
+    def query(self, cert):
+        try:
+            cert = ssl.DER_cert_to_PEM_cert(cert)
+            user = ABAC.ID_chunk(cert)
+        except Exception, e:
+            raise AbacError("Could not load user cert: %s" % e)
+
+        now = int(time.time() * 1000000)
+        uuids = []
+
+        for a in self.auth_mem[:]:
+            if int(a['valid_until']) <= int(now):
+                self.auth_mem.remove(a)
+                continue
+            role_str = self.server_id.keyid() + "." + str(self.SLICE_ADMIN_ROLE_PREFIX + a['_id'])
+            (success, credentials) = self.ctx.query(role_str, user.keyid())
+            if success:
+                uuids.append(str(uuid.UUID(a['_id'])))
+
+        return uuids

@@ -107,16 +107,7 @@ class Gemini(PPI):
     def __get_allowed_uuids(self, app, req):
         auth = app._auth
         cert = req.get_ssl_certificate(binary_form=True)
-        now = int(time.time() * 1000000)
-
-        uuids = []
-        for a in auth.auth_mem:
-            if int(a['valid_until']) <= int(now):
-                auth.auth_mem.remove(a)
-            if auth.query(cert, a['_id']) is True:
-                uuids.append(str(uuid.UUID(a['_id'])))
-
-        return uuids
+        return auth.query(cert)
 
 
 class AuthUserCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
