@@ -26,6 +26,9 @@ else:
 
 from urllib import urlencode
 
+import tornadoredis
+import tornado.websocket
+
 import settings
 from settings import MIME
 from settings import SCHEMAS
@@ -66,6 +69,8 @@ CACHE = {
     },
 }
 
+trc = tornadoredis.Client()
+trc.connect()
 
 class SSEHandler(tornado.web.RequestHandler):
     """
@@ -858,6 +863,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     res_refs=res_refs, return_resources=True)
         self.dblayer.insert(resources, callback=callback)
 
+        for res in resources:
+            trc.publish(res["\$schema"], tornado.escape.json_encode(res))
+            trc.publish(res["\$schema"] + "/" + res["id"], tornado.escape.json_encode(res))
+
     def on_post(self, request, error=None, res_refs=None, return_resources=True):
         """
         HTTP POST callback to send the results to the client.
@@ -983,6 +992,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return_resource=True)
         self.dblayer.insert(dict(resource._to_mongoiter()), callback=callback)
 
+        trc.publish(resource["\$schema"], tornado.escape.json_encode(resource))
+        trc.publish(resource["\$schema"] + "/" + res["id"], tornado.escape.json_encode(resource))
+
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
         """
         HTTP PUT callback to send the results to the client.
@@ -1051,7 +1063,68 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return
         self.finish()
 
+class SubscriptionHandler(tornado.websocket.WebSocketHandler):
+    def __init__(self, *args, **kwargs):
+        super(SubscriptionHandler, self).__init__(*args, **kwargs)
 
+    def open(self, resource_type = None, resource_id = None, query = None):
+        if resource_type is not None:
+            if resource_type in settings.SCHEMAS:
+                channel = settings.SCHEMAS[resource_type]
+                if resource_id is not None:
+                    channel += "/" + resource_id
+                    
+                self.channel = channel
+        else:
+            # TODO: Add channel functionality to arbitrary queries
+            #       Filters should be indexed by uid
+            #       and maintained locally at the Redis level.
+            #       In the future, these filters will need to be
+            #       synced with any other unis instances (possibly) via
+            #       Redis' sharding functionality.
+            
+            #query = self.get_argument("query")
+            #if query == "":
+            #    self.write_message('Connection failed: Bad resource type or ID')
+            #    return
+            #else:
+            #    jsonQuery = json.loads(query)
+            #    self.channel = self.GenerateChannel(jsonQuery)
+            #    #AddChannelToFilter(channel)
+            
+            self.write_message('Arbitrary Queries not supported at this time')
+            return
+
+        self.listen()
+        
+    @tornado.gen.engine
+    def listen(self):
+        self.client = tornadoredis.Client()
+        self.client.connect()
+        yield tornado.gen.Task(self.client.subscribe, self.channel)
+        self.client.listen(self.deliver)
+        
+    def on_message(self, msg):
+        pass
+
+    def deliver(self, msg):
+        if msg.kind == 'message':
+            self.write_message(str(msg.body))
+        if msg.kind == 'disconnect':
+            self.write_message('This connection terminated '
+                               'due to a Redis server error.')
+            self.close()
+    
+    def on_close(self):
+        if self.client.subscribed:
+            self.client.unsubscribe(self.channel)
+            self.client.disconnect()
+    
+    def check_origin(self, origin):
+        return True
+
+    def GenerateChannel(query):
+        pass
 
 class CollectionHandler(NetworkResourceHandler):
     def initialize(self, collections, *args, **kwargs):
@@ -1220,8 +1293,7 @@ class CollectionHandler(NetworkResourceHandler):
         
         callback = functools.partial(self.on_post, res_refs=res_refs)
         self.dblayer.insert(coll_reps, callback=callback)
-            
-
+        
     def set_self_ref(self, resource):
         """Assignes a selfRef to a resource"""
         fullname = utils.class_fullname(resource)

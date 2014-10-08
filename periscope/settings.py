@@ -162,6 +162,7 @@ SCHEMAS = {
     'data' : 'http://unis.incntre.iu.edu/schema/20140214/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20140214/datum#',
     'measurement': 'http://unis.incntre.iu.edu/schema/20140214/measurement#',
+    'file': 'http://unis.incntre.iu.edu/schema/20140909/exnode#'
 }
 
 # Default settings that apply to almost all network resources
@@ -411,7 +412,7 @@ measurements = dict(default_resource_settings.items() + \
         }.items()
 )
 measurement = dict(default_resource_settings.items() + \
-        {
+         {
             "name": "measurement",
             "pattern": "/measurements/(?P<res_id>[^\/]*)$",
             "model_class": "periscope.models.Measurement",
@@ -419,6 +420,46 @@ measurement = dict(default_resource_settings.items() + \
             "schema": {MIME['PSJSON']: SCHEMAS["measurement"]},
         }.items()
 )
+
+exnodes = dict(default_resource_settings.items() + \
+         {
+            "name": "exnodes",
+            "pattern": "/files$",
+            "model_class": "periscope.models.Exnode",
+            "collection_name": "exnodes",
+            "schema": {MIME['PSJSON']: SCHEMAS["file"]},
+         }.items()
+)
+exnode = dict(default_resource_settings.items() + \
+         {
+           "name": "exnode",
+           "pattern": "/files/(?P<res_id>[^\/]*)$",
+           "model_class": "periscope.models.Exnode",
+           "collection_name": "exnodes",
+           "schema": {MIME['PSJSON']: SCHEMAS["file"]},
+         }.items()
+)
+
+itemSubscription = {
+    "base_url"      : "",
+    "name"          : "itemSubscription",
+    "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)/(?P<resource_id>[^\/]*)$",
+    "handler_class" : "periscope.handlers.SubscriptionHandler"
+}
+
+catSubscription = {
+    "base_url"      : "",
+    "name"          : "categorySubscription",
+    "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)$",
+    "handler_class" : "periscope.handlers.SubscriptionHandler"
+}
+
+querySubscription = {
+    "base_url"      : "",
+    "name"          : "querySubscription",
+    "pattern"       : "/subscribe",
+    "handler_class" : "periscope.handlers.SubscriptionHandler"
+}
 
 collections = {
     "links": link,
@@ -464,11 +505,19 @@ Resources = {
     "datas" : datas,
     "measurements": measurements,
     "measurement" : measurement,
+    "exnodes"     : exnodes,
+    "exnode"      : exnode,
+}
+
+Subscriptions = {
+    "itemSubscription"  : itemSubscription,
+    "catSubscription"   : catSubscription,
+    "querySubscription" : querySubscription,
 }
 
 main_handler_settings = {
     "resources": ["links", "ports", "nodes", "services", "paths",
-        "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements"],
+        "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements", "exnodes"],
     "name": "main",
     "base_url": "",
     "pattern": "/$",

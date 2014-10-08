@@ -1,0 +1,74 @@
+* UNIS PubSub Implementation
+Below are installation instructions and notes on the publisher/subscriber implementation for the UNIS runtime.
+
+** PubSub
+
+*** Dependencies
+Redis is used to implement the publisher subscriber pattern
+#+BEGIN_SRC
+$ sudo yum install redis
+$ sudo redis-server&
+#+END_SRC
+
+The tornado-redis module allows UNIS to communicate with redis
+#+BEGIN_SRC
+$ sudo easy_install pip
+$ sudo pip install tornado-redis
+#+END_SRC
+
+*** Install
+Run the setup script in top level of the repository.
+#+BEGIN_SRC
+$ sudo python setup.py build
+$ sudo python setup.py install
+#+END_SRC
+
+*** Run
+You can run UNIS as a daemon
+#+BEGIN_SRC
+$ sudo periscoped
+#+END_SRC
+
+or run UNIS straight from the repository
+#+BEGIN_SRC
+$ sudo python periscope/app.py
+#+END_SRC
+
+Either of which will start UNIS running on port 8888.
+
+*** Implementation
+The pubsub mechanism in UNIS taps into a Redis server in order to
+track channel based subscriptions from clients.  These subscriptions
+run through a RESTful API and are independent of implementation details
+on either the client or server.
+
+*** API
+The RESTful API for subscribing to messages from UNIS or the MS follows
+the structure of the non-subscription based API calls.  Any resource with
+a schema may be subscribed to by using the schema name as the =reference=,
+specific resources can be subscribed to using a =reference= and an =id=.
+
+| Action    | Noun             | Example                | Description                                     |
+|-----------+------------------+------------------------+-------------------------------------------------|
+| subscribe | /{resource}      | ws://localhost/port    | Subscribes to all resources of a given schema   |
+| subscribe | /{resource}/{id} | ws://localhost/node/25 | Subscribes to a single resource with a given id |
+
+
+*** Valid Schema
+
+| Schema name     |
+|-----------------|
+| networkresource |
+| node            |
+| domain          |
+| port            |
+| link            |
+| path            |
+| network         |
+| topology        |
+| service         |
+| blipp           |
+| metadata        |
+| data            |
+| datum           |
+| measurement     |
