@@ -992,8 +992,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return_resource=True)
         self.dblayer.insert(dict(resource._to_mongoiter()), callback=callback)
 
-        trc.publish(resource["\$schema"], tornado.escape.json_encode(resource))
-        trc.publish(resource["\$schema"] + "/" + res["id"], tornado.escape.json_encode(resource))
+        trc.publish(resource["$schema"], tornado.escape.json_encode(resource))
+        trc.publish(resource["$schema"] + "/" + resource["id"], tornado.escape.json_encode(resource))
 
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
         """
