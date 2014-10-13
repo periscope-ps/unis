@@ -15,12 +15,12 @@ from tornado.options import define
 PERISCOPE_ROOT = os.path.dirname(os.path.abspath(__file__)) + os.sep
 sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
 #SCHEMA_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache")
-SCHEMA_CACHE_DIR = "/var/unis/.cache"
+SCHEMA_CACHE_DIR = None
 
-GCF_PATH = "/opt/gcf-2.6/src/gcf/"
+GCF_PATH = "/opt/gcf/src/gcf/"
 sys.path.append(os.path.dirname(GCF_PATH))
 
-AUTH_STORE_DIR = "/opt/periscope-ps-unis/periscope/abac"
+AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
 
 JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
 UNIS_SCHEMAS_USE_LOCAL = False
@@ -29,12 +29,12 @@ UNIS_SCHEMAS_USE_LOCAL = False
 # Tornado settings.
 ######################################################################
 
-ENABLE_SSL = True
+ENABLE_SSL = False
 SSL_OPTIONS = {
-    'certfile': "/opt/periscope-ps-unis/periscope/ssl/server.pem",
-    'keyfile': "/opt/periscope-ps-unis/periscope/ssl/server.key",
+    'certfile': os.path.join(PERISCOPE_ROOT, "ssl/server.pem"),
+    'keyfile': os.path.join(PERISCOPE_ROOT, "ssl/server.key"),
     'cert_reqs': ssl.CERT_REQUIRED,
-    'ca_certs': "/usr/local/etc/protogeni/ssl/genica.bundle"
+    'ca_certs': os.path.join(PERISCOPE_ROOT, "ssl/genica.bundle")
 }
 
 CLIENT_SSL_OPTIONS = {
@@ -45,9 +45,9 @@ CLIENT_SSL_OPTIONS = {
 ######################################################################
 # Measurement Store settings.
 ######################################################################
-UNIS_URL = "https://unis.incntre.iu.edu:8443"
-#UNIS_URL = "http://localhost:8888"
-MS_ENABLE = False
+#UNIS_URL = "https://unis.incntre.iu.edu:8443"
+UNIS_URL = "http://localhost:8888"
+MS_ENABLE = True
 
 MS_CLIENT_CERT = "/usr/local/etc/certs/ms_cert.pem"
 MS_CLIENT_KEY = "/usr/local/etc/certs/ms_key.pem"
@@ -59,7 +59,7 @@ GEMINI_NODE_INFO = None
 ######################################################################
 
 # Enable GENI/ABAC auth support
-ENABLE_AUTH = True
+ENABLE_AUTH = False
 
 # Enable application wide debugging options
 DEBUG = True
@@ -86,8 +86,8 @@ ASYNC_DB = {
     'host': DB_HOST,
     'port': DB_PORT,
     'mincached': 1,
-    'maxcached': 5,
-    'maxconnections': 200,
+    'maxcached': 50,
+    'maxconnections': 250,
     'dbname': DB_NAME,
 }
 
