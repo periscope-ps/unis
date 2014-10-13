@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20140909/directory#",
+    "description": "A directory is a subclass of exnode",
+    "name": "directory",
+    "type": "object",
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20140909/exnode#"
+    },
+    "required": ["parent", "nodes"],
+    "properties": {
+    	"parent": {
+    	    "description": "A pointer to a parent exnode, null if root",
+    	    "anyOf": [
+		{
+		    "$ref": "http://unis.incntre.iu.edu/schema/20140909/exnode#"
+		},
+		{
+                    "$ref": "http://json-schema.org/draft-03/links#"
+                },
+		{
+		    "type": "null"
+		}
+	    ]
+    	},
+    	"nodes": {
+    	    "description": "A list of exnodes in this directory, can be empty",
+    	    "type": "array",
+            "additionalProperties": false,
+	    "minItems": 0,
+	    "uniqueItems": false,
+    	    "items": {
+		"anyOf": [
+		    {
+			"$ref": "http://unis.incntre.iu.edu/schema/20140909/exnode#"
+		    },
+		    {
+			"$ref": "http://json-schema.org/draft-04/links#"
+                    }
+		]
+	    }
+    	}
+    }
+}
