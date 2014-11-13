@@ -514,6 +514,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query.pop("limit", None)
         if limit:
             limit = convert_value_type("limit", limit, "integer")
+                        
+        skip = self.get_argument("skip", default=0)
+        query.pop("skip", None)
+        if skip:
+            skip = convert_value_type("skip", skip, "integer")
         
         query_ret = []
         for arg in query:
@@ -549,7 +554,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                         ret.append(item)
                 query_ret["query"].update({"$and": ret})
 
-        ret_val = {"fields": fields, "limit": limit, "query": query_ret}
+        ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip}
         return ret_val
 
     def _get_cursor(self):
@@ -572,6 +577,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query = parsed["query"]
         fields = parsed["fields"]
         limit = parsed["limit"]
+        skip = parsed["skip"]
         is_list = not res_id
 
         if query["list"]:
@@ -579,13 +585,12 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if is_list == False:
             limit = 1
         if is_list:
-            query["query"]["status"] = {"$ne": "DELETED"}
-
+            query["query"]["status"] = {"$ne": "DELETED"}            
         callback = functools.partial(self._get_on_response,
                             new=True, is_list=is_list, query=query["query"])
-        self._find(query["query"], callback, fields=fields, limit=limit)
+        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip)        
 
-    def _find(self, query, callback, fields=None, limit=None):
+    def _find(self, query, callback, fields=None, limit=None , skip=None):
         """Query the database.
 
         Parameters:
@@ -608,7 +613,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if "sort" not in options:
             options["sort"] = []
         options["sort"].append(("ts", -1))
-        self._query = query
+        options['skip']=skip
+        self._query = query        
         self._cursor = self.dblayer.find(**options)
 
     def _get_more(self, cursor, callback):
