@@ -517,7 +517,7 @@ Subscriptions = {
 
 main_handler_settings = {
     "resources": ["links", "ports", "nodes", "services", "paths",
-        "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements"],
+        "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements", "exnodes"],
     "name": "main",
     "base_url": "",
     "pattern": "/$",
