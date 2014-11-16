@@ -159,7 +159,18 @@ class PeriscopeApplication(tornado.web.Application):
             )
         )
         return handler
-
+    
+    def _make_getSchema_handler(self,name,pattern,base_url,handler_class):         
+         scm_handler = (
+            tornado.web.URLSpec(base_url + pattern, handler_class,
+                dict(                    
+                    base_url=base_url+pattern,
+                ), 
+                name=name
+            )
+         )
+         return scm_handler        
+    
     def _make_main_handler(self, name,  pattern, base_url, handler_class, resources):
         if type(handler_class) in [str, unicode]:
             handler_class = load_class(handler_class)
@@ -229,7 +240,7 @@ class PeriscopeApplication(tornado.web.Application):
 
         for sub in settings.Subscriptions:
             handlers.append(self._make_subscription_handler(**settings.Subscriptions[sub]))
- 
+        handlers.append(self._make_getSchema_handler(**settings.getSchema))
         handlers.append(self._make_main_handler(**settings.main_handler_settings))
         
         tornado.web.Application.__init__(self, handlers,

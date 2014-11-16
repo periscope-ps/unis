@@ -8,6 +8,7 @@ import json
 import re
 import functools
 import jsonpointer
+from periscope.models import schemaLoader
 from jsonpath import jsonpath
 from netlogger import nllog
 import time
@@ -19,6 +20,7 @@ import tornado.web
 from tornado.httpclient import HTTPError
 from tornado.httpclient import AsyncHTTPClient
 import pymongo
+from periscope import models
 if pymongo.version_tuple[1] > 1:
     from bson.objectid import ObjectId
 else:
@@ -229,7 +231,20 @@ class SSEHandler(tornado.web.RequestHandler):
         except Exception, e:
             self._handle_request_exception(e)
 
-
+class SchemaHandler(tornado.web.RequestHandler):
+    def initialize(self, base_url):
+        None
+    def get(self, res_id=None):
+        """Handles HTTP GET"""        
+        args = self.request.arguments
+        if 'name' in args.keys() and "node" in settings.SCHEMAS:
+            """ Return schema json """  
+            self.write(schemaLoader.get(settings.SCHEMAS["node"]))                      
+        else:
+            self.write(settings.SCHEMAS)                    
+        self.finish()
+        
+    
 class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     """Generic Network resources handler"""
 
