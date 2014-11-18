@@ -21,6 +21,7 @@ from tornado.httpclient import HTTPError
 from tornado.httpclient import AsyncHTTPClient
 import pymongo
 from periscope import models
+from __builtin__ import str
 if pymongo.version_tuple[1] > 1:
     from bson.objectid import ObjectId
 else:
@@ -405,7 +406,15 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     [MIME['PSJSON'], MIME['SSE']]
         else:
             return False
-
+                        
+    def countCallback(self,response,error):        
+        if (response[u'ok']) :            
+            self.set_header('X-Count', str(response[u'n']))            
+        self.countFinished = True
+        if(self.mainFinished) :
+            """ Main will take care of finishing """                        
+            self.finish()        
+                        
     def write_error(self, status_code, **kwargs):
         """
         Overrides Tornado error writter to produce different message
@@ -629,7 +638,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             options["sort"] = []
         options["sort"].append(("ts", -1))
         options['skip']=skip
-        self._query = query        
+        options['ccallback']=self.countCallback
+        self._query = query            
+        self.countFinished = False 
+        self.mainFinished = False
         self._cursor = self.dblayer.find(**options)
 
     def _get_more(self, cursor, callback):
@@ -744,12 +756,17 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
         if keep_alive and not last_batch:
             self.flush()
+            self.mainFinished = False
             get_more_callback()            
         else:
             if last_batch:
                 self._remove_cursor()
-                self.finish()
+                self.mainFinished = True
+                if (self.countFinished) :
+                    """ Count will take care of finishing """                                        
+                    self.finish()                                 
             else:
+                self.mainFinished = False
                 get_more_callback()
 
     def _validate_psjson_profile(self):
@@ -1781,4 +1798,7 @@ class DataHandler(NetworkResourceHandler):
         db_layer = self.application.get_db_layer(self._res_id, "ts", "ts",
                         True,  5000)
         query.pop("id", None)
+        options['ccallback']=self.countCallback
+        self.countFinished = False 
+        self.mainFinished = False
         self._cursor = db_layer.find(**options)
