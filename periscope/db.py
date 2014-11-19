@@ -52,13 +52,15 @@ class DBLayer(object, nllog.DoesLogging):
         """Returns a reference to the default mongodb collection."""
         return self._client[self._collection_name]
 
-    def find(self, query, callback=None, **kwargs):
+    def find(self, query, callback=None, ccallback = None,**kwargs):
         """Finds one or more elements in the collection."""
         self.log.info("find")
         fields = kwargs.pop("fields", {})
-        fields["_id"] = 0
-        return self.collection.find(query, callback=callback,
-                                    fields=fields, **kwargs)
+        fields["_id"] = 0                        
+        findCursor = self.collection.find(query, callback=callback,
+                                    fields=fields, **kwargs)        
+        self._client['$cmd'].find_one({'count' : self._collection_name , 'query' : query}, _is_command=True, callback=ccallback)                    
+        return findCursor 
 
     def _insert_id(self, data):
         if "_id" not in data and not self.capped:

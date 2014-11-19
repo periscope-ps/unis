@@ -40,6 +40,8 @@ from periscope.models import HyperLink
 from periscope.models import Topology
 from periscope.models import schemaLoader
 from periscope.models import JSONSchemaModel
+from periscope import models
+from periscope.models import schemaLoader
 import periscope.utils as utils
 from asyncmongo.errors import IntegrityError, TooManyConnections
 
@@ -231,6 +233,18 @@ class SSEHandler(tornado.web.RequestHandler):
         except Exception, e:
             self._handle_request_exception(e)
 
+class SchemaHandler(tornado.web.RequestHandler):
+    def initialize(self, base_url):
+        None
+    def get(self, res_id=None):
+        """Handles HTTP GET"""
+        args = self.request.arguments
+        if 'name' in args.keys() and "node" in settings.SCHEMAS:
+            """ Return schema json """
+            self.write(schemaLoader.get(settings.SCHEMAS["node"]))
+        else:
+            self.write(settings.SCHEMAS)
+        self.finish()
 
 class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     """Generic Network resources handler"""

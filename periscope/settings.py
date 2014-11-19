@@ -245,6 +245,14 @@ services = dict(default_resource_settings.items() + \
             "schema": {MIME['PSJSON']: SCHEMAS["service"]},
         }.items()
 )
+getSchema = dict( \
+        {
+            "name": "getSchema",
+            "pattern": "/getSchema$",
+            "base_url":"",
+            "handler_class": "periscope.handlers.SchemaHandler",                            
+        }.items()
+)
 service = dict(default_resource_settings.items() + \
         {
             "name": "service",
