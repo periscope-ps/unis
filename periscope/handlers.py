@@ -20,8 +20,6 @@ import tornado.web
 from tornado.httpclient import HTTPError
 from tornado.httpclient import AsyncHTTPClient
 import pymongo
-from periscope import models
-from __builtin__ import str
 if pymongo.version_tuple[1] > 1:
     from bson.objectid import ObjectId
 else:
@@ -43,6 +41,8 @@ from periscope.models import HyperLink
 from periscope.models import Topology
 from periscope.models import schemaLoader
 from periscope.models import JSONSchemaModel
+from periscope import models
+from periscope.models import schemaLoader
 import periscope.utils as utils
 from asyncmongo.errors import IntegrityError, TooManyConnections
 
@@ -74,6 +74,8 @@ CACHE = {
 
 trc = tornadoredis.Client()
 trc.connect()
+query_list = []
+uuid = 0
 
 class SSEHandler(tornado.web.RequestHandler):
     """
@@ -245,7 +247,6 @@ class SchemaHandler(tornado.web.RequestHandler):
             self.write(settings.SCHEMAS)                    
         self.finish()
         
-    
 class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     """Generic Network resources handler"""
 
@@ -407,11 +408,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         else:
             return False
                         
-    def countCallback(self,response,error):        
-        if (response[u'ok']) :            
+    def countCallback(self, response, error):
+        if (response[u'ok']):
             self.set_header('X-Count', str(response[u'n']))            
         self.countFinished = True
-        if(self.mainFinished) :
+        if (self.mainFinished):
             """ Main will take care of finishing """                        
             self.finish()        
                         
@@ -663,7 +664,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     print "Sort takes integer argument 1 or -1 "                
                     #self.set_header('X-error', "Sort takes integer argument 1 or -1")                                                                                            
         options['skip']=skip
-        options['ccallback']=self.countCallback
+        options['ccallback'] = self.countCallback
         self._query = query            
         self.countFinished = False 
         self.mainFinished = False
@@ -781,13 +782,13 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
         if keep_alive and not last_batch:
             self.flush()
-            self.mainFinished = False
+            self.mainFinished = True
             get_more_callback()            
         else:
             if last_batch:
                 self._remove_cursor()
                 self.mainFinished = True
-                if (self.countFinished) :
+                if self.countFinished:
                     """ Count will take care of finishing """                                        
                     self.finish()                                 
             else:
@@ -927,8 +928,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self.dblayer.insert(resources, callback=callback)
 
         for res in resources:
-            trc.publish(res["\$schema"], tornado.escape.json_encode(res))
-            trc.publish(res["\$schema"] + "/" + res["id"], tornado.escape.json_encode(res))
+            self.publish(res)
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True):
         """
@@ -1055,8 +1055,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return_resource=True)
         self.dblayer.insert(dict(resource._to_mongoiter()), callback=callback)
 
-        trc.publish(resource["\$schema"], tornado.escape.json_encode(resource))
-        trc.publish(resource["\$schema"] + "/" + res["id"], tornado.escape.json_encode(resource))
+        self.publish(resource)
 
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
         """
@@ -1126,45 +1125,44 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return
         self.finish()
 
+    def publish(self, resource):
+        for query in query_list:
+            is_member = True
+            tmpConditions = query["conditions"]
+
+            for condition, value in tmpConditions.iteritems():
+                if condition not in resource or resource[condition] != value:
+                    is_member = False
+                    break
+            if is_member:
+                trc.publish(str(query["channel"]), tornado.escape.json_encode(resource))
+                
+
 class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
         super(SubscriptionHandler, self).__init__(*args, **kwargs)
 
-    def open(self, resource_type = None, resource_id = None, query = None):
-        if resource_type is not None:
-            if resource_type in settings.SCHEMAS:
-                channel = settings.SCHEMAS[resource_type]
-                if resource_id is not None:
-                    channel += "/" + resource_id
-                    
-                self.channel = channel
-        else:
-            # TODO: Add channel functionality to arbitrary queries
-            #       Filters should be indexed by uid
-            #       and maintained locally at the Redis level.
-            #       In the future, these filters will need to be
-            #       synced with any other unis instances (possibly) via
-            #       Redis' sharding functionality.
+    def open(self, resource_type = None, resource_id = None):
+        try:
+            query_string = self.get_argument("query", None)
+            query = {}
+            if query_string:
+                query = json.loads(query_string)
             
-            #query = self.get_argument("query")
-            #if query == "":
-            #    self.write_message('Connection failed: Bad resource type or ID')
-            #    return
-            #else:
-            #    jsonQuery = json.loads(query)
-            #    self.channel = self.GenerateChannel(jsonQuery)
-            #    #AddChannelToFilter(channel)
-            
-            self.write_message('Arbitrary Queries not supported at this time')
-            return
+            query['\\$schema'] = settings.SCHEMAS[resource_type]
+            if resource_id:
+                query['id'] = resource_id
 
-        self.listen()
+            self.channel = self.AddQueryToFilter(query)
+            self.listen()
+        except Exception as exp:
+            return
         
     @tornado.gen.engine
     def listen(self):
         self.client = tornadoredis.Client()
         self.client.connect()
-        yield tornado.gen.Task(self.client.subscribe, self.channel)
+        yield tornado.gen.Task(self.client.subscribe, str(self.channel))
         self.client.listen(self.deliver)
         
     def on_message(self, msg):
@@ -1186,8 +1184,11 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
 
-    def GenerateChannel(query):
-        pass
+    def AddQueryToFilter(self, query):
+        global uuid, query_list
+        uuid = uuid + 1
+        query_list.append({ "channel": uuid, "conditions": query })
+        return uuid
 
 class CollectionHandler(NetworkResourceHandler):
     def initialize(self, collections, *args, **kwargs):
@@ -1838,7 +1839,7 @@ class DataHandler(NetworkResourceHandler):
         db_layer = self.application.get_db_layer(self._res_id, "ts", "ts",
                         True,  5000)
         query.pop("id", None)
-        options['ccallback']=self.countCallback
+        options['ccallback'] = self.countCallback
         self.countFinished = False 
-        self.mainFinished = False
+        self.mainFInished = False
         self._cursor = db_layer.find(**options)
