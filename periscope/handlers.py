@@ -478,10 +478,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             in_split = value.split(",")
             if len(in_split) > 1:
                 return process_in_query(key, in_split)[key]
-            operators = ["lt", "lte", "gt", "gte"]
+            operators = ["lt", "lte", "gt", "gte","not"]
             for op in operators:
                 if value.startswith(op + "="):
-                    val = {"$"+ op: process_value(key, value.lstrip(op + "="))}
+                    if op == "not":
+                        tmpVal = re.compile("^"+process_value(key, value.lstrip(op + "=")) + "$", re.IGNORECASE)
+                    else:                        
+                        tmpVal = process_value(key, value.lstrip(op + "="))                                
+                    val = {"$"+ op : tmpVal}
                     return val
             value_types = ["integer", "number", "string", "boolean"]
             for t in value_types:
@@ -543,6 +547,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query.pop("skip", None)
         if skip:
             skip = convert_value_type("skip", skip, "integer")
+            
+        sort = self.get_argument("sort", default=None)
+        query.pop("sort", None)
+        if sort:
+            sort = convert_value_type("sort", sort, "string")
         
         query_ret = []
         for arg in query:
@@ -578,7 +587,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                         ret.append(item)
                 query_ret["query"].update({"$and": ret})
 
-        ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip}
+        ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip , "sort" : sort}
         return ret_val
 
     def _get_cursor(self):
@@ -601,7 +610,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query = parsed["query"]
         fields = parsed["fields"]
         limit = parsed["limit"]
-        skip = parsed["skip"]
+        skip = parsed["skip"]        
+        sort = parsed["sort"]
+        
         is_list = not res_id
 
         if query["list"]:
@@ -612,9 +623,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query["query"]["status"] = {"$ne": "DELETED"}            
         callback = functools.partial(self._get_on_response,
                             new=True, is_list=is_list, query=query["query"])
-        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip)        
+        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)        
 
-    def _find(self, query, callback, fields=None, limit=None , skip=None):
+    def _find(self, query, callback, fields=None, limit=None , skip=None,sort=None):
         """Query the database.
 
         Parameters:
@@ -637,6 +648,20 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if "sort" not in options:
             options["sort"] = []
         options["sort"].append(("ts", -1))
+        if sort :                         
+            """ Parse sort options and create the array """
+            print "parsing sort"
+            sortStr = sort                        
+            """ Split it and then add it to array"""
+            sortOpt = sortStr.split(",")
+            for opt in sortOpt :
+                x = opt.split(":")
+                try :                    
+                    options["sort"].append((x[0],int(x[1])))                
+                except:
+                    """ Ignore , """
+                    print "Sort takes integer argument 1 or -1 "                
+                    #self.set_header('X-error', "Sort takes integer argument 1 or -1")                                                                                            
         options['skip']=skip
         options['ccallback']=self.countCallback
         self._query = query            
@@ -1771,7 +1796,7 @@ class DataHandler(NetworkResourceHandler):
                             new=True, is_list=is_list, query=query)
         self._find(query, callback, fields=fields, limit=limit)
 
-    def _find(self, query, callback, fields=None, limit=None):
+    def _find(self, query, callback, fields=None, limit=None,sort=None):
         """Query the database.
 
         Parameters:
@@ -1794,6 +1819,21 @@ class DataHandler(NetworkResourceHandler):
         if "sort" not in options:
             options["sort"] = []
         options["sort"].append(("ts", -1))
+        if sort : 
+            """ Parse sort options and create the array """            
+            sortStr = sort
+            options["sort"] = []
+            """ Split it and then add it to array"""
+            sortOpt = sortStr.split(",")
+            for opt in sortOpt :
+                x = opt.split(":")
+                try :                    
+                    options["sort"].append((x[0],int(x[1])))                
+                except:
+                    """ Ignore , """                    
+                    #self.set_header('X-error', "Sort takes integer argument 1 or -1")      
+                    print "Sort takes integer argument 1 or -1 "                
+                            
         self._query = query
         db_layer = self.application.get_db_layer(self._res_id, "ts", "ts",
                         True,  5000)
