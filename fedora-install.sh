@@ -3,7 +3,7 @@
 # Self-extracting bash script that installs UNIS and the MS
 #
 # create self extracting tarball like this (from parent dir):
-# 'tar zc peri-tornado | cat peri-tornado/ubuntu-install.sh - > peri-tornado.sh'
+# 'tar zc $DIR | cat $DIR/ubuntu-install.sh - > unis_installer.sh'
 # Supports: Debian based distributions
 # Depends: python 2.6
 
@@ -31,8 +31,8 @@ SKIP=`awk '/^__TARFILE_FOLLOWS__/ { print NR + 1; exit 0; }' $0`
 THIS=`pwd`/$0
 tail -n +$SKIP $THIS | tar -xz
 
-# Installation steps for LAMP Toolkit
-DIR=peri-tornado
+# Installation steps for UNIS/MS
+DIR=periscope-ps-unis
 
 GENSOURCES_FILE="/etc/yum.repos.d/10gen.repo"
 
@@ -53,8 +53,7 @@ yum -y install python-setuptools
 #sudo python setup.py install
 #cd ..
 
-yum -y install m2crypto
-yum -y install libnl-devel
+yum -y install m2crypto libnl-devel redis
 cd ${DIR}
 python ./setup.py install
 

@@ -72,6 +72,7 @@ Manual Installation notes:
 
 Required Packages (Note those packages are installed automatically by setup.py):
 - tornado>=2.3
+- tornado-redis
 - pymongo==2.1.1  # Won't work the newer versions
 - asyncmongo  # see notes below
 - unittest2

@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.incntre.iu.edu/schema/20140909/extent#",
+    "description": "An extent is some chunk of data, somewhere",
+    "name": "extent",
+    "type": "object",
+    "required": ["location", "size", "offset"],
+    "properties": {
+    	"location": {
+    	    "description": "Where the extent resides as a URI",
+    	    "type": "object",
+	    "required": ["read"]
+	    "properties": {
+	        "read": {
+		    "description": "Specific location of the read path of the extent",
+		    "type": "string",
+		    "format": "uri"
+		}
+		"write": {
+		    "description": "Specific location of the write path of the extent",
+		    "type": "string",
+		    "format": "uri"
+		}
+		"manage": {
+		    "description": "Specific location of the manage path of the extent",
+		    "type": "string",
+		    "format": "uri"
+		}
+	    }
+    	},
+	"size": {
+	    "description": "The size of an extent",
+	    "type": "integer"
+	},
+    	"offset": {
+    	    "description": "Offset of this chunk in overall file",
+	    "type": "integer"
+    	},
+	"index": {
+	    "description": "Relative index of an extent",
+	    "type": "integer"
+	}
+    }
+}

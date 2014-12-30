@@ -1054,8 +1054,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         callback = functools.partial(self.on_put, res_ref=res_ref, 
             return_resource=True)
         self.dblayer.insert(dict(resource._to_mongoiter()), callback=callback)
-
         self.publish(resource)
+        # TODO - Is this required ??????????///
+        trc.publish(resource["$schema"], tornado.escape.json_encode(resource))
+        trc.publish(resource["$schema"] + "/" + resource["id"], tornado.escape.json_encode(resource))
 
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
         """
@@ -1734,6 +1736,8 @@ class DataHandler(NetworkResourceHandler):
                 except TooManyConnections:
                     self.send_error(503, message="Too many DB connections")
                     return
+                trc.publish(settings.SCHEMAS["data"], tornado.escape.json_encode(body["data"]))
+                trc.publish(settings.SCHEMAS["data"] + "/" + self._res_id, tornado.escape.json_encode(body["data"]))
             else:
                 self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return
@@ -1764,6 +1768,8 @@ class DataHandler(NetworkResourceHandler):
                     except TooManyConnections:
                         self.send_error(503, message="Too many DB connections")
                         return
+                    trc.publish(settings.SCHEMAS["data"], tornado.escape.json_encode({mids[i]: data[mids[i]]}))
+                    trc.publish(settings.SCHEMAS["data"] + "/" + mids[i], tornado.escape.json_encode(data[mids[i]]))
                 else:
                     self.send_error(400, message="The collection for metadata ID '%s' does not exist" % mids[i])
                     return

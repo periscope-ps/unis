@@ -15,7 +15,7 @@ from tornado.options import define
 PERISCOPE_ROOT = os.path.dirname(os.path.abspath(__file__)) + os.sep
 sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
 #SCHEMA_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache")
-SCHEMA_CACHE_DIR = None
+SCHEMA_CACHE_DIR = "/var/unis/.cache"
 
 GCF_PATH = "/opt/gcf/src/"
 sys.path.append(os.path.dirname(GCF_PATH))
@@ -46,7 +46,7 @@ CLIENT_SSL_OPTIONS = {
 # Measurement Store settings.
 ######################################################################
 #UNIS_URL = "https://unis.incntre.iu.edu:8443"
-UNIS_URL = "http://localhost:8888"
+UNIS_URL = "http://localhost:9000"
 MS_ENABLE = True
 
 MS_CLIENT_CERT = "/usr/local/etc/certs/ms_cert.pem"
@@ -76,7 +76,7 @@ APP_SETTINGS = {
 ######################################################################
 # Mongo Database settings
 ######################################################################
-DB_NAME = "periscope_db"
+DB_NAME = "unis_db"
 DB_HOST = "127.0.0.1"
 DB_PORT = 27017
 
@@ -86,8 +86,8 @@ ASYNC_DB = {
     'host': DB_HOST,
     'port': DB_PORT,
     'mincached': 1,
-    'maxcached': 50,
-    'maxconnections': 250,
+    'maxcached': 5,
+    'maxconnections': 200,
     'dbname': DB_NAME,
 }
 

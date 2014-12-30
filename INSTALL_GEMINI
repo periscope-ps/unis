@@ -1,0 +1,143 @@
+== Installing and configuring UNIS for use in GENI/GEMINI ==
+
+The default UNIS configuration does not enable SSL or ABAC AA
+features used in GEMINI.  These instructions outline the
+additional dependencies and configuration steps needed to
+enable and test the use of GENI certificates and credentials
+when manipulating UNIS objects via the REST API.
+
+=== Required Software ===
+
+ * ABAC: http://abac.deterlab.net
+
+   This software can be installed from source or using the
+   available packages for your distribution.  UNIS will make
+   use of the ABAC python module.  'import ABAC' should work
+   from a python shell.
+
+ * GCF: http://trac.gpolab.bbn.com/gcf
+
+   The GCF/SFA python modules allow UNIS to parse GENI
+   certificates and credentials.  UNIS requires a PYTHONPATH
+   that includes the sfa.trust.credential module.
+
+ * Python OpenSSL wrapper/module.
+
+   Install an appropriate OS distribution package, e.g.,
+   'yum install pyOpenSSL'
+
+ * MongoDB
+
+   Install an appropriate OS distribution package, e.g.,
+   'yum install mongodb'
+
+=== UNIS Configuration ===
+
+Starting with a fresh clone of the UNIS repository:
+
+ > git clone git@github.com:periscope-ps/unis.git
+ > cd unis
+ > sudo python setup.py develop
+
+The setup.py scripts will download and install core dependencies
+for running UNIS.  The 'develop' argument specifies that UNIS
+will run out of the source directory, meaning you can edit files
+within the source tree and have them apply to the running service.
+
+At this point, executing 'periscoped' from a shell will start the 
+UNIS service without SSL and ABAC AA, e.g.:
+
+ > periscoped
+ ts=2014-08-03T17:23:35.666691Z event=periscope.periscope.start level=Info
+
+Now edit 'periscope/settings.py' and note the following options:
+
+ * GCF_PATH: The location of the GCF install.
+   GCF_PATH = "/opt/gcf/src/gcf/"
+
+ * ENABLE_SSL: True/False
+   ENABLE_SSL = True
+
+ * AUTH_STORE_DIR: The directory where certificates and credentials
+   will be stored. The default setting is an 'abac' directory within
+   the source tree.
+   AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
+
+ * SSL_OPTIONS: Specify the UNIS server certificate, key, and CA bundle.
+   
+   This configuration section controls SSL authentication based on
+   allowable client certs for a given CA bundle.  A self-signed server
+   certificate is included in the UNIS repository, as well as the GENI
+   CA bundle.  'ssl.CERT_REQUIRED' tells the SSL implementation to
+   require a client certificate for HTTPS connections.
+
+ * CLIENT_SSL_OPTIONS: Tell UNIS to use the specified cert/key for
+   connections to itself.  For ABAC Auth, it is recommended to use the
+   same server cert/key from the SSL_OPTIONS.
+
+   CLIENT_SSL_OPTIONS = {
+    'certfile': os.path.join(PERISCOPE_ROOT, "ssl/server.pem"),
+    'keyfile': os.path.join(PERISCOPE_ROOT, "ssl/server.key"),
+   }
+
+ * ENABLE_AUTH: True/False
+   ENABLE_AUTH = True 
+
+
+=== Enabling the MS (optional) ===
+ * MS_ENABLE: True/False
+
+ * UNIS_URL: The URL of the UNIS instance to contact. The UNIS and MS
+   can run as the same service.
+
+ * MS_CLIENT_CERT: The certificate used when contacting UNIS.
+
+ * MS_CLIENT_KEY:  The key used when contacting UNIS.
+
+ * GEMINI_NODE_INFO: Path to the GEMINI info file installed on each node
+   during the instrumentize process. Set to 'None' when not running
+   from within a GENI/GEMINI node resource.
+
+=== Testing GEMINI AA ===
+
+With the SSL and Auth configuration above, restarting periscoped should
+display the same log message as before.  A trace will be displayed if
+dependencies or configuration are missing.
+
+Use the script in 'examples/unis_client.py' to test the running instance.
+A valid GENI certificate and key can be used.
+
+ > ./unis_client.py https://localhost:8888/domains GET ~/.gcf/portal.pem ~/.gcf/portal.pem
+
+An empty response should be displayed.
+UNIS can associate a user with a given slice using a GENI slice credential:
+
+ > ./unis_client.py https://localhost:8888/credentials/genislice POST <cert> <key> <credential>
+
+UNIS can assign a role given an ABAC credential, for instance when
+registering a proxy certificate for use with UNIS:
+
+> ./unis_client.py https://localhost:8888/credentials/geniuser POST <cert> <key> <credential>
+
+A typical operation for GEMINI is to post a slice manifest to UNIS.  With a
+given GENI slice manifest in RSpec format, convert to UNIS format using
+unisencoder (https://github.com/periscope-ps/unisencoder):
+
+ > unisencoder -t rspec3 --slice_cred <GENI slice cred> -o <UNIS manifest> <GENI manifest>
+
+Any user that is allowed to post resources for a given slice (using the
+/credentials/{genislice,geniuser} endpoints above), can now POST this converted
+manifest to UNIS:
+
+ > ./unis_client.py https://localhost:8888/domains POST <cert> <key> <UNIS manifest>
+
+Only those users with access may view (GET) those same resources via the REST API.
+
+
+=== Running a persistent UNIS ===
+
+There is an example configuration for Supervisor (unis.supervisor.conf) 
+in the top level source directory.  Supervisor will manage the UNIS
+process(es) and allow for consistent logging.
+
+Supervisor can typically be installed via an OS distribution package.
