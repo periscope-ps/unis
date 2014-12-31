@@ -45,7 +45,7 @@ CLIENT_SSL_OPTIONS = {
 ######################################################################
 # Measurement Store settings.
 ######################################################################
-#UNIS_URL = "https://unis.incntre.iu.edu:8443"
+#UNIS_URL = "https://127.0.0.1:8443"
 UNIS_URL = "http://localhost:8888"
 MS_ENABLE = True
 
@@ -120,7 +120,7 @@ def config_logger():
                  nllog.TRACE)[3]
     else:
         log_level = (logging.WARN, logging.INFO, logging.DEBUG,
-                 nllog.TRACE)[0]
+                 nllog.TRACE)[3]
     log.setLevel(log_level)
 
 
@@ -148,20 +148,21 @@ MIME = {
 }
 
 SCHEMAS = {
-    'networkresource': 'http://unis.incntre.iu.edu/schema/20140214/networkresource#',
-    'node': 'http://unis.incntre.iu.edu/schema/20140214/node#',
-    'domain': 'http://unis.incntre.iu.edu/schema/20140214/domain#',
-    'port': 'http://unis.incntre.iu.edu/schema/20140214/port#',
-    'link': 'http://unis.incntre.iu.edu/schema/20140214/link#',
-    'path': 'http://unis.incntre.iu.edu/schema/20140214/path#',
-    'network': 'http://unis.incntre.iu.edu/schema/20140214/network#',
-    'topology': 'http://unis.incntre.iu.edu/schema/20140214/topology#',
-    'service': 'http://unis.incntre.iu.edu/schema/20140214/service#',
-    'blipp': 'http://unis.incntre.iu.edu/schema/20140214/blipp#',
-    'metadata': 'http://unis.incntre.iu.edu/schema/20140214/metadata#',
-    'data' : 'http://unis.incntre.iu.edu/schema/20140214/data#',
-    'datum' : 'http://unis.incntre.iu.edu/schema/20140214/datum#',
-    'measurement': 'http://unis.incntre.iu.edu/schema/20140214/measurement#',
+    'networkresource': 'http://127.0.0.1/schema/20140214/networkresource#',
+    'node': 'http://127.0.0.1/schema/20140214/node#',
+    'domain': 'http://127.0.0.1/schema/20140214/domain#',
+    'port': 'http://127.0.0.1/schema/20140214/port#',
+    'link': 'http://127.0.0.1/schema/20140214/link#',
+    'path': 'http://127.0.0.1/schema/20140214/path#',
+    'network': 'http://127.0.0.1/schema/20140214/network#',
+    'topology': 'http://127.0.0.1/schema/20140214/topology#',
+    'service': 'http://127.0.0.1/schema/20140214/service#',
+    'blipp': 'http://127.0.0.1/schema/20140214/blipp#',
+    'metadata': 'http://127.0.0.1/schema/20140214/metadata#',
+    'data' : 'http://127.0.0.1/schema/20140214/data#',
+    'datum' : 'http://127.0.0.1/schema/20140214/datum#',
+    'measurement': 'http://127.0.0.1/schema/20140214/measurement#',
+    'rule': 'http://127.0.0.1/schema/20140214/rule#',
 }
 
 # Default settings that apply to almost all network resources
@@ -341,7 +342,7 @@ topology = dict(default_resource_settings.items() + \
 metadatas = dict(default_resource_settings.items() + \
         {
             "name": "metadatas",
-            "pattern": "/metadata$", 
+            "pattern": "/metadata$",
             "model_class": "periscope.models.Metadata",
             "collection_name": "metadata",
             "schema": {MIME['PSJSON']: SCHEMAS["metadata"]},
@@ -360,7 +361,7 @@ metadata = dict(default_resource_settings.items() + \
 events = dict(default_resource_settings.items() + \
         {
             "name": "events",
-            "pattern": "/events$", 
+            "pattern": "/events$",
             "handler_class" : "periscope.handlers.EventsHandler",
             "model_class": "periscope.models.Event",
             "collection_name": "events_cache",
@@ -382,7 +383,7 @@ event = dict(default_resource_settings.items() + \
 datas = dict(default_resource_settings.items() + \
         {
             "name": "datas",
-            "pattern": "/data$", 
+            "pattern": "/data$",
             "handler_class" : "periscope.handlers.DataHandler",
             "model_class": "periscope.models.Data",
             "collection_name": None,
@@ -420,6 +421,25 @@ measurement = dict(default_resource_settings.items() + \
         }.items()
 )
 
+rules = dict(default_resource_settings.items() + \
+        {
+            "name": "rules",
+            "pattern": "/rules$",
+            "model_class": "periscope.models.Rule",
+            "collection_name": "rules",
+            "schema": {MIME['PSJSON']: SCHEMAS["rule"]},
+        }.items()
+)
+rule = dict(default_resource_settings.items() + \
+        {
+            "name": "rule",
+            "pattern": "/rules/(?P<res_id>[^\/]*)$",
+            "model_class": "periscope.models.Rule",
+            "collection_name": "rules",
+            "schema": {MIME['PSJSON']: SCHEMAS["rule"]},
+        }.items()
+)
+
 collections = {
     "links": link,
     "ports": port,
@@ -430,6 +450,7 @@ collections = {
     "domains": domain,
     "topologies": topology,
     "measurements": measurement,
+    "rules":rule,
 }
 
 topologies["collections"] = collections
@@ -464,11 +485,13 @@ Resources = {
     "datas" : datas,
     "measurements": measurements,
     "measurement" : measurement,
+    "rules":rules,
+    "rule":rule,
 }
 
 main_handler_settings = {
     "resources": ["links", "ports", "nodes", "services", "paths",
-        "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements"],
+        "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements", "rules"],
     "name": "main",
     "base_url": "",
     "pattern": "/$",

@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
+    "id": "http://127.0.0.1/schema/20140214/rule#",
+    "description": "Rule",
+    "name": "Rule",
+    "type": "object",
+    "extends": {
+        "$ref": "http://unis.incntre.iu.edu/schema/20140214/networkresource#"
+    },
+    "properties": {
+        "match": {
+            "description": "match of the openflow rule",
+            "required": false,
+            "type": "string"
+        }
+        "action":{
+            "description": "actions of the openflow rule"
+            "required": false,
+            "type": "string"
+        }
+    }
+}
