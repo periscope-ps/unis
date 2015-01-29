@@ -162,7 +162,7 @@ SCHEMAS = {
     'data' : 'http://unis.incntre.iu.edu/schema/20140214/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20140214/datum#',
     'measurement': 'http://unis.incntre.iu.edu/schema/20140214/measurement#',
-    'file': 'http://unis.incntre.iu.edu/schema/20140909/exnode#'
+    'exnode': 'http://unis.incntre.iu.edu/schema/exnode/3/exnode#'
 }
 
 # Default settings that apply to almost all network resources
@@ -431,20 +431,22 @@ measurement = dict(default_resource_settings.items() + \
 
 exnodes = dict(default_resource_settings.items() + \
          {
-            "name": "exnodes",
-            "pattern": "/files$",
-            "model_class": "periscope.models.Exnode",
-            "collection_name": "exnodes",
-            "schema": {MIME['PSJSON']: SCHEMAS["file"]},
+             "name"                   : "exnodes",
+             "pattern"                : "/exnodes$",
+             "handler_class"          : "periscope.handlers.ExnodeHandler",
+             "model_class"            : "periscope.models.Exnode",
+             "collection_name"        : "exnodes",
+             "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
          }.items()
 )
 exnode = dict(default_resource_settings.items() + \
          {
-           "name": "exnode",
-           "pattern": "/files/(?P<res_id>[^\/]*)$",
-           "model_class": "periscope.models.Exnode",
-           "collection_name": "exnodes",
-           "schema": {MIME['PSJSON']: SCHEMAS["file"]},
+             "name"                   : "exnode",
+             "pattern"                : "/exnodes/(?P<res_id>[^\/]*)$",
+             "handler_class"          : "periscope.handlers.ExnodeHandler",
+             "model_class"            : "periscope.models.Exnode",
+             "collection_name"        : "exnodes",
+             "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
          }.items()
 )
 

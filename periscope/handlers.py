@@ -8,6 +8,7 @@ import json
 import re
 import functools
 import jsonpointer
+import jsonschema
 from periscope.models import schemaLoader
 from jsonpath import jsonpath
 from netlogger import nllog
@@ -701,7 +702,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             del self._cursor
 
     def _get_on_response(self, response, error, new=False,
-                        is_list=False, query=None, last_batch=False):
+                        is_list=False, query=None, last_batch=False):       
         """callback for get request
 
         Parameters:
@@ -935,6 +936,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         HTTP POST callback to send the results to the client.
         """
         
+        print "Calling on_post"
         if error:
             if isinstance(error, IntegrityError):
                 self.send_error(409,
@@ -946,7 +948,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                         str(error).replace("\"", "\\\""))
             return
         
+        print "Finding Resource"
         if return_resources:
+            print "Attempting to Return Resource"
             query = {"$or": []}
             for res_ref in res_refs:
                 query["$or"].append(res_ref)
@@ -980,6 +984,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             else:
                 self.write(dumps_mongo(unescaped, indent=2))
         except Exception as exp:
+            print "Failed to return POST: %s" % (str(exp).replace("\"", "\\\""))
             self.send_error(500,
                     message="Could't process the POST request '%s'" % \
                         str(exp).replace("\"", "\\\""))
@@ -1055,9 +1060,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return_resource=True)
         self.dblayer.insert(dict(resource._to_mongoiter()), callback=callback)
         self.publish(resource)
-        # TODO - Is this required ??????????///
-        trc.publish(resource["$schema"], tornado.escape.json_encode(resource))
-        trc.publish(resource["$schema"] + "/" + resource["id"], tornado.escape.json_encode(resource))
 
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
         """
@@ -1638,6 +1640,66 @@ class EventsHandler(NetworkResourceHandler):
             except Exception as exp:
                 self.send_error(400, message="1 At least one of the metadata ID is invalid.")
                 return                
+
+class ExnodeHandler(NetworkResourceHandler):
+    @tornado.web.asynchronous
+    @tornado.web.removeslash
+    def post(self, res_id=None):
+        if self.accept_content_type not in self.schemas_single:
+            message = "Schema is not defined for content of type '%s'" % (self.accept_content_type)
+            self.send_error(500, message = message)
+            return
+
+        if res_id:
+            message = "NetworkResource ID should not be defined."
+            self.send_error(500, message = message)
+            return
+
+        resource = json.loads(self.request.body)
+        query = {}
+        query["parent"] = resource["parent"]
+        query["name"]   = resource["name"]
+        callback = functools.partial(self._on_get_siblings, _candidateExnode = self.request)
+        self._cursor = self.dblayer.find(query, callback)
+
+
+    @tornado.web.asynchronous
+    @tornado.web.removeslash
+    def _on_get_siblings(self, response, error, _candidateExnode = None):
+        if error:
+            self.send_error(500, message = error)
+            return
+        
+        if response:
+            # There is already an exnode sibling with that name
+            # Get the Id of the old exnode and update the content
+            #  with the content of the new exnode
+
+            res_id = response[0].get(self.Id)
+            body = json.loads(_candidateExnode.body)
+            resource = self._model_class(body)
+            resource["$schema"] = response[0].get("$schema", self.schemas_single[MIME['PSJSON']])
+            resource["selfRef"] = response[0].get("selfRef")
+            resource["modified"] = resource[self.timestamp]
+            resource[self.Id]   = response[0].get("id")
+            res_refs = []
+            ref = {}
+            ref[self.Id] = res_id
+            ref[self.timestamp] = resource[self.timestamp]
+            res_refs.append(ref)
+            resource = dict(resource._to_mongoiter())
+            
+            query = {}
+            query[self.Id] = res_id
+            
+            callback = functools.partial(self.on_post, res_refs = res_refs, return_resources = True)
+            self.dblayer.update(query, resource, callback = callback)
+        else:
+            # This is a unique exnode
+            # Execute normal post
+            self.request = _candidateExnode
+            super(ExnodeHandler, self).post_psjson()
+
         
 class DataHandler(NetworkResourceHandler):        
         
@@ -1736,8 +1798,6 @@ class DataHandler(NetworkResourceHandler):
                 except TooManyConnections:
                     self.send_error(503, message="Too many DB connections")
                     return
-                trc.publish(settings.SCHEMAS["data"], tornado.escape.json_encode(body["data"]))
-                trc.publish(settings.SCHEMAS["data"] + "/" + self._res_id, tornado.escape.json_encode(body["data"]))
             else:
                 self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return
@@ -1768,8 +1828,6 @@ class DataHandler(NetworkResourceHandler):
                     except TooManyConnections:
                         self.send_error(503, message="Too many DB connections")
                         return
-                    trc.publish(settings.SCHEMAS["data"], tornado.escape.json_encode({mids[i]: data[mids[i]]}))
-                    trc.publish(settings.SCHEMAS["data"] + "/" + mids[i], tornado.escape.json_encode(data[mids[i]]))
                 else:
                     self.send_error(400, message="The collection for metadata ID '%s' does not exist" % mids[i])
                     return
