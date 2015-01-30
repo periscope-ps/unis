@@ -1,7 +1,7 @@
 import os
 from subprocess import call
 
-file = '{ "created": 14532097173, "modified": 14532097173, "name": "test_file6", "size": 1450000, "parent": null, "mode": "file"}'
+exnode = '{ "created": 14532097173, "modified": 14532097173, "name": "test_file6", "size": 1450000, "parent": null, "mode": "file"}'
 
 #measurement = '{ "id": "2", "configuration": { "default_collection_size": 10000 }, "eventTypes": ["test1", "test2"] }'
 
@@ -12,7 +12,7 @@ file = '{ "created": 14532097173, "modified": 14532097173, "name": "test_file6",
 
 
 print "\033[34mPublishing id \033[36m26\033[34m to files\033[0m"
-print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", file, "http://localhost:8888/exnodes"])
+print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", exnode, "http://localhost:8888/exnodes"])
 
 #print "\033[34mPublishing id \033[36m2\033[34m to measurements\033[0m"
 #call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", measurement, "http://localhost:8888/measurements"])

@@ -936,7 +936,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         HTTP POST callback to send the results to the client.
         """
         
-        print "Calling on_post"
         if error:
             if isinstance(error, IntegrityError):
                 self.send_error(409,
@@ -948,9 +947,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                         str(error).replace("\"", "\\\""))
             return
         
-        print "Finding Resource"
         if return_resources:
-            print "Attempting to Return Resource"
             query = {"$or": []}
             for res_ref in res_refs:
                 query["$or"].append(res_ref)
