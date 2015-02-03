@@ -1902,5 +1902,5 @@ class DataHandler(NetworkResourceHandler):
         query.pop("id", None)
         options['ccallback'] = self.countCallback
         self.countFinished = False 
-        self.mainFInished = False
+        self.mainFinished = False
         self._cursor = db_layer.find(**options)
