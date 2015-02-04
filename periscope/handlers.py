@@ -494,11 +494,19 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 if value.startswith(t + ":"):
                     val = convert_value_type(key, value.split(t + ":")[1], t)
                     return val
-            
             if key in ["ts", "ttl"]:
                 val = convert_value_type(key, value, "number")
                 return val
             return value
+
+        def process_exists_query(key, value):
+            value = value[7:]
+            or_q = []
+            or_q.append({key: { "$exists": convert_value_type(key, value, "boolean") } })
+            if value == "false":
+                or_q.append({ key: None })
+            return  { "$or": or_q }
+            
                 
         def process_in_query(key, values):
             in_q = [process_value(key, val) for val in values]       
@@ -562,7 +570,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 query_ret.append(and_q)
                 continue
             query[arg] = ",".join(query[arg])
-            
+
+            if query[arg].startswith("exists="):
+                query_ret.append(process_exists_query(arg, query[arg]))
+                continue
             split_or = query[arg].split("|")
             if len(split_or) > 1:
                 query_ret.append(process_or_query(arg, split_or))
@@ -1127,6 +1138,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self.finish()
 
     def publish(self, resource):
+        global query_list
         for query in query_list:
             is_member = True
             tmpConditions = query["conditions"]
@@ -1161,6 +1173,8 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         
     @tornado.gen.engine
     def listen(self):
+        global query_list
+
         self.client = tornadoredis.Client()
         self.client.connect()
         yield tornado.gen.Task(self.client.subscribe, str(self.channel))
@@ -1187,9 +1201,10 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
 
     def AddQueryToFilter(self, query):
         global uuid, query_list
+        channel = uuid
         uuid = uuid + 1
-        query_list.append({ "channel": uuid, "conditions": query })
-        return uuid
+        query_list.append({ "channel": channel, "conditions": query })
+        return channel
 
 class CollectionHandler(NetworkResourceHandler):
     def initialize(self, collections, *args, **kwargs):
@@ -1795,6 +1810,10 @@ class DataHandler(NetworkResourceHandler):
                 except TooManyConnections:
                     self.send_error(503, message="Too many DB connections")
                     return
+                
+                body["data"]["id"] = self._res_id
+                body["data"]["\\$schema"] = settings.SCHEMAS["data"]
+                self.publish(body["data"])
             else:
                 self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return
@@ -1825,6 +1844,11 @@ class DataHandler(NetworkResourceHandler):
                     except TooManyConnections:
                         self.send_error(503, message="Too many DB connections")
                         return
+                    
+                    push_data = data[mids[i]][0]
+                    push_data["id"] = mids[i]
+                    push_data["\\$schema"] = settings.SCHEMAS["data"]
+                    self.publish(push_data)
                 else:
                     self.send_error(400, message="The collection for metadata ID '%s' does not exist" % mids[i])
                     return
