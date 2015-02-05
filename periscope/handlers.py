@@ -1148,8 +1148,19 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     is_member = False
                     break
             if is_member:
-                trc.publish(str(query["channel"]), tornado.escape.json_encode(resource))
+                trimmed_resource = self.trim_published_resource(resource, query["fields"])
+                trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
                 
+
+    def trim_published_resource(self, resource, fields):
+        result = {}
+        if fields == None:
+            return resource
+        else:
+            for field in fields:
+                result[field] = resource[field]
+        
+            return result
 
 class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
@@ -1158,15 +1169,21 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def open(self, resource_type = None, resource_id = None):
         try:
             query_string = self.get_argument("query", None)
+            fields_string = self.get_argument("fields", None)
             query = {}
+            fields = None
+
             if query_string:
                 query = json.loads(query_string)
+
+            if fields_string:
+                fields = fields_string.split(',')
             
             query['\\$schema'] = settings.SCHEMAS[resource_type]
             if resource_id:
                 query['id'] = resource_id
 
-            self.channel = self.AddQueryToFilter(query)
+            self.channel = self.AddQueryToFilter(query, fields)
             self.listen()
         except Exception as exp:
             return
@@ -1199,11 +1216,11 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
 
-    def AddQueryToFilter(self, query):
+    def AddQueryToFilter(self, query, fields):
         global uuid, query_list
         channel = uuid
         uuid = uuid + 1
-        query_list.append({ "channel": channel, "conditions": query })
+        query_list.append({ "channel": channel, "conditions": query, "fields": fields })
         return channel
 
 class CollectionHandler(NetworkResourceHandler):
@@ -1928,3 +1945,9 @@ class DataHandler(NetworkResourceHandler):
         self.countFinished = False 
         self.mainFinished = False
         self._cursor = db_layer.find(**options)
+
+    def trim_published_resource(self, resource, fields):
+        result = {}
+        result["value"] = resource["value"]
+        result["ts"]    = resource["ts"]
+        return result
