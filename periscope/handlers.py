@@ -1216,11 +1216,16 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
 
-    def AddQueryToFilter(self, query, fields):
+    def AddQueryToFilter(self, conditions, fields):
         global uuid, query_list
-        channel = uuid
+        
+        for query in query_list:
+            if conditions == query["conditions"]:
+                return query["channel"]
+
+        channel = str(uuid)
         uuid = uuid + 1
-        query_list.append({ "channel": channel, "conditions": query, "fields": fields })
+        query_list.append({ "channel": channel, "conditions": conditions, "fields": fields })
         return channel
 
 class CollectionHandler(NetworkResourceHandler):
