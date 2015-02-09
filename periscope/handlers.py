@@ -488,13 +488,22 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             in_split = value.split(",")
             if len(in_split) > 1:
                 return process_in_query(key, in_split)[key]
-            operators = ["lt", "lte", "gt", "gte","not"]
+            operators = ["lt", "lte", "gt", "gte","not","eq","null"]
             for op in operators:
                 if value.startswith(op + "="):
                     if op == "not":
                         tmpVal = re.compile("^"+process_value(key, value.lstrip(op + "=")) + "$", re.IGNORECASE)
+                    elif op == "eq":                        
+                        tmpVal = process_value(key, value.lstrip(op + "="))
+                        tmpVal = float(tmpVal)
+                        return tmpVal
+                    elif op =="null":
+                        return None
                     else:                        
-                        tmpVal = process_value(key, value.lstrip(op + "="))                                
+                        tmpVal = process_value(key, value.lstrip(op + "="))
+                        if op in ["lt", "lte", "gt", "gte"]:
+                            tmpVal = float(tmpVal)
+
                     val = {"$"+ op : tmpVal}
                     return val
             value_types = ["integer", "number", "string", "boolean"]
@@ -502,7 +511,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 if value.startswith(t + ":"):
                     val = convert_value_type(key, value.split(t + ":")[1], t)
                     return val
-            if key in ["ts", "ttl"]:
+            if key in ["ts", "ttl"] or op in ["lt", "lte", "gt", "gte"]:
                 val = convert_value_type(key, value, "number")
                 return val
             return value
@@ -570,7 +579,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query.pop("sort", None)
         if sort:
             sort = convert_value_type("sort", sort, "string")
-        
+                
         query_ret = []
         for arg in query:
             if isinstance(query[arg], list) and len(query[arg]) > 1:
