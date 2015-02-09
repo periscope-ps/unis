@@ -78,6 +78,14 @@ trc.connect()
 query_list = []
 uuid = 0
 
+def decode (str) :
+    while True:
+        dec = urllib2.unquote(str)
+        if dec == str:
+            break
+        str = dec
+    return dec
+
 class SSEHandler(tornado.web.RequestHandler):
     """
     Handles Server-Sent Events (SSE) requests as specified in
@@ -570,7 +578,12 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 query_ret.append(and_q)
                 continue
             query[arg] = ",".join(query[arg])
-
+            if query[arg].startswith("reg="):
+                param = decode(query[arg][4:])
+                print "Using regex ", param
+                val = re.compile(process_value(arg,param), re.IGNORECASE)
+                query_ret.append({arg: val})
+                continue
             if query[arg].startswith("exists="):
                 query_ret.append(process_exists_query(arg, query[arg]))
                 continue
@@ -584,7 +597,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 query_ret.append(in_q)
             else:
                 query_ret.append({arg: process_value(arg, split[0])})
-
         if query_ret:
             query_ret = {"list": True, "query": {"$and": query_ret}}
         else:
