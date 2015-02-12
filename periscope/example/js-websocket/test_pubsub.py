@@ -1,7 +1,7 @@
 import os
 from subprocess import call
 
-exnode = '{ "created": 14532097173, "modified": 14532097173, "name": "test_file6", "size": 1450000, "parent": null, "mode": "file"}'
+exnode = '{ "created": 14532097173, "modified": 14532097173, "name": "test_file6", "size": 1450000, "parent": null, "mode": "file", "extents": [ { "read": "http://www.stuff.com" } ] }'
 
 #measurement = '{ "id": "2", "configuration": { "default_collection_size": 10000 }, "eventTypes": ["test1", "test2"] }'
 

@@ -162,7 +162,8 @@ SCHEMAS = {
     'data' : 'http://unis.incntre.iu.edu/schema/20140214/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20140214/datum#',
     'measurement': 'http://unis.incntre.iu.edu/schema/20140214/measurement#',
-    'exnode': 'http://unis.incntre.iu.edu/schema/exnode/3/exnode#'
+    'exnode': 'http://unis.incntre.iu.edu/schema/exnode/3/exnode#',
+    'extent': 'http://unis.incntre.iu.edu/schema/exnode/3/extent#',
 }
 
 # Default settings that apply to almost all network resources
@@ -450,6 +451,25 @@ exnode = dict(default_resource_settings.items() + \
          }.items()
 )
 
+extents = dict(default_resource_settings.items() + \
+         {
+             "name"                   : "extents",
+             "pattern"                : "/extents$",
+             "model_class"            : "periscope.models.Extent",
+             "collection_name"        : "extents",
+             "schema": {MIME['PSJSON']: SCHEMAS["extent"]},
+         }.items()
+)
+extent = dict(default_resource_settings.items() + \
+         {
+             "name"                   : "extent",
+             "pattern"                : "/extents/(?P<res_id>[^\/]*)$",
+             "model_class"            : "periscope.models.Extent",
+             "collection_name"        : "extents",
+             "schema": {MIME['PSJSON']: SCHEMAS["extent"]},
+         }.items()
+)
+
 itemSubscription = {
     "base_url"      : "",
     "name"          : "itemSubscription",
@@ -517,6 +537,8 @@ Resources = {
     "measurement" : measurement,
     "exnodes"     : exnodes,
     "exnode"      : exnode,
+    "extents"     : extents,
+    "extent"      : extent,
 }
 
 Subscriptions = {
@@ -527,7 +549,7 @@ Subscriptions = {
 
 main_handler_settings = {
     "resources": ["links", "ports", "nodes", "services", "paths",
-        "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements", "exnodes"],
+                  "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements", "exnodes", "extents"],
     "name": "main",
     "base_url": "",
     "pattern": "/$",
