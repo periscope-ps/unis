@@ -9,6 +9,7 @@ import re
 import functools
 import jsonpointer
 import jsonschema
+import uuid
 from periscope.models import schemaLoader
 from jsonpath import jsonpath
 from netlogger import nllog
@@ -76,7 +77,6 @@ CACHE = {
 trc = tornadoredis.Client()
 trc.connect()
 query_list = []
-uuid = 0
 
 def decode (str) :
     while True:
@@ -1238,14 +1238,13 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         return True
 
     def AddQueryToFilter(self, conditions, fields):
-        global uuid, query_list
+        global query_list
         
         for query in query_list:
             if conditions == query["conditions"]:
                 return query["channel"]
 
-        channel = str(uuid)
-        uuid = uuid + 1
+        channel = uuid.uuid4().hex
         query_list.append({ "channel": channel, "conditions": conditions, "fields": fields })
         return channel
 
