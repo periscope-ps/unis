@@ -162,8 +162,8 @@ SCHEMAS = {
     'data' : 'http://unis.incntre.iu.edu/schema/20140214/data#',
     'datum' : 'http://unis.incntre.iu.edu/schema/20140214/datum#',
     'measurement': 'http://unis.incntre.iu.edu/schema/20140214/measurement#',
-    'exnode': 'http://unis.incntre.iu.edu/schema/exnode/3/exnode#',
-    'extent': 'http://unis.incntre.iu.edu/schema/exnode/3/extent#',
+    'exnode': 'http://unis.incntre.iu.edu/schema/exnode/4/exnode#',
+    'extent': 'http://unis.incntre.iu.edu/schema/exnode/4/extent#',
 }
 
 # Default settings that apply to almost all network resources
@@ -438,6 +438,12 @@ exnodes = dict(default_resource_settings.items() + \
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
+             "collections": [
+                 { "name": "extents", "collection_name": "extents" }
+             ],
+             "models": [
+                 { "name": "extents", "model_class": "periscope.models.Extent" }
+             ]
          }.items()
 )
 exnode = dict(default_resource_settings.items() + \
@@ -448,6 +454,12 @@ exnode = dict(default_resource_settings.items() + \
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
+             "collections": [
+                 { "name": "extents", "collection_name": "extents" }
+             ],
+             "models": [
+                 { "name": "extents", "model_class": "periscope.models.Extent" }
+             ]
          }.items()
 )
 

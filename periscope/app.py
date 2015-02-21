@@ -132,17 +132,36 @@ class PeriscopeApplication(tornado.web.Application):
         
         kwargs: additional handler specific arguments
         """
+        
         # Load classes
         if type(handler_class) in [str, unicode]:
             handler_class = load_class(handler_class)
         if type(model_class) in [str, unicode]:
             model_class = load_class(model_class)
         
+        try:
+            models = {}
+            for model in kwargs["models"]:
+                if type(model["model_class"]) in [str, unicode]:
+                    models[model["name"]] = load_class(model["model_class"])
+            kwargs["models"] = models
+        except:
+            pass
+
         # Prepare the DBlayer
         # Prepare the DBlayer
-        db_layer = self.get_db_layer(collection_name,
-                        id_field_name, timestamp_field_name,
-                        is_capped_collection, capped_collection_size)
+        db_layer = self.get_db_layer(collection_name, id_field_name, timestamp_field_name, is_capped_collection, capped_collection_size)
+        
+        try:
+            layers = {}
+            for collection in kwargs["collections"]:
+                layer = self.get_db_layer(collection["collection_name"],
+                                          id_field_name, timestamp_field_name,
+                                          is_capped_collection, capped_collection_size)
+                layers[collection["name"]] = (layer)
+            kwargs["collections"] = layers
+        except:
+            pass
         
         # Make the handler
         handler = (
@@ -170,7 +189,8 @@ class PeriscopeApplication(tornado.web.Application):
                 name=name
             )
          )
-         return scm_handler        
+         return scm_handler
+
     
     def _make_main_handler(self, name,  pattern, base_url, handler_class, resources):
         if type(handler_class) in [str, unicode]:

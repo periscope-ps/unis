@@ -423,7 +423,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self.countFinished = True
         if (self.mainFinished):
             """ Main will take care of finishing """                        
-            self.finish()        
+            self.finish()
                         
     def write_error(self, status_code, **kwargs):
         """
@@ -444,6 +444,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 result += '"%s": "%s",' % (key, kwargs[key])
             result = result.rstrip(",") + "}\n"
             self.write(result)
+
             self.finish()
 
     def set_default_headers(self):
@@ -816,14 +817,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if keep_alive and not last_batch:
             self.flush()
             self.mainFinished = True
-            get_more_callback()            
+            get_more_callback()  
         else:
             if last_batch:
                 self._remove_cursor()
                 self.mainFinished = True
                 if self.countFinished:
-                    """ Count will take care of finishing """                                        
-                    self.finish()                                 
+                    """ Count will take care of finishing """
+                    self.finish()
             else:
                 self.mainFinished = False
                 get_more_callback()
@@ -894,7 +895,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self.request.body = json.dumps(body)
         return self.post_psjson()
 
-    def post_psjson(self):
+    def post_psjson(self, **kwargs):
         """
         Handles HTTP POST request with Content Type of PSJSON.
         """
@@ -928,12 +929,12 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             try:
                 item = resources[index]
                 item["selfRef"] = "%s/%s" % \
-                    (self.request.full_url().split('?')[0], item[self.Id])
+                                  (self.request.full_url().split('?')[0], item[self.Id])
                 item["$schema"] = item.get("$schema", self.schemas_single[MIME['PSJSON']])
                 if item["$schema"] != self.schemas_single[self.accept_content_type]:
                     self.send_error(400,
-                        message="Not valid body '%s'; expecting $schema: '%s'." % \
-                        (item["$schema"], self.schemas_single[self.accept_content_type]))
+                                    message="Not valid body '%s'; expecting $schema: '%s'." % \
+                                    (item["$schema"], self.schemas_single[self.accept_content_type]))
                     return
                 if run_validate == True:
                     item._validate()
@@ -957,13 +958,13 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 return
 
         callback = functools.partial(self.on_post,
-                    res_refs=res_refs, return_resources=True)
+                                     res_refs=res_refs, return_resources=True, **kwargs)
         self.dblayer.insert(resources, callback=callback)
 
         for res in resources:
             self.publish(res)
 
-    def on_post(self, request, error=None, res_refs=None, return_resources=True):
+    def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
         """
         HTTP POST callback to send the results to the client.
         """
@@ -1160,6 +1161,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
     def publish(self, resource):
         global query_list
+        
         for query in query_list:
             is_member = True
             tmpConditions = query["conditions"]
@@ -1188,6 +1190,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         super(SubscriptionHandler, self).__init__(*args, **kwargs)
 
     def open(self, resource_type = None, resource_id = None):
+        global query_list
         try:
             query_string = self.get_argument("query", None)
             fields_string = self.get_argument("fields", None)
@@ -1697,6 +1700,30 @@ class EventsHandler(NetworkResourceHandler):
                 return                
 
 class ExnodeHandler(NetworkResourceHandler):
+    def initialize(self, dblayer, base_url,
+            Id="id",
+            timestamp="ts",
+            schemas_single=None,
+            schemas_list=None,
+            allow_get=False,
+            allow_post=True,
+            allow_put=True,
+            allow_delete=True,
+            tailable=False,
+            model_class=None,
+            accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']],
+            content_types_mime=[MIME['SSE'], MIME['PSJSON'],
+                                MIME['PSBSON'], MIME['PSXML'], MIME['HTML']],
+                   collections={},
+                   models={}):
+        self.extent_layer = collections["extents"]
+        self.extent_model = models["extents"]
+        super(ExnodeHandler, self).initialize(dblayer=dblayer, base_url=base_url, Id=Id, timestamp=timestamp, 
+                                              schemas_single=schemas_single, schemas_list=schemas_list,
+                                              allow_get=allow_get, allow_post=allow_post, allow_put=allow_put,
+                                              allow_delete=allow_delete, tailable=tailable, model_class=model_class,
+                                              accepted_mime=accepted_mime, content_types_mime=content_types_mime)
+    
     @tornado.web.asynchronous
     @tornado.web.removeslash
     def post(self, res_id=None):
@@ -1704,39 +1731,47 @@ class ExnodeHandler(NetworkResourceHandler):
             message = "Schema is not defined for content of type '%s'" % (self.accept_content_type)
             self.send_error(500, message = message)
             return
-
+        
         if res_id:
             message = "NetworkResource ID should not be defined."
             self.send_error(500, message = message)
             return
-
+        
         resource = json.loads(self.request.body)
         query = {}
         query["parent"] = resource["parent"]
         query["name"]   = resource["name"]
         callback = functools.partial(self._on_get_siblings, _candidateExnode = self.request)
         self._cursor = self.dblayer.find(query, callback)
-
-
+        
+        
     @tornado.web.asynchronous
     @tornado.web.removeslash
     def _on_get_siblings(self, response, error, _candidateExnode = None):
         if error:
             self.send_error(500, message = error)
             return
+
+        body     = json.loads(_candidateExnode.body)
+        resource = self._model_class(body)
+        extents = []
+        try:
+            extents  = body["extents"]
+            body["extents"] = resource["extents"] = []
+            _candidateExnode.body = json.dumps(body)
+        except:
+            pass
         
         if response:
             # There is already an exnode sibling with that name
             # Get the Id of the old exnode and update the content
             #  with the content of the new exnode
-
+            
             res_id = response[0].get(self.Id)
-            body = json.loads(_candidateExnode.body)
-            resource = self._model_class(body)
-            resource["$schema"] = response[0].get("$schema", self.schemas_single[MIME['PSJSON']])
-            resource["selfRef"] = response[0].get("selfRef")
+            resource["$schema"]  = response[0].get("$schema", self.schemas_single[MIME['PSJSON']])
+            resource["selfRef"]  = response[0].get("selfRef")
             resource["modified"] = resource[self.timestamp]
-            resource[self.Id]   = response[0].get("id")
+            resource[self.Id]    = response[0].get("id")
             res_refs = []
             ref = {}
             ref[self.Id] = res_id
@@ -1747,13 +1782,143 @@ class ExnodeHandler(NetworkResourceHandler):
             query = {}
             query[self.Id] = res_id
             
-            callback = functools.partial(self.on_post, res_refs = res_refs, return_resources = True)
+            for extent in extents:
+                extent["parent"] = res_id
+            
+            # Remove potentailly orphaned extents
+            remove_query = {}
+            remove_query["parent"] = res_id
+            self.extent_layer.remove(remove_query, callback = lambda *_, **__: None)
+            
+            callback = functools.partial(self.on_post, res_refs = res_refs, return_resources = True, extents = extents)
             self.dblayer.update(query, resource, callback = callback)
+            self.publish(resource)
         else:
             # This is a unique exnode
             # Execute normal post
             self.request = _candidateExnode
-            super(ExnodeHandler, self).post_psjson()
+            super(ExnodeHandler, self).post_psjson(extents = extents)
+
+    def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
+        extents = []
+
+        try:
+            if kwargs["extents"]:
+                for extent in kwargs["extents"]:
+                    tmpExtent = self.extent_model(extent)
+                    tmpExtent["parent"] = res_refs[0]["id"]
+                    tmpExtent["selfRef"] = "%s/%s/%s" % (self.request.full_url().split('?')[0].rsplit('/', 1)[0],
+                                                     "extents",
+                                                     tmpExtent[self.Id])
+                    tmpExtent["$schema"] = settings.SCHEMAS["extent"]
+                    mongo_extent = dict(tmpExtent._to_mongoiter())
+                    extents.append(mongo_extent)
+                    self.publish(mongo_extent)
+                
+                self.extent_layer.insert(extents, lambda *_, **__: None)
+        except Exception as exp:
+            self.send_error(400, message="decode: could not decode extents")
+            
+        super(ExnodeHandler, self).on_post(request = request, error = error, res_refs = res_refs, return_resources = return_resources, **kwargs)
+
+
+    @tornado.web.asynchronous
+    @tornado.web.removeslash            
+    def get(self, res_id = None):
+        self._response_list = {}
+        super(ExnodeHandler, self).get(res_id)
+
+    def _get_on_response(self, response, error, new=False,
+                        is_list=False, query=None, last_batch=False):       
+        """callback for get request
+
+        Parameters:
+            response: the response body from the database
+            error: any error messages from the database.
+            new: True if this is the first time to call this method.
+            is_list: If True listing is requered, for example /nodes,
+                    otherwise it's a single object like /nodes/node_id
+        """
+        if error:
+            self.send_error(500, message=error)
+            return
+        keep_alive = self.supports_streaming
+        if new and not response and not is_list:
+            self.send_error(404)
+            return
+        if response and not is_list:
+            #            response = response[0]
+            if response.get("status", None) == "DELETED":
+                self.set_status(410)
+                self._remove_cursor()
+                self.finish()
+                return
+        cursor = self._get_cursor()
+        response_callback = functools.partial(self._get_on_response,
+                                    new=False, is_list=is_list)
+        get_more_callback = functools.partial(self._get_more,
+                                    cursor, response_callback)
+
+        # This will be called when self._get_more returns empty response
+        if not new and not response and keep_alive and not last_batch:
+            IOLoop.instance().add_callback(get_more_callback)
+            return
+
+        accept = self.accept_content_type
+        self.set_header("Content-Type",
+                    accept + "; profile=" + self.schemas_single[accept])
+
+        if accept == MIME['PSJSON'] or accept == MIME['JSON']:
+            json_response = dumps_mongo(response,
+                                indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+            json_response = json.loads(json_response)
+            for exnode in json_response:
+                self._response_list[exnode["id"]] = exnode
+        else:
+            # TODO (AH): HANDLE HTML, SSE and other formats
+            json_response = dumps_mongo(response,
+                                indent=2).replace('\\\\$', '$')
+            json_response = json.loads(json_response)
+            for exnode in json_response:
+                self._response_list[exnode["id"]] = exnode
+
+        if keep_alive and not last_batch:
+            self.mainFinished = True
+            get_more_callback()
+        else:
+            if last_batch:
+                self._remove_cursor()
+                self._get_extents()
+            else:
+                self.mainFinished = False
+                get_more_callback()
+        
+    def _get_extents(self):
+        id_list = self._response_list.keys()
+        query = { "parent": { "$in": id_list } }
+        self.extent_layer.find(query, self._write_response)
+        
+    def _write_response(self, response, error):
+        if error is not None:
+            self.send_error(500, message=error)
+            return
+        
+        response = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+        response = json.loads(response)
+        
+        for extent in response:
+            try:
+                self._response_list[extent["parent"]]["extents"].append(extent)
+            except Exception as exp:
+                self.send_error(500, message=exp)
+                return
+
+        response = self._response_list.values()
+        self.write(json.dumps(response, indent=2))
+        self.mainFinished = True
+        if self.countFinished:
+            self.finish()
+
 
         
 class DataHandler(NetworkResourceHandler):        
