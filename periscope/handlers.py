@@ -9,6 +9,7 @@ import re
 import functools
 import jsonpointer
 import jsonschema
+import uuid
 from periscope.models import schemaLoader
 from jsonpath import jsonpath
 from netlogger import nllog
@@ -76,7 +77,6 @@ CACHE = {
 trc = tornadoredis.Client()
 trc.connect()
 query_list = []
-uuid = 0
 
 def decode (str) :
     while True:
@@ -1241,14 +1241,13 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         return True
 
     def AddQueryToFilter(self, conditions, fields):
-        global uuid, query_list
+        global query_list
         
         for query in query_list:
             if conditions == query["conditions"]:
                 return query["channel"]
 
-        channel = str(uuid)
-        uuid = uuid + 1
+        channel = uuid.uuid4().hex
         query_list.append({ "channel": channel, "conditions": conditions, "fields": fields })
         return channel
 
@@ -2019,9 +2018,11 @@ class DataHandler(NetworkResourceHandler):
                     self.send_error(503, message="Too many DB connections")
                     return
                 
-                body["data"]["id"] = self._res_id
-                body["data"]["\\$schema"] = settings.SCHEMAS["data"]
-                self.publish(body["data"])
+                push_data = {'id': self._res_id,
+                             'data': body["data"],
+                             '\\$schema': settings.SCHEMAS["data"]
+                             }
+                self.publish(push_data)
             else:
                 self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return
@@ -2053,9 +2054,10 @@ class DataHandler(NetworkResourceHandler):
                         self.send_error(503, message="Too many DB connections")
                         return
                     
-                    push_data = data[mids[i]][0]
-                    push_data["id"] = mids[i]
-                    push_data["\\$schema"] = settings.SCHEMAS["data"]
+                    push_data = {'id': mids[i],
+                                 'data': data[mids[i]],
+                                 '\\$schema': settings.SCHEMAS["data"]
+                                 }
                     self.publish(push_data)
                 else:
                     self.send_error(400, message="The collection for metadata ID '%s' does not exist" % mids[i])
@@ -2138,7 +2140,5 @@ class DataHandler(NetworkResourceHandler):
         self._cursor = db_layer.find(**options)
 
     def trim_published_resource(self, resource, fields):
-        result = {}
-        result["value"] = resource["value"]
-        result["ts"]    = resource["ts"]
-        return result
+        return {resource['id']: resource['data']}
+    
