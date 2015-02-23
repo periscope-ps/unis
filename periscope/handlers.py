@@ -1737,12 +1737,20 @@ class ExnodeHandler(NetworkResourceHandler):
             return
         
         resource = json.loads(self.request.body)
-        query = {}
-        query["parent"] = resource["parent"]
-        query["name"]   = resource["name"]
-        callback = functools.partial(self._on_get_siblings, _candidateExnode = self.request)
-        self._cursor = self.dblayer.find(query, callback)
-        
+        if resource["mode"] == "directory":
+            query = {}
+            query["parent"] = resource["parent"]
+            query["name"]   = resource["name"]
+            callback = functools.partial(self._on_get_siblings, _candidateExnode = self.request)
+            self._cursor = self.dblayer.find(query, callback)
+        else:
+            try:
+                extents  = resource["extents"]
+                resource["extents"] = resource["extents"] = []
+                self.request.body = json.dumps(resource)
+                self.post_psjson(extents = extents)
+            except Exception as exp:
+                self.write_error(500, message = exp)
         
     @tornado.web.asynchronous
     @tornado.web.removeslash
@@ -1796,7 +1804,7 @@ class ExnodeHandler(NetworkResourceHandler):
             # This is a unique exnode
             # Execute normal post
             self.request = _candidateExnode
-            super(ExnodeHandler, self).post_psjson(extents = extents)
+            self.post_psjson(extents = extents)
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
         extents = []
