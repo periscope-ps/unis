@@ -1792,8 +1792,6 @@ class ExnodeHandler(NetworkResourceHandler):
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
         try:
-            extents = []
-            
             if kwargs["extents"]:
                 extents = []
                 
@@ -1809,13 +1807,14 @@ class ExnodeHandler(NetworkResourceHandler):
                     self.publish(mongo_extent)
                 
                 self.extent_layer.insert(extents, lambda *_, **__: None)
-            else:
-                pass
         except Exception as exp:
             self.send_error(400, message="decode: could not decode extents")
             
         super(ExnodeHandler, self).on_post(request = request, error = error, res_refs = res_refs, return_resources = return_resources, **kwargs)
 
+    def get(self, res_id = None):
+        self._response_list = {}
+        super(ExnodeHandler, self).get(res_id)
 
     def _get_on_response(self, response, error, new=False,
                         is_list=False, query=None, last_batch=False):       
@@ -1828,8 +1827,6 @@ class ExnodeHandler(NetworkResourceHandler):
             is_list: If True listing is requered, for example /nodes,
                     otherwise it's a single object like /nodes/node_id
         """        
-        self._response_list = {}
-        
         if error:
             self.send_error(500, message=error)
             return
