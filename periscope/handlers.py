@@ -1876,17 +1876,20 @@ class ExnodeHandler(NetworkResourceHandler):
         else:
             if last_batch:
                 self._remove_cursor()
-                self._get_extents()
+                self._get_extents(is_list)
             else:
                 self.mainFinished = False
                 get_more_callback()
         
-    def _get_extents(self):
+    def _get_extents(self, is_list):
         id_list = self._response_list.keys()
         query = { "parent": { "$in": id_list } }
-        self.extent_layer.find(query, self._write_response)
+        response_callback = functools.partial(self._write_response,
+                                              is_list=is_list)
         
-    def _write_response(self, response, error):
+        self.extent_layer.find(query, response_callback)
+        
+    def _write_response(self, response, error, is_list = True):
         if error is not None:
             self.send_error(500, message=error)
             return
@@ -1902,7 +1905,7 @@ class ExnodeHandler(NetworkResourceHandler):
                 return
 
         response = self._response_list.values()
-        if len(response) == 1 and response[0] is not None:
+        if not is_list:
             self.write(json.dumps(response[0], indent=2))
         else:
             self.write(json.dumps(response, indent=2))
