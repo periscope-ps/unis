@@ -1788,10 +1788,12 @@ class ExnodeHandler(NetworkResourceHandler):
             # This is a unique exnode
             # Execute normal post
             self.request = _candidateExnode
-            self.post_psjson(extents = extents)
+            self.post_psjson()
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
         try:
+            extents = []
+            
             if kwargs["extents"]:
                 extents = []
                 
@@ -1807,6 +1809,8 @@ class ExnodeHandler(NetworkResourceHandler):
                     self.publish(mongo_extent)
                 
                 self.extent_layer.insert(extents, lambda *_, **__: None)
+            else:
+                pass
         except Exception as exp:
             self.send_error(400, message="decode: could not decode extents")
             
@@ -1868,7 +1872,7 @@ class ExnodeHandler(NetworkResourceHandler):
             json_response = json.loads(json_response)
             for exnode in json_response:
                 self._response_list[exnode["id"]] = exnode
-
+                
         if keep_alive and not last_batch:
             self.mainFinished = True
             get_more_callback()
