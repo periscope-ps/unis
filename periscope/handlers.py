@@ -1759,20 +1759,12 @@ class ExnodeHandler(NetworkResourceHandler):
             self.send_error(500, message = error)
             return
 
-        body     = json.loads(_candidateExnode.body)
-        resource = self._model_class(body)
-        extents = []
-        try:
-            extents  = body["extents"]
-            body["extents"] = resource["extents"] = []
-            _candidateExnode.body = json.dumps(body)
-        except:
-            pass
-        
         if response:
             # There is already an exnode sibling with that name
             # Get the Id of the old exnode and update the content
             #  with the content of the new exnode
+            body     = json.loads(_candidateExnode.body)
+            resource = self._model_class(body)
             
             res_id = response[0].get(self.Id)
             resource["$schema"]  = response[0].get("$schema", self.schemas_single[MIME['PSJSON']])
@@ -1789,27 +1781,19 @@ class ExnodeHandler(NetworkResourceHandler):
             query = {}
             query[self.Id] = res_id
             
-            for extent in extents:
-                extent["parent"] = res_id
-            
-            # Remove potentailly orphaned extents
-            remove_query = {}
-            remove_query["parent"] = res_id
-            self.extent_layer.remove(remove_query, callback = lambda *_, **__: None)
-            
-            callback = functools.partial(self.on_post, res_refs = res_refs, return_resources = True, extents = extents)
+            callback = functools.partial(self.on_post, res_refs = res_refs, return_resources = True, extents = [])
             self.dblayer.update(query, resource, callback = callback)
             self.publish(resource)
         else:
             # This is a unique exnode
             # Execute normal post
             self.request = _candidateExnode
-            self.post_psjson(extents = extents)
+            self.post_psjson()
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
-        extents = []
-
         try:
+            extents = []
+            
             if kwargs["extents"]:
                 for extent in kwargs["extents"]:
                     tmpExtent = self.extent_model(extent)
@@ -1823,17 +1807,15 @@ class ExnodeHandler(NetworkResourceHandler):
                     self.publish(mongo_extent)
                 
                 self.extent_layer.insert(extents, lambda *_, **__: None)
+            else:
+                pass
         except Exception as exp:
             self.send_error(400, message="decode: could not decode extents")
             
         super(ExnodeHandler, self).on_post(request = request, error = error, res_refs = res_refs, return_resources = return_resources, **kwargs)
 
 
-    @tornado.web.asynchronous
-    @tornado.web.removeslash            
-    def get(self, res_id = None):
-        self._response_list = {}
-        super(ExnodeHandler, self).get(res_id)
+
 
     def _get_on_response(self, response, error, new=False,
                         is_list=False, query=None, last_batch=False):       
@@ -1846,6 +1828,8 @@ class ExnodeHandler(NetworkResourceHandler):
             is_list: If True listing is requered, for example /nodes,
                     otherwise it's a single object like /nodes/node_id
         """        
+        self._response_list = {}
+        
         if error:
             self.send_error(500, message=error)
             return
@@ -1888,7 +1872,7 @@ class ExnodeHandler(NetworkResourceHandler):
             json_response = json.loads(json_response)
             for exnode in json_response:
                 self._response_list[exnode["id"]] = exnode
-
+                
         if keep_alive and not last_batch:
             self.mainFinished = True
             get_more_callback()
