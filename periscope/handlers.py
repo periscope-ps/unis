@@ -1845,7 +1845,7 @@ class ExnodeHandler(NetworkResourceHandler):
             new: True if this is the first time to call this method.
             is_list: If True listing is requered, for example /nodes,
                     otherwise it's a single object like /nodes/node_id
-        """
+        """        
         if error:
             self.send_error(500, message=error)
             return
@@ -1855,7 +1855,7 @@ class ExnodeHandler(NetworkResourceHandler):
             return
         if response and not is_list:
             #            response = response[0]
-            if response.get("status", None) == "DELETED":
+            if response[0].get("status", None) == "DELETED":
                 self.set_status(410)
                 self._remove_cursor()
                 self.finish()
@@ -1921,7 +1921,10 @@ class ExnodeHandler(NetworkResourceHandler):
                 return
 
         response = self._response_list.values()
-        self.write(json.dumps(response, indent=2))
+        if len(response) == 1 and response[0] is not None:
+            self.write(json.dumps(response[0], indent=2))
+        else:
+            self.write(json.dumps(response, indent=2))
         self.mainFinished = True
         if self.countFinished:
             self.finish()

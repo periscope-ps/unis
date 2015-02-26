@@ -22,11 +22,11 @@ extents.append(extent2)
 exnode = {}
 exnode["created"]  = 14532097173
 exnode["modified"] = 14532097173
-exnode["name"]     = "test_file2"
-exnode["size"]     = 13123141
+exnode["name"]     = "test_directory2"
+exnode["size"]     = 0
 exnode["parent"]   = None
-exnode["mode"]     = "file"
-exnode["extents"]  = extents
+exnode["mode"]     = "directory"
+exnode["extents"]  = [] #extents
 
 exnode = json.dumps(exnode)
 
