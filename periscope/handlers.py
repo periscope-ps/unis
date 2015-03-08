@@ -1812,11 +1812,48 @@ class ExnodeHandler(NetworkResourceHandler):
             
         super(ExnodeHandler, self).on_post(request = request, error = error, res_refs = res_refs, return_resources = return_resources, **kwargs)
 
-    def get(self, res_id = None):
-        self._response_list = {}
-        super(ExnodeHandler, self).get(res_id)
 
-    def _get_on_response(self, response, error, new=False,
+
+    @tornado.web.asynchronous
+    @tornado.web.removeslash
+    def get(self, res_id=None):
+        """Handles HTTP GET"""
+        self._response_list = {}
+        accept = self.accept_content_type
+        if res_id:
+            self._res_id = unicode(res_id)
+        else:
+            self._res_id = None
+        try:
+            parsed = self._parse_get_arguments()
+        except Exception, msg:
+            return self.send_error(403, message=msg)
+        query = parsed["query"]
+        fields = parsed["fields"]
+        limit = parsed["limit"]
+        skip = parsed["skip"]
+        sort = parsed["sort"]
+
+        is_list = not res_id
+
+        if query["list"]:
+            is_list = True
+        if is_list == False:
+            limit = 1
+        if is_list:
+            query["query"]["status"] = {"$ne": "DELETED"}            
+
+
+        callback = functools.partial(self._get_extent_on_response, new=True, is_list=is_list, query=query["query"])
+        if fields:
+            if "extents" not in fields:
+                callback = functools.partial(self._get_on_response, new=True, is_list=is_list, query=query["query"])
+            elif "id" not in fields:
+                return self.send_error(403, message = "Invalid fields: id must be included to get extents.")
+        
+        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)        
+
+    def _get_extent_on_response(self, response, error, new=False,
                         is_list=False, query=None, last_batch=False):       
         """callback for get request
 
@@ -1842,7 +1879,7 @@ class ExnodeHandler(NetworkResourceHandler):
                 self.finish()
                 return
         cursor = self._get_cursor()
-        response_callback = functools.partial(self._get_on_response,
+        response_callback = functools.partial(self._get_extent_on_response,
                                     new=False, is_list=is_list)
         get_more_callback = functools.partial(self._get_more,
                                     cursor, response_callback)
@@ -2083,7 +2120,7 @@ class DataHandler(NetworkResourceHandler):
         is_list = True #, not res_id
         if query:
             is_list = True
-        callback = functools.partial(self._get_on_response,
+        callback = functools.partial(self._get_extent_on_response,
                             new=True, is_list=is_list, query=query)
         self._find(query, callback, fields=fields, limit=limit)
 
