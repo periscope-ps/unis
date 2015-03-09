@@ -1170,7 +1170,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             for condition, value in tmpConditions.iteritems():
                 if condition not in resource or resource[condition] != value:
                     is_member = False
-                break
+                    break
             if is_member:
                 trimmed_resource = self.trim_published_resource(resource, query["fields"])
                 trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
