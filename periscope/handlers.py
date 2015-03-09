@@ -2153,8 +2153,8 @@ class DataHandler(NetworkResourceHandler):
         is_list = True #, not res_id
         if query:
             is_list = True
-        callback = functools.partial(self._get_extent_on_response,
-                            new=True, is_list=is_list, query=query)
+        callback = functools.partial(self._get_on_response,
+                                     new=True, is_list=is_list, query=query)
         self._find(query, callback, fields=fields, limit=limit)
 
     def _find(self, query, callback, fields=None, limit=None,sort=None):
