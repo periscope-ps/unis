@@ -552,6 +552,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     and_q.append(process_or_query(key, split_or))
                     continue
                 split = val.split(",")
+
                 if len(split) == 1:
                     and_q.append({key: process_value(key, split[0])})
                 else:
@@ -1169,7 +1170,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             for condition, value in tmpConditions.iteritems():
                 if condition not in resource or resource[condition] != value:
                     is_member = False
-                    break
+                break
             if is_member:
                 trimmed_resource = self.trim_published_resource(resource, query["fields"])
                 trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
@@ -1201,12 +1202,11 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
                 query = json.loads(query_string)
 
             if fields_string:
-                fields = fields_string.split(',')
-            
+                fields = fields_string.split(',')                
             query['\\$schema'] = settings.SCHEMAS[resource_type]
             if resource_id:
                 query['id'] = resource_id
-
+                
             self.channel = self.AddQueryToFilter(query, fields)
             self.listen()
         except Exception as exp:
@@ -1215,7 +1215,6 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     @tornado.gen.engine
     def listen(self):
         global query_list
-
         self.client = tornadoredis.Client()
         self.client.connect()
         yield tornado.gen.Task(self.client.subscribe, str(self.channel))
@@ -1223,7 +1222,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         
     def on_message(self, msg):
         pass
-
+        
     def deliver(self, msg):
         if msg.kind == 'message':
             self.write_message(str(msg.body))
@@ -1241,8 +1240,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         return True
 
     def AddQueryToFilter(self, conditions, fields):
-        global query_list
-        
+        global query_list        
         for query in query_list:
             if conditions == query["conditions"]:
                 return query["channel"]
@@ -1251,6 +1249,42 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         query_list.append({ "channel": channel, "conditions": conditions, "fields": fields })
         return channel
 
+class AggSubscriptionHandler(SubscriptionHandler):
+    def open(self, resource_type = None, resource_id = None):
+        global query_list
+        try:
+            query_string = self.get_argument("query", None)
+            fields_string = self.get_argument("fields", None)
+            query = {}
+            fields = None
+            print "Connected " , resource_type
+            if query_string:
+                query = json.loads(query_string)
+            if fields_string:
+                fields = fields_string.split(',')                
+                query['\\$schema'] = settings.SCHEMAS[resource_type]
+            if resource_id:
+                query['id'] = resource_id
+                
+            self.query = query
+            self.fields = fields
+        except Exception as exp:
+            return
+
+    def on_message(self, msg):
+        print "new message",msg
+        try:
+            msg_json = json.loads(msg)
+            print "ID being requested " , msg_json["id"] , self
+            query = self.query
+            id = msg_json["id"]
+            if id:
+                query['id'] = id 
+            self.channel = self.AddQueryToFilter(query, self.fields)
+            self.listen()
+        except Exception as exp:
+            print exp
+        
 class CollectionHandler(NetworkResourceHandler):
     def initialize(self, collections, *args, **kwargs):
         self._collections = collections
@@ -1553,8 +1587,7 @@ class EventsHandler(NetworkResourceHandler):
             body=json.loads(response.body)
             if body["id"] not in self.application.sync_db.collection_names():
                 self.application.get_db_layer(body["id"],"ts","ts",True,collection_size)
-                self.set_header("Location",
-                    "%s/data/%s" % (self.request.full_url().split('?')[0], body["id"]))
+                self.set_header("Location","%s/data/%s" % (self.request.full_url().split('?')[0], body["id"]))
                 callback = functools.partial(self.on_post,
                                              res_refs=None, return_resources=True)
                 post_body["ts"] = int(time.time() * 1000000)

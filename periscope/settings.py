@@ -495,6 +495,12 @@ catSubscription = {
     "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)$",
     "handler_class" : "periscope.handlers.SubscriptionHandler"
 }
+catAggSubscription = {
+    "base_url"      : "",
+    "name"          : "categoryAggregateSubscription",
+    "pattern"       : "/subscribeAgg/(?P<resource_type>[^\/]*)$",
+    "handler_class" : "periscope.handlers.AggSubscriptionHandler"
+}
 
 querySubscription = {
     "base_url"      : "",
@@ -556,6 +562,7 @@ Resources = {
 Subscriptions = {
     "itemSubscription"  : itemSubscription,
     "catSubscription"   : catSubscription,
+    "catAggSubscription"   : catAggSubscription,
     "querySubscription" : querySubscription,
 }
 
