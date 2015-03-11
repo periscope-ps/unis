@@ -1250,7 +1250,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         return channel
 
 class AggSubscriptionHandler(SubscriptionHandler):
-    def open(self, resource_type = None, resource_id = None):
+    def open(self, resource_type = None):
         global query_list
         try:
             query_string = self.get_argument("query", None)
@@ -1263,25 +1263,40 @@ class AggSubscriptionHandler(SubscriptionHandler):
             if fields_string:
                 fields = fields_string.split(',')                
                 query['\\$schema'] = settings.SCHEMAS[resource_type]
-            if resource_id:
-                query['id'] = resource_id
                 
-            self.query = query
+            self.idDict = dict()
             self.fields = fields
         except Exception as exp:
             return
 
+    def dcChannel(self,id) :
+        print "DC listner for id ", id
+        channel = self.idDict.get(id)
+        self.client.unsubscribe(self.channel)
+        # Remove the id from the map
+        self.idDict.pop(id)
+        
     def on_message(self, msg):
-        print "new message",msg
         try:
             msg_json = json.loads(msg)
             print "ID being requested " , msg_json["id"] , self
             query = self.query
             id = msg_json["id"]
+            isDC = msg_json['disconnect']
+            
             if id:
-                query['id'] = id 
-            self.channel = self.AddQueryToFilter(query, self.fields)
-            self.listen()
+                query['id'] = id
+                
+            if isDC:
+                self.dcChannel(id)
+            else:
+                # DO nothing if id is already registered
+                if idDict.get(id):                  
+                    pass
+                else:
+                    self.channel = self.AddQueryToFilter(query, self.fields)
+                    self.idDict[id] = self.channel
+                    self.listen()                    
         except Exception as exp:
             print exp
         
