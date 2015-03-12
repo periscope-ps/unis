@@ -1263,7 +1263,8 @@ class AggSubscriptionHandler(SubscriptionHandler):
             if fields_string:
                 fields = fields_string.split(',')                
                 query['\\$schema'] = settings.SCHEMAS[resource_type]
-                
+
+            self.query = query
             self.idDict = dict()
             self.fields = fields
         except Exception as exp:
@@ -1279,11 +1280,11 @@ class AggSubscriptionHandler(SubscriptionHandler):
     def on_message(self, msg):
         try:
             msg_json = json.loads(msg)
-            print "ID being requested " , msg_json["id"] , self
             query = self.query
             id = msg_json["id"]
-            isDC = msg_json['disconnect']
-            
+            isDC = False
+            if msg_json.has_key("disconnect") :
+                isDC = msg_json["disconnect"]            
             if id:
                 query['id'] = id
                 
@@ -1291,7 +1292,7 @@ class AggSubscriptionHandler(SubscriptionHandler):
                 self.dcChannel(id)
             else:
                 # DO nothing if id is already registered
-                if idDict.get(id):                  
+                if self.idDict.get(id):                  
                     pass
                 else:
                     self.channel = self.AddQueryToFilter(query, self.fields)
