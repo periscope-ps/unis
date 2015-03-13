@@ -2,6 +2,14 @@ import os
 import json
 from subprocess import call
 
+dumpdir = {}
+dumpdir["size"] = 0
+dumpdir["created"] = 1426244007
+dumpdir["modified"] = 1426244007
+dumpdir["name"] = "dump"
+dumpdir["parent"]   = None
+dumpdir["mode"]     = "directory"
+dumpdir["extents"] = []
 
 extents = []
 
@@ -25,10 +33,11 @@ exnode["modified"] = 14532097173
 exnode["name"]     = "test_directory2"
 exnode["size"]     = 0
 exnode["parent"]   = None
-exnode["mode"]     = "directory"
-exnode["extents"]  = [] #extents
+exnode["mode"]     = "file"
+exnode["extents"]  = extents
 
 exnode = json.dumps(exnode)
+dumpdir = json.dumps(dumpdir)
 
 #measurement = '{ "id": "2", "configuration": { "default_collection_size": 10000 }, "eventTypes": ["test1", "test2"] }'
 
@@ -39,7 +48,7 @@ exnode = json.dumps(exnode)
 
 
 print "\033[34mPublishing id \033[36m26\033[34m to files\033[0m"
-print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", exnode, "http://localhost:8888/exnodes"])
+print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", dumpdir, "http://dev.incntre.iu.edu:8888/exnodes"])
 
 #print "\033[34mPublishing id \033[36m2\033[34m to measurements\033[0m"
 #call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", measurement, "http://localhost:8888/measurements"])

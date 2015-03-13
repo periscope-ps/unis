@@ -1769,6 +1769,7 @@ class ExnodeHandler(NetworkResourceHandler):
             self.send_error(500, message = message)
             return
         
+        print "Recieved: {0}".format(self.request.body)
         resource = json.loads(self.request.body)
         if resource["mode"] == "directory":
             query = {}
@@ -1825,7 +1826,7 @@ class ExnodeHandler(NetworkResourceHandler):
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
         try:
-            if kwargs["extents"]:
+            if "extents" in kwargs and len(kwargs["extents"]) > 0:
                 extents = []
                 
                 for extent in kwargs["extents"]:
@@ -1841,7 +1842,9 @@ class ExnodeHandler(NetworkResourceHandler):
                 
                 self.extent_layer.insert(extents, lambda *_, **__: None)
         except Exception as exp:
+            print exp
             self.send_error(400, message="decode: could not decode extents")
+            return
             
         super(ExnodeHandler, self).on_post(request = request, error = error, res_refs = res_refs, return_resources = return_resources, **kwargs)
 
