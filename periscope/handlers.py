@@ -591,7 +591,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query[arg] = ",".join(query[arg])
             if query[arg].startswith("reg="):
                 param = decode(query[arg][4:])
-                print "Using regex ", param
+                #print "Using regex ", param
                 val = re.compile(process_value(arg,param), re.IGNORECASE)
                 query_ret.append({arg: val})
                 continue
@@ -686,7 +686,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         options["sort"].append(("ts", -1))
         if sort :                         
             """ Parse sort options and create the array """
-            print "parsing sort"
             sortStr = sort                        
             """ Split it and then add it to array"""
             sortOpt = sortStr.split(",")
@@ -696,7 +695,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     options["sort"].append((x[0],int(x[1])))                
                 except:
                     """ Ignore , """
-                    print "Sort takes integer argument 1 or -1 "                
+                    #print "Sort takes integer argument 1 or -1 "                
                     #self.set_header('X-error', "Sort takes integer argument 1 or -1")                                                                                            
         options['skip']=skip
         options['ccallback'] = self.countCallback
@@ -1015,7 +1014,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             else:
                 self.write(dumps_mongo(unescaped, indent=2))
         except Exception as exp:
-            print "Failed to return POST: %s" % (str(exp).replace("\"", "\\\""))
+            #print "Failed to return POST: %s" % (str(exp).replace("\"", "\\\""))
             self.send_error(500,
                     message="Could't process the POST request '%s'" % \
                         str(exp).replace("\"", "\\\""))
@@ -1186,9 +1185,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         
             return result
 
-class SubscriptionHandler(tornado.websocket.WebSocketHandler):
+class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging):
     def __init__(self, *args, **kwargs):
         super(SubscriptionHandler, self).__init__(*args, **kwargs)
+        nllog.DoesLogging.__init__(self)
+        self.listening = False
 
     def open(self, resource_type = None, resource_id = None):
         global query_list
@@ -1206,19 +1207,22 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
             query['\\$schema'] = settings.SCHEMAS[resource_type]
             if resource_id:
                 query['id'] = resource_id
-                
+
+            # This handler only handles one channel, on open
             self.channel = self.AddQueryToFilter(query, fields)
             self.listen()
         except Exception as exp:
+            self.write_message('Error in subscription: %s' % exp)
+            self.client = None
             return
         
     @tornado.gen.engine
     def listen(self):
-        global query_list
         self.client = tornadoredis.Client()
         self.client.connect()
         yield tornado.gen.Task(self.client.subscribe, str(self.channel))
         self.client.listen(self.deliver)
+        self.listening = True
         
     def on_message(self, msg):
         pass
@@ -1232,15 +1236,15 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
             self.close()
     
     def on_close(self):
-        if self.client.subscribed:
+        if self.client and self.client.subscribed:
             self.client.unsubscribe(self.channel)
             self.client.disconnect()
-    
+            
     def check_origin(self, origin):
         return True
 
     def AddQueryToFilter(self, conditions, fields):
-        global query_list        
+        global query_list
         for query in query_list:
             if conditions == query["conditions"]:
                 return query["channel"]
@@ -1253,53 +1257,66 @@ class AggSubscriptionHandler(SubscriptionHandler):
     def open(self, resource_type = None):
         global query_list
         try:
+            self.log.info("ws_connect=%s" % self.request.remote_ip)
             query_string = self.get_argument("query", None)
             fields_string = self.get_argument("fields", None)
             query = {}
             fields = None
-            print "Connected " , resource_type
-            if query_string:
-                query = json.loads(query_string)
-            if fields_string:
-                fields = fields_string.split(',')                
-                query['\\$schema'] = settings.SCHEMAS[resource_type]
+            # this works only for /data at the moment
 
-            self.query = query
             self.idDict = dict()
             self.fields = fields
+
+            # This handler works with many channels, on_message
+            self.client = tornadoredis.Client()
+            self.client.connect()
         except Exception as exp:
+            self.write_message('Error in subscription: %s' % exp)
+            self.client = None
             return
 
+    def on_close(self):
+        if self.client and self.client.subscribed:
+            for i in self.idDict.keys():
+                self.dcChannel(i)
+        self.client.disconnect()
+        self.log.info("ws_disconnect=%s" % self.request.remote_ip)
+
     def dcChannel(self,id) :
-        print "DC listner for id ", id
         channel = self.idDict.get(id)
-        self.client.unsubscribe(self.channel)
+        self.client.unsubscribe(channel)
         # Remove the id from the map
+        self.log.info("unsubscribe=%s" % id)
         self.idDict.pop(id)
+
+    @tornado.gen.engine
+    def listen(self, channel):
+        yield tornado.gen.Task(self.client.subscribe, str(channel))
+        if not self.listening:
+            self.client.listen(self.deliver)
+            self.listening = True
         
     def on_message(self, msg):
         try:
+            query = {}
             msg_json = json.loads(msg)
-            query = self.query
             id = msg_json["id"]
-            isDC = False
-            if msg_json.has_key("disconnect") :
-                isDC = msg_json["disconnect"]            
-            if id:
-                query['id'] = id
+            if msg_json.has_key("disconnect"):
+                if (msg_json["disconnect"]):
+                    self.dcChannel(id)
+                    return
                 
-            if isDC:
-                self.dcChannel(id)
+            # DO nothing if id is already registered
+            if self.idDict.get(id):                  
+                pass
             else:
-                # DO nothing if id is already registered
-                if self.idDict.get(id):                  
-                    pass
-                else:
-                    self.channel = self.AddQueryToFilter(query, self.fields)
-                    self.idDict[id] = self.channel
-                    self.listen()                    
+                query['id'] = id
+                channel = self.AddQueryToFilter(query, self.fields)
+                self.idDict[id] = channel
+                self.listen(channel)
+                self.log.info("subscribe=%s" % id)
         except Exception as exp:
-            print exp
+            pass
         
 class CollectionHandler(NetworkResourceHandler):
     def initialize(self, collections, *args, **kwargs):
@@ -2212,7 +2229,7 @@ class DataHandler(NetworkResourceHandler):
                 except:
                     """ Ignore , """                    
                     #self.set_header('X-error', "Sort takes integer argument 1 or -1")      
-                    print "Sort takes integer argument 1 or -1 "                
+                    #print "Sort takes integer argument 1 or -1 "                
                             
         self._query = query
         db_layer = self.application.get_db_layer(self._res_id, "ts", "ts",
