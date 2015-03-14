@@ -2009,14 +2009,14 @@ class ExnodeHandler(NetworkResourceHandler):
             except Exception as exp:
                 self.send_error(500, message=exp)
                 return
-
-        response = self._response_list.values()
-        if not is_list:
-            self.write(json.dumps(response[0], indent=2))
-        else:
-            self.write(json.dumps(response, indent=2))
             
         if last_batch:
+            response = self._response_list.values()
+            if not is_list:
+                self.write(json.dumps(response[0], indent=2))
+            else:
+                self.write(json.dumps(response, indent=2))
+
             self._remove_cursor()
             self.mainFinished = True
             if self.countFinished:
