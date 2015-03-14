@@ -1766,19 +1766,19 @@ class EventsHandler(NetworkResourceHandler):
 
 class ExnodeHandler(NetworkResourceHandler):
     def initialize(self, dblayer, base_url,
-            Id="id",
-            timestamp="ts",
-            schemas_single=None,
-            schemas_list=None,
-            allow_get=False,
-            allow_post=True,
-            allow_put=True,
-            allow_delete=True,
-            tailable=False,
-            model_class=None,
-            accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']],
-            content_types_mime=[MIME['SSE'], MIME['PSJSON'],
-                                MIME['PSBSON'], MIME['PSXML'], MIME['HTML']],
+                   Id="id",
+                   timestamp="ts",
+                   schemas_single=None,
+                   schemas_list=None,
+                   allow_get=False,
+                   allow_post=True,
+                   allow_put=True,
+                   allow_delete=True,
+                   tailable=False,
+                   model_class=None,
+                   accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']],
+                   content_types_mime=[MIME['SSE'], MIME['PSJSON'],
+                                       MIME['PSBSON'], MIME['PSXML'], MIME['HTML']],
                    collections={},
                    models={}):
         self.extent_layer = collections["extents"]
@@ -1802,7 +1802,8 @@ class ExnodeHandler(NetworkResourceHandler):
             self.send_error(500, message = message)
             return
         
-        print "Recieved: {0}".format(self.request.body)
+        print "Received: {0}".format(self.request.body)
+        print "Size: ", len(self.request.body)
         resource = json.loads(self.request.body)
         if resource["mode"] == "directory":
             query = {}
@@ -1912,14 +1913,13 @@ class ExnodeHandler(NetworkResourceHandler):
         if is_list:
             query["query"]["status"] = {"$ne": "DELETED"}            
 
-
         callback = functools.partial(self._get_extent_on_response, new=True, is_list=is_list, query=query["query"])
         if fields:
             if "extents" not in fields:
                 callback = functools.partial(self._get_on_response, new=True, is_list=is_list, query=query["query"])
             elif "id" not in fields:
                 return self.send_error(403, message = "Invalid fields: id must be included to get extents.")
-        
+            
         return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)        
 
     def _get_extent_on_response(self, response, error, new=False,
@@ -1932,7 +1932,7 @@ class ExnodeHandler(NetworkResourceHandler):
             new: True if this is the first time to call this method.
             is_list: If True listing is requered, for example /nodes,
                     otherwise it's a single object like /nodes/node_id
-        """        
+        """
         if error:
             self.send_error(500, message=error)
             return
@@ -1965,40 +1965,40 @@ class ExnodeHandler(NetworkResourceHandler):
         if accept == MIME['PSJSON'] or accept == MIME['JSON']:
             json_response = dumps_mongo(response,
                                 indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
-            json_response = json.loads(json_response)
-            for exnode in json_response:
-                self._response_list[exnode["id"]] = exnode
         else:
             # TODO (AH): HANDLE HTML, SSE and other formats
             json_response = dumps_mongo(response,
                                 indent=2).replace('\\\\$', '$')
-            json_response = json.loads(json_response)
-            for exnode in json_response:
-                self._response_list[exnode["id"]] = exnode
-                
-        if keep_alive and not last_batch:
-            self.mainFinished = True
-            get_more_callback()
+
+        json_response = json.loads(json_response)
+        for exnode in json_response:
+            self._response_list[exnode["id"]] = exnode
+            
+        if last_batch:
+            self._remove_cursor()
+            self._get_extents(is_list)
         else:
-            if last_batch:
-                self._remove_cursor()
-                self._get_extents(is_list)
-            else:
-                self.mainFinished = False
-                get_more_callback()
+            self.mainFinished = False
+            get_more_callback()
         
     def _get_extents(self, is_list):
         id_list = self._response_list.keys()
         query = { "parent": { "$in": id_list } }
-        response_callback = functools.partial(self._write_response,
-                                              is_list=is_list)
+        response_callback = functools.partial(self._write_extent_response,
+                                              new=False, is_list=is_list, last_batch=False)
         
-        self.extent_layer.find(query, response_callback)
+        self._cursor = self.extent_layer.find(query, response_callback, limit=10000000)
         
-    def _write_response(self, response, error, is_list = True):
+    def _write_extent_response(self, response, error, new=False, is_list=True, last_batch=False):
         if error is not None:
             self.send_error(500, message=error)
             return
+
+        cursor = self._get_cursor()
+        response_callback = functools.partial(self._write_extent_response,
+                                              new=False, is_list=is_list)
+        get_more_callback = functools.partial(self._get_more,
+                                              cursor, response_callback)
         
         response = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
         response = json.loads(response)
@@ -2015,11 +2015,15 @@ class ExnodeHandler(NetworkResourceHandler):
             self.write(json.dumps(response[0], indent=2))
         else:
             self.write(json.dumps(response, indent=2))
-        self.mainFinished = True
-        if self.countFinished:
-            self.finish()
-
-
+            
+        if last_batch:
+            self._remove_cursor()
+            self.mainFinished = True
+            if self.countFinished:
+                self.finish()
+        else:
+            self.mainFinished = False
+            get_more_callback()
         
 class DataHandler(NetworkResourceHandler):        
         
