@@ -1,6 +1,9 @@
 function removeExnodes(e) {
     files = db.exnodes.find({$and: [{mode: "file", parent: e.id}]})
-    files.forEach(function(f) { print("removing file: " + f.name); db.exnodes.remove(f)})
+    files.forEach(function(f) { 
+	extents = db.extents.remove({parent: f.id})
+	print("removing file: " + f.name); db.exnodes.remove(f)
+    })
     sdirs = db.exnodes.find({$and: [{mode: "directory"}, {parent: e.id}]})
     sdirs.forEach(removeExnodes)
     print("removing dir: " + e.name)
