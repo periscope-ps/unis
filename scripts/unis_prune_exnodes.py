@@ -28,7 +28,7 @@ def prune_exnodes(collection):
     exnodes = collection.find({"mode": "file"})
     
     for exnode in exnodes:
-        if "extents" in exnode and len(exnode["extents"]) == 0:
+        if "extents" not in exnode or len(exnode["extents"]) == 0:
             to_remove.append(exnode["_id"])
             print "Removing Exnode {0}".format(exnode["_id"])
         
