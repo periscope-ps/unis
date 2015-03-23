@@ -16,7 +16,6 @@ def prune_extents(collection):
             to_remove.append(extent["_id"])
         
         if expires < now:
-            print extent
             to_remove.append(extent["_id"])
             print "Removing {0}".format(extent["_id"])
     
@@ -26,13 +25,16 @@ def prune_extents(collection):
 def prune_exnodes(collection, extent_collection):
     to_remove = []
     exnodes = collection.find({"mode": "file"})
-    
+    exnodes = list(exnodes)
+
     for exnode in exnodes:
-        if "extents" not in exnode or len(exnode["extents"]) == 0:
-            to_remove.append(exnode["_id"])
-            print "Removing Exnode {0}".format(exnode["_id"])
+        extents = list(extent_collection.find({"parent": exnode["id"]}))
+        print "%s: %s extents" % (exnode["id"], len(extents))
+        if len(extents) == 0:
+            to_remove.append(exnode["id"])
+            print "Removing Exnode {0}".format(exnode["id"])
         
-    remove_cmd = {"_id": {"$in": to_remove}}
+    remove_cmd = {"id": {"$in": to_remove}}
     collection.remove(remove_cmd)
 
 def main():
