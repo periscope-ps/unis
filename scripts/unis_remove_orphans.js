@@ -10,7 +10,7 @@ function removeExnodes(e) {
     db.exnodes.remove(e)
 }
 
-REMOVE_DIR="dump"
+REMOVE_DIR = null
 
 conn = new Mongo()
 db = conn.getDB("unis_db")
@@ -18,6 +18,6 @@ now = new Date().getTime()*1000
 
 // find the top-level directory to recursively remove                                                                                           
 dir = db.exnodes.find({$and: [{name: REMOVE_DIR},
-                              {mode: "directory"},
+                              {mode: "file"},
                               {parent: null}]})
 dir.forEach(removeExnodes)
