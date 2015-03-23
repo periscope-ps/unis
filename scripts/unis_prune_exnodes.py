@@ -19,11 +19,11 @@ def prune_extents(collection):
             print extent
             to_remove.append(extent["_id"])
             print "Removing {0}".format(extent["_id"])
-
+    
     remove_cmd = {"_id": {"$in": to_remove}}
     collection.remove(remove_cmd)
 
-def prune_exnodes(collection):
+def prune_exnodes(collection, extent_collection):
     to_remove = []
     exnodes = collection.find({"mode": "file"})
     
@@ -42,7 +42,7 @@ def main():
     extents = db.extents
     
     prune_extents(extents)
-    prune_exnodes(exnodes)
+    prune_exnodes(exnodes, extents)
 
 if __name__ == "__main__":
     main()
