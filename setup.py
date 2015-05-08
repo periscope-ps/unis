@@ -19,7 +19,7 @@ version = "0.1.dev"
 setup(
     name="periscope",
     version=version,
-    packages=["periscope", "periscope.test"],
+    packages=["periscope", "periscope.test", "periscope.handlers"],
     package_data={},
     author="Ahmed El-Hassany",
     author_email="ahassany@indiana.edu",

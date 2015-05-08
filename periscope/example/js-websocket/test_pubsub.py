@@ -30,14 +30,23 @@ extents.append(extent2)
 exnode = {}
 exnode["created"]  = 14532097173
 exnode["modified"] = 14532097173
-exnode["name"]     = "test_directory2"
+exnode["name"]     = "test_file"
 exnode["size"]     = 0
 exnode["parent"]   = None
 exnode["mode"]     = "file"
 exnode["extents"]  = extents
 
+extra_extent = {}
+extra_extent["location"] = "ibp://"
+extra_extent["size"] = 314159
+extra_extent["offest"] = 885
+extra_extent["mapping"] = { "read": "blah2", "write": "further+blah", "manage": "foo" }
+extra_extent["parent"] = "554c9af6f8c2be47b3527b38"
+
 exnode = json.dumps(exnode)
+extra_extent = json.dumps(extra_extent)
 dumpdir = json.dumps(dumpdir)
+
 
 #measurement = '{ "id": "2", "configuration": { "default_collection_size": 10000 }, "eventTypes": ["test1", "test2"] }'
 
@@ -48,7 +57,7 @@ dumpdir = json.dumps(dumpdir)
 
 
 print "\033[34mPublishing id \033[36m26\033[34m to files\033[0m"
-print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", dumpdir, "http://dev.incntre.iu.edu:8888/exnodes"])
+print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", extra_extent, "http://localhost:8888/extents"])
 
 #print "\033[34mPublishing id \033[36m2\033[34m to measurements\033[0m"
 #call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", measurement, "http://localhost:8888/measurements"])

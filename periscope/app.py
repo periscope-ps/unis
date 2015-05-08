@@ -19,11 +19,6 @@ from tornado.httpclient import AsyncHTTPClient
 import settings
 from settings import MIME
 from settings import SCHEMAS
-from periscope.handlers import NetworkResourceHandler
-from periscope.handlers import CollectionHandler
-from periscope.handlers import MainHandler
-from periscope.handlers import SubscriptionHandler
-from periscope.handlers import ExnodeHandler
 from periscope.db import DBLayer
 from periscope.utils import load_class
 from periscope.pp_interface import PP_INTERFACE as PPI
