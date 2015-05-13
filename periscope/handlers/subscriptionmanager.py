@@ -3,6 +3,7 @@
 import json
 import tornadoredis
 import uuid
+import tornado.web
 
 __trc__           = tornadoredis.Client()
 __subscriptions__ = []
@@ -26,7 +27,7 @@ class SubscriptionManager(object):
             
             for condition, value in tmpConditions.iteritems():
                 if condition not in resource or resource[condition] != value:
-                    is_member = false
+                    is_member = False
                     break
                 
                 if is_member:

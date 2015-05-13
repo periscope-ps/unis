@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import periscope.settings
+import periscope.settings as settings
 import tornado.web
 
 class SchemaHandler(tornado.web.RequestHandler):

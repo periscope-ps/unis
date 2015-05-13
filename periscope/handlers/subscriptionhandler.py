@@ -6,7 +6,7 @@ import tornado.gen
 import tornadoredis
 from netlogger import nllog
 
-import periscope.settings
+import periscope.settings as settings
 from subscriptionmanager import SubscriptionManager
 
 class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging):

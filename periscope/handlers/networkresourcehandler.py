@@ -14,7 +14,6 @@ from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
 from asyncmongo.errors import IntegrityError
 
-import periscope.settings
 from periscope.settings import MIME
 from ssehandler import SSEHandler
 from subscriptionmanager import SubscriptionManager

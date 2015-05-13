@@ -6,7 +6,6 @@ from tornado.ioloop import IOLoop
 import tornado.web
 
 
-import periscope.settings
 from periscope.settings import MIME
 from networkresourcehandler import NetworkResourceHandler
 from periscope.db import dumps_mongo
