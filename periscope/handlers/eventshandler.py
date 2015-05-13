@@ -8,11 +8,10 @@ import time
 from tornado.httpclient import AsyncHTTPClient
 from asyncmongo.errors import IntegrityError
 
-import periscope.settings
+import periscope.settings as settings
 from periscope.settings import MIME
 from networkresourcehandler import NetworkResourceHandler
 from periscope.db import dumps_mongo
-
 
 
 class EventsHandler(NetworkResourceHandler):        

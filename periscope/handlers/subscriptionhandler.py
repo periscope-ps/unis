@@ -13,7 +13,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
     def __init__(self, *args, **kwargs):
         super(SubscriptionHandler, self).__init__(*args, **kwargs)
         nllog.DoesLogging.__init__(self)
-        self._manager = SubsciptionManager()
+        self._manager = SubscriptionManager()
         self.listening = False
 
     def open(self, resource_type = None, resource_id = None):

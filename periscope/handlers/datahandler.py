@@ -5,7 +5,7 @@ import functools
 import tornado.web
 from asyncmongo.errors import IntegrityError, TooManyConnections
 
-import periscope.settings
+import periscope.settings as settings
 from periscope.settings import MIME
 from networkresourcehandler import NetworkResourceHandler
 
