@@ -29,8 +29,6 @@ else:
     bson_decode = bson.decode_all
     bson_valid = bson.is_valid
 
-query_list = []
-
 def decode(str):
     while True:
         dec = urllib2.unquote(str)
@@ -876,21 +874,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self.dblayer.insert(dict(resource._to_mongoiter()), callback=callback)
         self._subscriptions.publish(resource)
 
-    def publish(self, resource):
-        global query_list
-    
-        for query in query_list:
-            is_member = True
-            tmpConditions = query["conditions"]
-            
-            for condition, value in tmpConditions.iteritems():
-                if condition not in resource or resource[condition] != value:
-                    is_member = False
-                    break
-            if is_member:
-                trimmed_resource = self.trim_published_resource(resource, query["fields"])
-                trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
-                
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
         """
         HTTP PUT callback to send the results to the client.

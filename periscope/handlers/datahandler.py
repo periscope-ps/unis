@@ -112,7 +112,7 @@ class DataHandler(NetworkResourceHandler):
                              'data': body["data"],
                              '\\$schema': settings.SCHEMAS["data"]
                              }
-                self._manager.publish(push_data, trim_published_resource)
+                self._subscriptions.publish(push_data, trim_published_resource)
             else:
                 self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return
@@ -148,7 +148,7 @@ class DataHandler(NetworkResourceHandler):
                                  'data': data[mids[i]],
                                  '\\$schema': settings.SCHEMAS["data"]
                                  }
-                    self.publish(push_data)
+                    self._subscriptions.publish(push_data)
                 else:
                     self.send_error(400, message="The collection for metadata ID '%s' does not exist" % mids[i])
                     return
