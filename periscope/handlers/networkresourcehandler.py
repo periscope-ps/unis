@@ -363,7 +363,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query.pop("sort", None)
         if sort:
             sort = convert_value_type("sort", sort, "string")
-                
+            
         query_ret = []
         for arg in query:
             if isinstance(query[arg], list) and len(query[arg]) > 1:
@@ -404,7 +404,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     for item in query_ret["query"]["$and"]:
                         ret.append(item)
                 query_ret["query"].update({"$and": ret})
-
         ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip , "sort" : sort}
         return ret_val
 
@@ -465,7 +464,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             options["limit"] = limit
         if "sort" not in options:
             options["sort"] = []
-        options["sort"].append(("ts", -1))
+
+        IsTsPresent = False
         if sort :                         
             """ Parse sort options and create the array """
             sortStr = sort                        
@@ -473,12 +473,17 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             sortOpt = sortStr.split(",")
             for opt in sortOpt :
                 x = opt.split(":")
+                if x[0] == "ts":
+                    IsTsPresent = True
                 try :                    
                     options["sort"].append((x[0],int(x[1])))                
                 except:
                     """ Ignore , """
                     #print "Sort takes integer argument 1 or -1 "                
-                    #self.set_header('X-error', "Sort takes integer argument 1 or -1")                                                                                            
+                    #self.set_header('X-error', "Sort takes integer argument 1 or -1")
+        if not IsTsPresent:
+            options["sort"].append(("ts", -1))
+
         options['skip']=skip
         options['ccallback'] = self.countCallback
         self._query = query            
