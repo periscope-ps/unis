@@ -37,6 +37,30 @@ def prune_exnodes(collection, extent_collection):
     remove_cmd = {"id": {"$in": to_remove}}
     collection.remove(remove_cmd)
 
+def prune_directories(collection):
+    root = collection.find({"parent": None})
+
+    for exnode in root:
+        children = search_children(exnode, collection)
+
+
+def search_children(exnode, collection):
+    if exnode["mode"] == "file":
+        return True
+
+    contains_data = False
+    children = collection.find({ "parent": exnode["id"] })
+
+    for child in children:
+        contains_data = contains_data | search_children(child, collection)
+
+    if not contains_data:
+        collection.remove({"id": exnode["id"]})
+        print "Removing Directory: {0}".format(exnode["name"])
+
+    return contains_data
+        
+        
 def main():
     client = MongoClient()
     db = client["unis_db"]
@@ -45,6 +69,7 @@ def main():
     
     prune_extents(extents)
     prune_exnodes(exnodes, extents)
+    prune_directories(exnodes)
 
 if __name__ == "__main__":
     main()

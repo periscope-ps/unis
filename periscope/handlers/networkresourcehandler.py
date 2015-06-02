@@ -851,13 +851,13 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                  "'%s' and in the body '%s'" % (body[self.Id], res_id))
             return
         
-        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
+        #resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         
-        if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
-            self.send_error(400,
-                message="Not valid body '%s'; expecting $schema: '%s'." % \
-                (item["$schema"], self.schemas_single[self.accept_content_type]))
-            return
+        #if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
+        #    self.send_error(400,
+        #        message="Not valid body '%s'; expecting $schema: '%s'." % \
+        #        (resource["$schema"], self.schemas_single[self.accept_content_type]))
+        #    return
 
         if 'selfRef' not in resource:
             resource['selfRef'] = "%s/%s" % \
@@ -870,12 +870,15 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             self.send_error(400, message="Not valid body " + str(exp))
             return
         
+        query = {}
+        query[self.Id] = resource[self.Id]
+        
         res_ref = {}
         res_ref[self.Id] = resource[self.Id]
         res_ref[self.timestamp] = resource[self.timestamp]
         callback = functools.partial(self.on_put, res_ref=res_ref, 
             return_resource=True)
-        self.dblayer.insert(dict(resource._to_mongoiter()), callback=callback)
+        self.dblayer.update(query, dict(resource._to_mongoiter()), callback=callback)
         self._subscriptions.publish(resource)
 
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
