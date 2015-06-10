@@ -443,7 +443,8 @@ exnodes = dict(default_resource_settings.items() + \
              ],
              "models": [
                  { "name": "extents", "model_class": "periscope.models.Extent" }
-             ]
+             ],
+             "allow_put": False
          }.items()
 )
 exnode = dict(default_resource_settings.items() + \

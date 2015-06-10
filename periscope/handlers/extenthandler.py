@@ -152,6 +152,7 @@ class ExtentHandler(NetworkResourceHandler):
             query = { "id": resource["parent"] }
             callback = functools.partial(self._find_exnode_and_update, allocation = resource)
             self._cursor = self.exnode_layer.find(query, callback)
+            self._subscriptions.publish(resource)
         except ValueError as exp:
             self.write_error(500, message = "malformed json request - {exp}".format(exp = exp))
             return
