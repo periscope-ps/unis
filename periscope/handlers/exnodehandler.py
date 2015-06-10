@@ -28,8 +28,8 @@ class ExnodeHandler(NetworkResourceHandler):
                                        MIME['PSBSON'], MIME['PSXML'], MIME['HTML']],
                    collections={},
                    models={}):
-        self.extent_layer = collections["extents"]
-        self.extent_model = models["extents"]
+        self.allocation_layer = collections["extents"]
+        self.allocation_model = models["extents"]
         super(ExnodeHandler, self).initialize(dblayer=dblayer, base_url=base_url, Id=Id, timestamp=timestamp, 
                                               schemas_single=schemas_single, schemas_list=schemas_list,
                                               allow_get=allow_get, allow_post=allow_post, allow_put=allow_put,
@@ -57,12 +57,7 @@ class ExnodeHandler(NetworkResourceHandler):
             callback = functools.partial(self._on_get_siblings, _candidateExnode = self.request)
             self._cursor = self.dblayer.find(query, callback)
         else:
-            try:
-                extents  = resource["extents"]
-                self.request.body = json.dumps(resource)
-                self.post_psjson(extents = extents)
-            except Exception as exp:
-                self.write_error(500, message = exp)
+            self.post_psjson()
         
     @tornado.web.asynchronous
     @tornado.web.removeslash
@@ -102,25 +97,98 @@ class ExnodeHandler(NetworkResourceHandler):
             self.request = _candidateExnode
             self.post_psjson()
 
-    def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
-        try:
-            if "extents" in kwargs and len(kwargs["extents"]) > 0:
-                extents = []
-                
-                for extent in kwargs["extents"]:
-                    tmpExtent = self.extent_model(extent)
-                    tmpExtent["parent"] = res_refs[0]["id"]
-                    tmpExtent["selfRef"] = "%s/%s/%s" % (self.request.full_url().split('?')[0].rsplit('/', 1)[0],
-                                                     "extents",
-                                                     tmpExtent[self.Id])
-                    mongo_extent = dict(tmpExtent._to_mongoiter())
-                    extents.append(mongo_extent)
-                    self._subscriptions.publish(mongo_extent)
-                
-                self.extent_layer.insert(extents, lambda *_, **__: None)
-        except Exception as exp:
-            print exp
-            self.send_error(400, message="decode: could not decode extents")
-            return
+    def post_psjson(self, **kwargs):
+        """
+        Handles HTTP POST request with Content Type of PSJSON.
+        """
+        profile = self._validate_psjson_profile()
+        run_validate = True
+        if self.get_argument("validate", None) == 'false':
+            run_validate = False
             
-        super(ExnodeHandler, self).on_post(request = request, error = error, res_refs = res_refs, return_resources = return_resources, **kwargs)
+        if not profile:
+            return
+        try:
+            body = json.loads(self.request.body)
+        except Exception as exp:
+            self.send_error(400, message="malformatted json request '%s'." % exp)
+            return
+        
+        try:
+            resources = []
+            if isinstance(body, list):
+                for item in body:
+                    resources.append(self._model_class(item))
+            else:
+                resources = [self._model_class(body)]
+        except Exception as exp:
+            self.send_error(400, message="malformatted request " + str(exp))
+            return
+        
+        # Validate schema
+        res_refs =[]
+        for index in range(len(resources)):
+            try:
+                item = resources[index]
+                item["selfRef"] = "%s/%s" % \
+                                  (self.request.full_url().split('?')[0], item[self.Id])
+                item["$schema"] = item.get("$schema", self.schemas_single[MIME['PSJSON']])
+                if item["$schema"] != self.schemas_single[self.accept_content_type]:
+                    self.send_error(400,
+                                    message="Not valid body '%s'; expecting $schema: '%s'." % \
+                                    (item["$schema"], self.schemas_single[self.accept_content_type]))
+                    return
+
+                item["extents"] = self.update_allocations(item)
+                if run_validate == True:
+                    item._validate()
+                res_ref = {}
+                res_ref[self.Id] = item[self.Id]
+                res_ref[self.timestamp] = item[self.timestamp]
+                res_refs.append(res_ref)
+                resources[index] = dict(item._to_mongoiter())
+            except Exception as exp:
+                self.send_error(400, message="Not valid body '%s'." % exp)
+                return
+
+        # PPI processing/checks
+        if getattr(self.application, '_ppi_classes', None):
+            try:
+                for resource in resources:
+                    for pp in self.application._ppi_classes:
+                        pp.pre_post(resource, self.application, self.request)
+            except Exception, msg:
+                self.send_error(400, message=msg)
+                return
+
+        callback = functools.partial(self.on_post,
+                                     res_refs=res_refs, return_resources=True, **kwargs)
+        self.dblayer.insert(resources, callback=callback)
+
+        for res in resources:
+            self._subscriptions.publish(res)
+
+
+    def update_allocations(self, resource):
+        allocations = []
+
+        try:
+            for alloc in resource["extents"]:
+                tmpAllocation = self.allocation_model(alloc)
+                tmpAllocation["parent"] = resource[self.Id]
+                tmpAllocation["selfRef"] = "%s/%s/%s" % (self.request.full_url().split('?')[0].rsplit('/', 1)[0],
+                                                         "extents",
+                                                         tmpAllocation[self.Id])
+
+                mongo_alloc = dict(tmpAllocation._to_mongoiter())
+                allocations.append(mongo_alloc)
+                self._subscriptions.publish(tmpAllocation)
+                
+            self.allocation_layer.insert(allocations, lambda *_, **__: None)
+        except Exception as exp:
+            raise NameError(exp)
+
+        for alloc in allocations:
+            alloc.pop("_id", None)
+            
+        return allocations

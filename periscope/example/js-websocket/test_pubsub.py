@@ -2,6 +2,9 @@ import os
 import json
 from subprocess import call
 
+PARENT = "55772ebff8c2be1b1686ead7"
+ID     = "55772ebff8c2be1b1686ead9"
+
 dumpdir = {}
 dumpdir["size"] = 0
 dumpdir["created"] = 1426244007
@@ -41,10 +44,19 @@ extra_extent["location"] = "ibp://"
 extra_extent["size"] = 314159
 extra_extent["offest"] = 885
 extra_extent["mapping"] = { "read": "blah2", "write": "further+blah", "manage": "foo" }
-extra_extent["parent"] = "554c9af6f8c2be47b3527b38"
+extra_extent["parent"] = PARENT
+
+
+updated_extent = {}
+updated_extent["location"] = "UPDATED"
+updated_extent["size"]     = 7357
+updated_extent["offset"]   = 0
+updated_extent["parent"]   = extra_extent["parent"]
+updated_extent["id"]       = ID
 
 exnode = json.dumps(exnode)
 extra_extent = json.dumps(extra_extent)
+updated_extent = json.dumps(updated_extent)
 dumpdir = json.dumps(dumpdir)
 
 
@@ -55,9 +67,11 @@ dumpdir = json.dumps(dumpdir)
 #service = '{ "id": "4", "serviceType": "Test Service" }'
 
 
+#print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", exnode, "http://localhost:8888/exnodes"])
 
-print "\033[34mPublishing id \033[36m26\033[34m to files\033[0m"
-print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", extra_extent, "http://localhost:8888/extents"])
+#print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", extra_extent, "http://localhost:8888/extents"])
+
+print call(["curl", "-X", "PUT", "-H", "Content-Type: application/perfsonar+json", "--data", updated_extent, "http://localhost:8888/extents/{0}".format(ID)])
 
 #print "\033[34mPublishing id \033[36m2\033[34m to measurements\033[0m"
 #call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", measurement, "http://localhost:8888/measurements"])

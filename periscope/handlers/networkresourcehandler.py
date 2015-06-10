@@ -705,7 +705,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 for item in body:
                     resources.append(self._model_class(item))
             else:
-                resources = [self._model_class(body)] 
+                resources = [self._model_class(body)]
         except Exception as exp:
             self.send_error(400, message="malformatted request " + str(exp))
             return
