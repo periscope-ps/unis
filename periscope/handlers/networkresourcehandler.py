@@ -731,6 +731,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 res_refs.append(res_ref)
                 resources[index] = dict(item._to_mongoiter())
             except Exception as exp:
+                print "NOT HERE"
                 self.send_error(400, message="Not valid body '%s'." % exp)
                 return
 

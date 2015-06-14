@@ -140,7 +140,7 @@ class ExnodeHandler(NetworkResourceHandler):
                     return
 
 
-                if resource["mode"] == "file":
+                if item["mode"] == "file":
                     item["extents"] = self.update_allocations(item)
                 if run_validate == True:
                     item._validate()
@@ -150,6 +150,7 @@ class ExnodeHandler(NetworkResourceHandler):
                 res_refs.append(res_ref)
                 resources[index] = dict(item._to_mongoiter())
             except Exception as exp:
+                print "HERE"
                 self.send_error(400, message="Not valid body '%s'." % exp)
                 return
 

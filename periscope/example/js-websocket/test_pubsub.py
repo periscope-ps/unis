@@ -66,12 +66,14 @@ dumpdir = json.dumps(dumpdir)
 
 #service = '{ "id": "4", "serviceType": "Test Service" }'
 
+print dumpdir
+print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", dumpdir, "http://localhost:8888/exnodes"])
 
 #print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", exnode, "http://localhost:8888/exnodes"])
 
 #print call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", extra_extent, "http://localhost:8888/extents"])
 
-print call(["curl", "-X", "PUT", "-H", "Content-Type: application/perfsonar+json", "--data", updated_extent, "http://localhost:8888/extents/{0}".format(ID)])
+#print call(["curl", "-X", "PUT", "-H", "Content-Type: application/perfsonar+json", "--data", updated_extent, "http://localhost:8888/extents/{0}".format(ID)])
 
 #print "\033[34mPublishing id \033[36m2\033[34m to measurements\033[0m"
 #call(["curl", "-H", "Content-Type: application/perfsonar+json", "--data", measurement, "http://localhost:8888/measurements"])
