@@ -139,7 +139,9 @@ class ExnodeHandler(NetworkResourceHandler):
                                     (item["$schema"], self.schemas_single[self.accept_content_type]))
                     return
 
-                item["extents"] = self.update_allocations(item)
+
+                if resource["mode"] == "file":
+                    item["extents"] = self.update_allocations(item)
                 if run_validate == True:
                     item._validate()
                 res_ref = {}
