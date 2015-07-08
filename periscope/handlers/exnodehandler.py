@@ -49,7 +49,16 @@ class ExnodeHandler(NetworkResourceHandler):
             self.send_error(500, message = message)
             return
         
-        resource = json.loads(self.request.body)
+        try:
+            if self.request.body.endswith('}') or self.request.body.endswith('}'):
+                resource = json.loads(self.request.body)
+            else:
+                end = self.request.body.rfind("}") + 1
+                resource = json.loads(self.request.body[:end])
+        except Exception as exp:
+            self.send_error(500, message = "Could not parse json - {exp}".format(exp = exp))
+            return
+        
         if resource["mode"] == "directory":
             query = {}
             query["parent"] = resource["parent"]
@@ -57,7 +66,7 @@ class ExnodeHandler(NetworkResourceHandler):
             callback = functools.partial(self._on_get_siblings, _candidateExnode = self.request)
             self._cursor = self.dblayer.find(query, callback)
         else:
-            self.post_psjson()
+            self.post_psjson(exnode = resource)
         
     @tornado.web.asynchronous
     @tornado.web.removeslash
@@ -95,7 +104,7 @@ class ExnodeHandler(NetworkResourceHandler):
             # This is a unique exnode
             # Execute normal post
             self.request = _candidateExnode
-            self.post_psjson()
+            self.post_psjson(exnode = json.loads(self.request.body))
 
     def post_psjson(self, **kwargs):
         """
@@ -108,19 +117,14 @@ class ExnodeHandler(NetworkResourceHandler):
             
         if not profile:
             return
-        try:
-            body = json.loads(self.request.body)
-        except Exception as exp:
-            self.send_error(400, message="malformatted json request '%s'." % exp)
-            return
         
         try:
             resources = []
-            if isinstance(body, list):
-                for item in body:
+            if isinstance(kwargs["exnode"], list):
+                for item in kwargs["exnode"]:
                     resources.append(self._model_class(item))
             else:
-                resources = [self._model_class(body)]
+                resources = [self._model_class(kwargs["exnode"])]
         except Exception as exp:
             self.send_error(400, message="malformatted request " + str(exp))
             return
@@ -150,7 +154,6 @@ class ExnodeHandler(NetworkResourceHandler):
                 res_refs.append(res_ref)
                 resources[index] = dict(item._to_mongoiter())
             except Exception as exp:
-                print "HERE"
                 self.send_error(400, message="Not valid body '%s'." % exp)
                 return
 

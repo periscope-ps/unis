@@ -226,7 +226,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 result += '"%s": "%s",' % (key, kwargs[key])
             result = result.rstrip(",") + "}\n"
             self.write(result)
-
+            
             self.finish()
 
     def set_default_headers(self):
@@ -523,6 +523,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
     def _get_on_response(self, response, error, new=False,
                         is_list=False, query=None, last_batch=False):       
+
         """callback for get request
 
         Parameters:
@@ -731,7 +732,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 res_refs.append(res_ref)
                 resources[index] = dict(item._to_mongoiter())
             except Exception as exp:
-                print "NOT HERE"
                 self.send_error(400, message="Not valid body '%s'." % exp)
                 return
 

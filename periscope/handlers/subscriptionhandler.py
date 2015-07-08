@@ -27,7 +27,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
                 query = json.loads(query_string)
 
             if fields_string:
-                fields = fields_string.split(',')                
+                fields = fields_string.split(',')
             query['\\$schema'] = settings.SCHEMAS[resource_type]
             if resource_id:
                 query['id'] = resource_id
@@ -125,7 +125,7 @@ class AggSubscriptionHandler(SubscriptionHandler):
                     return
                 
             # DO nothing if id is already registered
-            if self.idDict.get(id):                  
+            if self.idDict.get(id):
                 pass
             else:
                 query['id'] = id
