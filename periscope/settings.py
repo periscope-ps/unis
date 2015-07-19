@@ -59,7 +59,7 @@ GEMINI_NODE_INFO = None
 ######################################################################
 
 # Enable GENI/ABAC auth support
-ENABLE_AUTH = False
+ENABLE_AUTH = True
 
 # Enable application wide debugging options
 DEBUG = True
@@ -79,6 +79,12 @@ APP_SETTINGS = {
 DB_NAME = "unis_db"
 DB_HOST = "127.0.0.1"
 DB_PORT = 27017
+# Auth Stuff needed for adding ABAC
+DB_AUTH = {
+    'auth_field' : "secToken",
+    'auth_default' : None,
+    'attrib_list' : ("landsat","unauth",""),
+}
 
 # Asyncmongo specific connection configurations
 ASYNC_DB = {
@@ -594,7 +600,7 @@ main_handler_settings = {
 # PRE/POST content processing module definitions.
 ######################################################################
 
-PP_MODULES = [('periscope.gemini', 'Gemini')]
+PP_MODULES = [] #[('periscope.gemini', 'Gemini')]
 #PP_MODULES = []
 
 # Settings for the GEMINI-specific authentication handlers

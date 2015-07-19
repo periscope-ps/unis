@@ -4,9 +4,14 @@ Databases related classes
 """
 import time
 import functools
+import settings
+import auth
 from json import JSONEncoder
 from netlogger import nllog
+from settings import DB_AUTH
 
+AuthField = DB_AUTH['auth_field']
+AuthDefault = DB_AUTH['auth_default']
 
 class MongoEncoder(JSONEncoder):
     """Special JSON encoder that converts Mongo ObjectIDs to string"""
@@ -52,12 +57,13 @@ class DBLayer(object, nllog.DoesLogging):
         """Returns a reference to the default mongodb collection."""
         return self._client[self._collection_name]
 
-    def find(self, query, callback=None, ccallback = None,**kwargs):
-        """Finds one or more elements in the collection."""
-        self.log.info("find")
+    def find(self, query, callback=None, ccallback = None,cert=None,**kwargs):
+        """Finds one or more elements in the collection."""        
+        self.modifyQueryByCert(query,cert)
+        self.log.info("find for Collection: [" + self._collection_name + "] with Auth as ["+ str(query[AuthField]) + "]")
         fields = kwargs.pop("fields", {})
         fields["_id"] = 0                        
-        findCursor = self.collection.find(query, callback=callback,
+        findCursor = self.collect ion.find(query, callback=callback,
                                           fields=fields, **kwargs)
         if ccallback:
             self._client['$cmd'].find_one({'count' : self._collection_name , 'query' : query}, _is_command=True, callback=ccallback)
@@ -70,25 +76,44 @@ class DBLayer(object, nllog.DoesLogging):
             timestamp = data.get(self.timestamp, int(time.time() * 1000000))
             data["_id"] = "%s:%s" % (res_id, timestamp)
             
-    def insert(self, data, callback=None, **kwargs):
+    def insert(self, data,cert=None,callback=None, **kwargs):
         """Inserts data to the collection."""
-        self.log.info("insert")
+        # TODO - Not sure how to deal with insert ,
+        # is filtering the data out as per attributes an option ?, Large inserts might kill the server or be slow
+        if cert == None:
+            """Select a default filter token"""
+            """ Should probably stop inserts and throw error """
+        else:
+            """ Get a list of attributes for this certificate """            
+            attList = self._auth.getAllowedAttributes(cert)
+            
+        self.log.info("insert for Collection: [" + self._collection_name + "] with Auth as ["+ str(query[AuthField]) + "]")
         if isinstance(data, list) and not self.capped:
             for item in data:
                 self._insert_id(item)
         elif not self.capped:
-            self._insert_id(data)
-            
-        
+            self._insert_id(data)                    
         return self.collection.insert(data, callback=callback, **kwargs)
 
-    def update(self, query, data, callback=None, **kwargs):
+    def update(self, query, data,cert=None, callback=None, **kwargs):
         """Updates data found by query in the collection."""
-        self.log.info("update")
+        self.modifyQueryByCert(query,cert)
+        self.log.info("Update for Collection: [" + self._collection_name + "] with Auth as ["+ str(query[AuthField]) + "]")
         return self.collection.update(query, data, callback=callback, **kwargs)
 
-    def remove(self, query, callback=None, **kwargs):
+    def remove(self, query, cert,callback=None, **kwargs):
         """Remove objects from the database that matches a query."""
-        self.log.info("remove")
+        self.modifyQueryByCert(query,cert)
+        self.log.info("Delete for Collection: [" + self._collection_name + "] with Auth as ["+ str(query[AuthField]) + "]")
         return self.collection.remove(query, callback=callback, **kwargs)
+
+    def modifyQueryByCert(self,query,cert=None):
+        if cert == None:
+            """Select a default filter token"""
+            query[AuthField] = AuthDefault
+        else:
+            """ Get a list of attributes for this certificate """            
+            attList = self._auth.getAllowedAttributes(cert)
+            query[AuthField] = { "$in" : attList }
+        
 

@@ -18,6 +18,10 @@ import ABAC
 from sfa.trust.gid import GID
 from sfa.trust.credential import Credential as GENICredential
 from sfa.trust.abac_credential import ABACCredential
+from settings import DB_AUTH
+
+AttributeList = DB_AUTH['attrib_list']
+#time = 24 * 3600 * 365 * 20
 
 class AbacError(Exception):
     def __init__(self, msg):
@@ -318,19 +322,42 @@ class ABACAuthService:
         else:
             raise AbacError("Unrecognized request")
 
-    def query_role(self, cert, slice_uuid, req=None, cert_format="DER"):
+    def query_attr(self, cert, attr,cert_format):        
         try:
-            if cert_format == "DER":
+            if cert_format == "DER":                
                 cert = ssl.DER_cert_to_PEM_cert(cert)
+            # Expects a PEM format cert always
             user = ABAC.ID_chunk(cert)
         except Exception, e:
             raise AbacError("Could not load user cert: %s" % e)
-        
+
         #out = self.ctx.credentials()
         #for x in out:
         #    print "%s <- %s" % (x.head().string(), x.tail().string())
+        role_str = self.server_id.keyid() + "." + str(attr)
+        (success, credentials) = self.ctx.query(role_str, user.keyid())
 
-        role_str = self.server_id.keyid() + "." + str(self.SLICE_ADMIN_ROLE_PREFIX + slice_uuid)
+        #print ">>>>", success
+        #for c in credentials:
+        #    print "%s <- %s" % (c.head().string(), c.tail().string())
+
+        return success
+    ## Query attribute
+    def query_role(self, cert, slice_uuid, req=None, cert_format="DER",attr = None):
+        if attr == None:
+            attr = self.SLICE_ADMIN_ROLE_PREFIX + slice_uuid
+        try:
+            if cert_format == "DER":                
+                cert = ssl.DER_cert_to_PEM_cert(cert)
+            # Expects a PEM format cert always
+            user = ABAC.ID_chunk(cert)
+        except Exception, e:
+            raise AbacError("Could not load user cert: %s" % e)
+
+        #out = self.ctx.credentials()
+        #for x in out:
+        #    print "%s <- %s" % (x.head().string(), x.tail().string())
+        role_str = self.server_id.keyid() + "." + str(attr)
         (success, credentials) = self.ctx.query(role_str, user.keyid())
 
         #print ">>>>", success
