@@ -230,7 +230,17 @@ class ABACAuthService:
         attr.write_file(os.path.join(self.ABAC_STORE_DIR, attr_filename))
         
         return
-
+    
+    def getAllowedAttributes(self,cert):
+        """ Get all allowed attributes for the cert """
+        attrList = []
+        for i in AttributeList:
+            ok,query = self.query_attr(cert,i)
+            if ok:
+                attrList.append(i)
+                
+        return attrList
+        
     def add_credential(self, cert, body):
         # Users can post credentials, usually delegating a given
         # permission to a second principal.
@@ -322,7 +332,7 @@ class ABACAuthService:
         else:
             raise AbacError("Unrecognized request")
 
-    def query_attr(self, cert, attr,cert_format):        
+    def query_attr(self, cert, attr,cert_format=None):
         try:
             if cert_format == "DER":                
                 cert = ssl.DER_cert_to_PEM_cert(cert)
@@ -365,7 +375,7 @@ class ABACAuthService:
         #    print "%s <- %s" % (c.head().string(), c.tail().string())
 
         return success
-
+    
     def query(self, cert):
         try:
             cert = ssl.DER_cert_to_PEM_cert(cert)
