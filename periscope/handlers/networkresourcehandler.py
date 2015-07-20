@@ -13,7 +13,6 @@ import tornado.web
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
 from asyncmongo.errors import IntegrityError
-
 from periscope.settings import MIME
 from ssehandler import SSEHandler
 from subscriptionmanager import SubscriptionManager
@@ -353,7 +352,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query.pop("limit", None)
         if limit:
             limit = convert_value_type("limit", limit, "integer")
-                        
+
+        # Get certificate
+        cert = self.get_argument("cert", default=None)
+        query.pop("cert", None)
+        
         skip = self.get_argument("skip", default=0)
         query.pop("skip", None)
         if skip:
@@ -404,7 +407,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     for item in query_ret["query"]["$and"]:
                         ret.append(item)
                 query_ret["query"].update({"$and": ret})
-        ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip , "sort" : sort}
+        ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip , "sort" : sort , "cert" : cert}
         return ret_val
 
     def _get_cursor(self):
@@ -413,7 +416,15 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
     @tornado.web.asynchronous
     @tornado.web.removeslash
-    def get(self, res_id=None):
+    def get(self, res_id=None,*args):
+        return self.handle_find(*args)
+
+    @tornado.web.asynchronous
+    @tornado.web.removeslash
+    def post(self, res_id=None,*args):        
+        return self.handle_find(*args)
+    
+    def handle_find(self, res_id=None):
         """Handles HTTP GET"""
         accept = self.accept_content_type
         if res_id:
@@ -429,9 +440,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         limit = parsed["limit"]
         skip = parsed["skip"]        
         sort = parsed["sort"]
+        cert = parsed["cert"]
         
-        is_list = not res_id
-
+        is_list = not res_id        
         if query["list"]:
             is_list = True
         if is_list == False:
@@ -440,9 +451,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query["query"]["status"] = {"$ne": "DELETED"}            
         callback = functools.partial(self._get_on_response,
                             new=True, is_list=is_list, query=query["query"])
-        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)        
-
+        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)
+    
     def _find(self, query, callback, fields=None, limit=None , skip=None,sort=None):
+        #logger = settings.get_logger()        
         """Query the database.
 
         Parameters:
@@ -463,8 +475,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if limit:
             options["limit"] = limit
         if "sort" not in options:
-            options["sort"] = []
-
+            options["sort"] = []        
         IsTsPresent = False
         if sort :                         
             """ Parse sort options and create the array """
@@ -483,7 +494,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     #self.set_header('X-error', "Sort takes integer argument 1 or -1")
         if not IsTsPresent:
             options["sort"].append(("ts", -1))
-
         options['skip']=skip
         options['ccallback'] = self.countCallback
         self._query = query            
@@ -641,7 +651,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
     @tornado.web.asynchronous
     @tornado.web.removeslash
-    def post(self, res_id=None):
+    def put(self, res_id=None):
         # Check if the schema for conetnt type is known to the server
         if self.accept_content_type not in self.schemas_single:
             message = "Schema is not defined for content of type '%s'" % \
