@@ -112,8 +112,8 @@ class DBLayer(object, nllog.DoesLogging):
             """Select a default filter token"""
             query[AuthField] = AuthDefault
         else:
-            """ Get a list of attributes for this certificate """            
-            attList = self._auth.getAllowedAttributes(cert)
+            """ Get a list of attributes for this certificate """
+            attList = settings.app._auth.getAllowedAttributes(cert)
             query[AuthField] = { "$in" : attList }
         
 

@@ -451,9 +451,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query["query"]["status"] = {"$ne": "DELETED"}            
         callback = functools.partial(self._get_on_response,
                             new=True, is_list=is_list, query=query["query"])
-        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)
+        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort,cert=cert)
     
-    def _find(self, query, callback, fields=None, limit=None , skip=None,sort=None):
+    def _find(self, query, callback, fields=None, limit=None , skip=None,sort=None,cert=None):
         #logger = settings.get_logger()        
         """Query the database.
 
@@ -495,6 +495,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if not IsTsPresent:
             options["sort"].append(("ts", -1))
         options['skip']=skip
+        options['cert']=cert
         options['ccallback'] = self.countCallback
         self._query = query            
         self.countFinished = False 

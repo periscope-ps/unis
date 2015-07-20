@@ -35,7 +35,6 @@ class ABACAuthService:
         # do a few sanity checks
         assert os.path.isfile(server_cert)
         assert os.path.isdir(store)
-
         # the DB interface for auth info"
         self.db = db_layer
         self.auth_mem = []
@@ -65,7 +64,7 @@ class ABACAuthService:
         # Load local attribute and principal store (*_attr.der and *_ID.der).
         # If storing this on mongo, you will still need to write them to tmp
         # files to use the libabac routines (as far as I can tell).
-        self.ctx.load_directory(self.ABAC_STORE_DIR)
+        self.ctx.load_directory(settings.AUTH_STORE_DIR)
         
         #out = self.ctx.credentials()
         #for x in out:
@@ -162,7 +161,7 @@ class ABACAuthService:
         # We have reached a point where we can safely load identities
         # The abac context shouldn't need the client cert if a S-F cred is presented
         self.ctx.load_id_chunk(puser.cert_chunk())
-
+        
         # This assumes the credential is valid (you can call cred.verify
         # with the CA roots, i.e. genica.bundle, to do it yourself).
         slice_uuid = slice_cred.get_gid_object().get_uuid()
@@ -233,6 +232,7 @@ class ABACAuthService:
     
     def getAllowedAttributes(self,cert):
         """ Get all allowed attributes for the cert """
+        #cert = ABAC.ID_chunk(str(cert))
         attrList = []
         for i in AttributeList:
             ok,query = self.query_attr(cert,i)
@@ -333,14 +333,15 @@ class ABACAuthService:
             raise AbacError("Unrecognized request")
 
     def query_attr(self, cert, attr,cert_format=None):
+        cert2 = str(cert)
         try:
             if cert_format == "DER":                
-                cert = ssl.DER_cert_to_PEM_cert(cert)
+                cert2 = ssl.DER_cert_to_PEM_cert(cert2)
             # Expects a PEM format cert always
-            user = ABAC.ID_chunk(cert)
+            user = ABAC.ID_chunk(cert2)
         except Exception, e:
             raise AbacError("Could not load user cert: %s" % e)
-
+    
         #out = self.ctx.credentials()
         #for x in out:
         #    print "%s <- %s" % (x.head().string(), x.tail().string())
@@ -351,7 +352,7 @@ class ABACAuthService:
         #for c in credentials:
         #    print "%s <- %s" % (c.head().string(), c.tail().string())
 
-        return success
+        return success,credentials
     ## Query attribute
     def query_role(self, cert, slice_uuid, req=None, cert_format="DER",attr = None):
         if attr == None:
