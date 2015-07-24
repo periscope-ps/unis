@@ -40,16 +40,17 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     """Generic Network resources handler"""
 
     def initialize(self, dblayer, base_url,
-            Id="id",
-            timestamp="ts",
-            schemas_single=None,
-            schemas_list=None,
-            allow_get=False,
-            allow_post=True,
-            allow_put=True,
-            allow_delete=True,
-            tailable=False,
-            model_class=None,
+                   Id="id",
+                   timestamp="ts",
+                   schemas_single=None,
+                   schemas_list=None,
+                   allow_get=False,
+                   allow_post=True,
+                   allow_put=True,
+                   allow_delete=True,
+                   tailable=False,
+                   model_class=None,
+                   collection_name=None,
             accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']],
             content_types_mime=[MIME['SSE'], MIME['PSJSON'],
                                 MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]):
@@ -100,7 +101,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self._tailable = tailable
         self._model_class = model_class
         self._subscriptions = SubscriptionManager()
-
+        self._collection_name = collection_name
+        
         if self.schemas_single is not None and \
             MIME["JSON"] not in self.schemas_single and \
             MIME["PSJSON"] in self.schemas_single:
@@ -750,7 +752,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self.dblayer.insert(resources, callback=callback)
 
         for res in resources:
-            self._subscriptions.publish(res)
+            self._subscriptions.publish(res, self._collection_name)
 
     def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
         """
@@ -880,7 +882,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         callback = functools.partial(self.on_put, res_ref=res_ref, 
             return_resource=True)
         self.dblayer.update(query, dict(resource._to_mongoiter()), callback=callback)
-        self._subscriptions.publish(resource)
+        self._subscriptions.publish(resource, self._collection_name)
 
     def on_put(self, response, error=None, res_ref=None, return_resource=True):
         """

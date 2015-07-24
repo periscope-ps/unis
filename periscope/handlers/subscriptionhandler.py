@@ -28,12 +28,11 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
 
             if fields_string:
                 fields = fields_string.split(',')
-            query['\\$schema'] = settings.SCHEMAS[resource_type]
             if resource_id:
                 query['id'] = resource_id
-
+            
             # This handler only handles one channel, on open
-            self.channel = self._manager.createChannel(query, fields)
+            self.channel = self._manager.createChannel(query, resource_type, fields)
             self.listen()
         except Exception as exp:
             self.write_message('Error in subscription: %s' % exp)

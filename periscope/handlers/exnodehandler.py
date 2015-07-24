@@ -23,6 +23,7 @@ class ExnodeHandler(NetworkResourceHandler):
                    allow_delete=True,
                    tailable=False,
                    model_class=None,
+                   collection_name=None,
                    accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']],
                    content_types_mime=[MIME['SSE'], MIME['PSJSON'],
                                        MIME['PSBSON'], MIME['PSXML'], MIME['HTML']],
@@ -34,7 +35,8 @@ class ExnodeHandler(NetworkResourceHandler):
                                               schemas_single=schemas_single, schemas_list=schemas_list,
                                               allow_get=allow_get, allow_post=allow_post, allow_put=allow_put,
                                               allow_delete=allow_delete, tailable=tailable, model_class=model_class,
-                                              accepted_mime=accepted_mime, content_types_mime=content_types_mime)
+                                              accepted_mime=accepted_mime, content_types_mime=content_types_mime,
+                                              collection_name=collection_name)
     
     @tornado.web.asynchronous
     @tornado.web.removeslash
@@ -99,7 +101,7 @@ class ExnodeHandler(NetworkResourceHandler):
             
             callback = functools.partial(self.on_post, res_refs = res_refs, return_resources = True, extents = [])
             self.dblayer.update(query, resource, callback = callback)
-            self._subscriptions.publish(resource)
+            self._subscriptions.publish(resource, self._collection_name)
         else:
             # This is a unique exnode
             # Execute normal post
@@ -172,7 +174,7 @@ class ExnodeHandler(NetworkResourceHandler):
         self.dblayer.insert(resources, callback=callback)
 
         for res in resources:
-            self._subscriptions.publish(res)
+            self._subscriptions.publish(res, self._collection_name)
 
 
     def update_allocations(self, resource):
@@ -188,7 +190,7 @@ class ExnodeHandler(NetworkResourceHandler):
 
                 mongo_alloc = dict(tmpAllocation._to_mongoiter())
                 allocations.append(mongo_alloc)
-                self._subscriptions.publish(tmpAllocation)
+                self._subscriptions.publish(tmpAllocation, self._collection_name)
                 
             self.allocation_layer.insert(allocations, lambda *_, **__: None)
         except Exception as exp:

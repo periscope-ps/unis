@@ -112,7 +112,7 @@ class DataHandler(NetworkResourceHandler):
                              'data': body["data"],
                              '\\$schema': settings.SCHEMAS["data"]
                              }
-                self._subscriptions.publish(push_data, trim_published_resource)
+                self._subscriptions.publish(push_data, self._collection_name, trim_published_resource)
             else:
                 self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return

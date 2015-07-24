@@ -17,23 +17,28 @@ class SubscriptionManager(object):
     # @input:       resource is a json object corrosponding to the resource in question.
     #               trim_function is an optional argument that overrides any previous
     #                 filter on the subscription and replaces them with a custom filter.
-    def publish(self, resource, trim_function = None):
+    def publish(self, resource, collection = None, trim_function = None):
         global __subscriptions__
         global __trc__
+        print "Publishing resource"
         
         for query in __subscriptions__:
             is_member = True
             tmpConditions = query["conditions"]
+            
+            if "collection" in query and query["collection"] != collection:
+                print "  {collection} : {query}".format(collection = collection, query = query["collection"])
+                continue
             
             for condition, value in tmpConditions.iteritems():
                 if condition not in resource or resource[condition] != value:
                     is_member = False
                     break
                 
-                if is_member:
-                    trim = trim_function or self.trim_published_resource
-                    trimmed_resource = trim(resource, query["fields"])
-                    __trc__.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
+            if is_member:
+                trim = trim_function or self.trim_published_resource
+                trimmed_resource = trim(resource, query["fields"])
+                __trc__.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
     
 
     # @description: createChannel registers a series of conditions to a channel for later use
@@ -42,7 +47,7 @@ class SubscriptionManager(object):
     #                 when published.
     #               fields is an array of fields to filter for when publishing.
     # @output:      createChannel returns the channel that the listener should subscribe to.
-    def createChannel(self, conditions, fields):
+    def createChannel(self, conditions, collection, fields):
         global __subsciptions__
 
         for query in __subscriptions__:
@@ -50,7 +55,7 @@ class SubscriptionManager(object):
                 return query["channel"]
             
         channel = uuid.uuid4().hex
-        __subscriptions__.append({ "channel": channel, "conditions": conditions, "fields": fields })
+        __subscriptions__.append({ "channel": channel, "conditions": conditions, "fields": fields, "collection": collection })
         return channel
     
     
