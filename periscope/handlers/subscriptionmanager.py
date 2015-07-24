@@ -51,10 +51,11 @@ class SubscriptionManager(object):
         global __subsciptions__
 
         for query in __subscriptions__:
-            if conditions == query["conditions"]:
+            if conditions == query["conditions"] and collection == query["collection"]:
                 return query["channel"]
             
         channel = uuid.uuid4().hex
+        print("Subscription added[{collection}]: {query}".format(collection = collection, query = conditions))
         __subscriptions__.append({ "channel": channel, "conditions": conditions, "fields": fields, "collection": collection })
         return channel
     
