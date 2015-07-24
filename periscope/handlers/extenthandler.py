@@ -172,7 +172,6 @@ class ExtentHandler(NetworkResourceHandler):
             return
 
         try:
-            print response
             exnode = response[0]
         except Exception as exp:
             self.send_error(500, message = exp)
