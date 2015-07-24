@@ -58,12 +58,11 @@ class DBLayer(object, nllog.DoesLogging):
         return self._client[self._collection_name]
 
     def find(self, query, callback=None, ccallback = None,cert=None,**kwargs):
-        """Finds one or more elements in the collection."""        
-        self.modifyQueryByCert(query,cert)
-        self.log.info("find for Collection: [" + self._collection_name + "] with Auth as ["+ str(query[AuthField]) + "]")
+        """Finds one or more elements in the collection."""                
+        self.log.info("find for Collection: [" + self._collection_name + "]")
         fields = kwargs.pop("fields", {})
         fields["_id"] = 0                        
-        findCursor = self.collect ion.find(query, callback=callback,
+        findCursor = self.collection.find(query, callback=callback,
                                           fields=fields, **kwargs)
         if ccallback:
             self._client['$cmd'].find_one({'count' : self._collection_name , 'query' : query}, _is_command=True, callback=ccallback)
@@ -87,7 +86,7 @@ class DBLayer(object, nllog.DoesLogging):
             """ Get a list of attributes for this certificate """            
             attList = self._auth.getAllowedAttributes(cert)
             
-        self.log.info("insert for Collection: [" + self._collection_name + "] with Auth as ["+ str(query[AuthField]) + "]")
+        self.log.info("insert for Collection: [" + self._collection_name + "]")
         if isinstance(data, list) and not self.capped:
             for item in data:
                 self._insert_id(item)
@@ -97,23 +96,12 @@ class DBLayer(object, nllog.DoesLogging):
 
     def update(self, query, data,cert=None, callback=None, **kwargs):
         """Updates data found by query in the collection."""
-        self.modifyQueryByCert(query,cert)
-        self.log.info("Update for Collection: [" + self._collection_name + "] with Auth as ["+ str(query[AuthField]) + "]")
+        self.log.info("Update for Collection: [" + self._collection_name + "]")
         return self.collection.update(query, data, callback=callback, **kwargs)
 
     def remove(self, query, cert,callback=None, **kwargs):
-        """Remove objects from the database that matches a query."""
-        self.modifyQueryByCert(query,cert)
-        self.log.info("Delete for Collection: [" + self._collection_name + "] with Auth as ["+ str(query[AuthField]) + "]")
+        """Remove objects from the database that matches a query."""        
+        self.log.info("Delete for Collection: [" + self._collection_name + "]")
         return self.collection.remove(query, callback=callback, **kwargs)
-
-    def modifyQueryByCert(self,query,cert=None):
-        if cert == None:
-            """Select a default filter token"""
-            query[AuthField] = AuthDefault
-        else:
-            """ Get a list of attributes for this certificate """
-            attList = settings.app._auth.getAllowedAttributes(cert)
-            query[AuthField] = { "$in" : attList }
         
 

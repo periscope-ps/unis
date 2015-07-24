@@ -202,27 +202,32 @@ class DataHandler(NetworkResourceHandler):
             options["fields"] = fields
         if limit:
             options["limit"] = limit
+
         if "sort" not in options:
-            options["sort"] = []
-        options["sort"].append(("ts", -1))
-        if sort : 
-            """ Parse sort options and create the array """            
-            sortStr = sort
-            options["sort"] = []
+            options["sort"] = []        
+        IsTsPresent = False
+        if sort :                         
+            """ Parse sort options and create the array """
+            sortStr = sort                        
             """ Split it and then add it to array"""
             sortOpt = sortStr.split(",")
             for opt in sortOpt :
                 x = opt.split(":")
+                if x[0] == "ts":
+                    IsTsPresent = True
                 try :                    
                     options["sort"].append((x[0],int(x[1])))                
                 except:
-                    """ Ignore , """                    
-                    #self.set_header('X-error', "Sort takes integer argument 1 or -1")      
+                    """ Ignore , """
                     #print "Sort takes integer argument 1 or -1 "                
-                            
+                    #self.set_header('X-error', "Sort takes integer argument 1 or -1")
+        if not IsTsPresent:
+            options["sort"].append(("ts", -1))
+            
         self._query = query
         db_layer = self.application.get_db_layer(self._res_id, "ts", "ts",
-                        True,  5000)
+                                                 True,  5000)
+        logger.info('periscope.datahandler._find '+ "".join(str(x) for x in options["sort"]))
         query.pop("id", None)
         options['ccallback'] = self.countCallback
         self.countFinished = False 

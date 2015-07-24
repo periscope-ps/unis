@@ -13,6 +13,7 @@ from tornado.options import define
 # Setting up path names.
 ######################################################################
 PERISCOPE_ROOT = os.path.dirname(os.path.abspath(__file__)) + os.sep
+#PERISCOPE_ROOT   = "/home/el/apps/unis-stuff/"
 sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
 #SCHEMA_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache")
 SCHEMA_CACHE_DIR = "/var/unis/.cache"
@@ -21,6 +22,7 @@ GCF_PATH = "/opt/gcf/src/"
 sys.path.append(os.path.dirname(GCF_PATH))
 
 AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
+#AUTH_STORE_DIR = "/home/el/apps/unis-stuff/abac" #os.path.join(os.path.abspath(os.path.curdir),"abac") #
 
 JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
 UNIS_SCHEMAS_USE_LOCAL = False
@@ -83,7 +85,7 @@ DB_PORT = 27017
 DB_AUTH = {
     'auth_field' : "secToken",
     'auth_default' : None,
-    'attrib_list' : ("landsat","unauth",""),
+    'attrib_list' : ("landsat","unauth"),
 }
 
 # Asyncmongo specific connection configurations
@@ -600,7 +602,7 @@ main_handler_settings = {
 # PRE/POST content processing module definitions.
 ######################################################################
 
-PP_MODULES = [] #[('periscope.gemini', 'Gemini')]
+PP_MODULES = [('periscope.filters.dataAuth','DataAuth')] #[('periscope.gemini', 'Gemini')]
 #PP_MODULES = []
 
 # Settings for the GEMINI-specific authentication handlers
