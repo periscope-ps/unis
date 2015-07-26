@@ -190,7 +190,7 @@ class ExnodeHandler(NetworkResourceHandler):
 
                 mongo_alloc = dict(tmpAllocation._to_mongoiter())
                 allocations.append(mongo_alloc)
-                self._subscriptions.publish(tmpAllocation, self._collection_name)
+                self._subscriptions.publish(tmpAllocation, "extents")
                 
             self.allocation_layer.insert(allocations, lambda *_, **__: None)
         except Exception as exp:
