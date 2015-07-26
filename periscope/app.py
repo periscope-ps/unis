@@ -222,6 +222,7 @@ class PeriscopeApplication(tornado.web.Application):
         return handler
         
     def __init__(self):
+        self.cookie_secret="S19283u182u3j12j3k12n3u12i3nu12i3n12ui3"
         self._async_db = None
         self._sync_db = None
         self._ppi_classes = []

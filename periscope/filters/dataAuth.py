@@ -33,11 +33,8 @@ class DataAuth(PPI, nllog.DoesLogging):
     pp_type = PPI.PP_TYPES[PPI.PP_AUTH]
     def pre_get(self,obj, app=None, req=None,Handler=None):
         self.log.info("Doing Pre get to get the attList ")
-        attlist = Handler.get_secure_cookie(cookie_name)
-        if attlist != None:
-            req.arguments[argName] = attlist
-        else:
-            req.arguments[argName] = None
+        # attlist = Handler.get_secure_cookie(cookie_name)
+        # req.arguments[argName] = None      
         return obj
     
     def pre_post(self,obj, app=None, req=None,Handler=None):
@@ -62,15 +59,11 @@ class DataAuth(PPI, nllog.DoesLogging):
         return obj
     
     def process_query(self,obj, app=None, req=None,Handler=None):
-        cert = open(settings.SSL_OPTIONS['certfile']).read()
-        attList = self.getAllowedAttributes(cert)
-        # print Handler.get_secure_cookie("asdas")
-        if req != None:
-            """ Get something from request - Probably a secure token and use it to get its attributes """
-            return [{'secToken' : { '$in' : ['landsat']}}] #self.add_secfilter_toquery(attList)
-        else:
-            return [{}]
-
+        # cert = open(settings.SSL_OPTIONS['certfile']).read()
+        attList = Handler.get_secure_cookie(cookie_name)        
+        self.log.info("Attlist is "+ str(attList))
+        return self.add_secfilter_toquery(attList)
+    
     def __init__(self, server_cert = settings.SSL_OPTIONS['certfile'],
                  server_key = settings.SSL_OPTIONS['keyfile'],
                  store = settings.AUTH_STORE_DIR, db_layer=None):
@@ -137,10 +130,10 @@ class DataAuth(PPI, nllog.DoesLogging):
     def add_secfilter_toquery(self,attList=None):
         if attList == None:
             """Select a default filter token"""
-            return { str(AuthField) : AuthDefault }
+            return [{ str(AuthField) : AuthDefault }]
         else:
             """ Get a list of attributes for this certificate """
-            return { str(AuthField) : { "$in" : attList }}
+            return [{ str(AuthField) : { "$in" : str(attList).split(",") }}]
 
 from periscope.handlers.ssehandler import SSEHandler
 # The authentication module
