@@ -57,11 +57,12 @@ class DBLayer(object, nllog.DoesLogging):
         """Returns a reference to the default mongodb collection."""
         return self._client[self._collection_name]
 
-    def find(self, query, callback=None, ccallback = None,cert=None,**kwargs):
+    def find(self, query, callback=None, ccallback = None,**kwargs):
         """Finds one or more elements in the collection."""                
         self.log.info("find for Collection: [" + self._collection_name + "]")
         fields = kwargs.pop("fields", {})
-        fields["_id"] = 0                        
+        fields["_id"] = 0
+        self.log.info(str(query))
         findCursor = self.collection.find(query, callback=callback,
                                           fields=fields, **kwargs)
         if ccallback:

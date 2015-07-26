@@ -84,6 +84,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         # TODO (AH): Add ability to Enable/Disable different HTTP methods
         #if not isinstance(dblayer, DBLayer):
         #    raise TypeError("dblayer is not instance of DBLayer")
+        nllog.DoesLogging.__init__(self)
         self.Id = Id
         self.timestamp = timestamp
         self._dblayer = dblayer
@@ -401,12 +402,12 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         # do any PPI query updates if there was an original query
         if getattr(self.application, '_ppi_classes', None):
             for pp in self.application._ppi_classes:
-                ret = []
-                ret = pp.process_query(ret, self.application, self.request)
+                ret = []                
+                ret = pp.process_query(ret, self.application, self.request,Handler=self)
                 if query_ret["list"]:
                     for item in query_ret["query"]["$and"]:
                         ret.append(item)
-                query_ret["query"].update({"$and": ret})
+                query_ret["query"].update({"$and": ret})        
         ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip , "sort" : sort , "cert" : cert}
         return ret_val
 
@@ -417,6 +418,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     @tornado.web.asynchronous
     @tornado.web.removeslash
     def get(self, res_id=None,*args):
+        # PPI processing/checks
+        super(NetworkResourceHandler,self).get(*args)        
         return self.handle_find(*args)
 
     @tornado.web.asynchronous
@@ -426,7 +429,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     
     def handle_find(self, res_id=None):
         """Handles HTTP GET"""
-        accept = self.accept_content_type
+        accept = self.accept_content_type        
         if res_id:
             self._res_id = unicode(res_id)
         else:
@@ -440,7 +443,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         limit = parsed["limit"]
         skip = parsed["skip"]        
         sort = parsed["sort"]
-        cert = parsed["cert"]
         
         is_list = not res_id        
         if query["list"]:
@@ -451,9 +453,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query["query"]["status"] = {"$ne": "DELETED"}            
         callback = functools.partial(self._get_on_response,
                             new=True, is_list=is_list, query=query["query"])
-        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort,cert=cert)
+        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)
     
-    def _find(self, query, callback, fields=None, limit=None , skip=None,sort=None,cert=None):
+    def _find(self, query, callback, fields=None, limit=None , skip=None,sort=None):
         #logger = settings.get_logger()        
         """Query the database.
 
@@ -495,7 +497,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if not IsTsPresent:
             options["sort"].append(("ts", -1))
         options['skip']=skip
-        options['cert']=cert
         options['ccallback'] = self.countCallback
         self._query = query            
         self.countFinished = False 
@@ -746,12 +747,13 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 self.send_error(400, message="Not valid body '%s'." % exp)
                 return
 
-        # PPI processing/checks
+        
+        # PPI processing/checks        
         if getattr(self.application, '_ppi_classes', None):
             try:
                 for resource in resources:
                     for pp in self.application._ppi_classes:
-                        pp.pre_post(resource, self.application, self.request)
+                        pp.pre_post(resource, self.application, self.request,Handler=self)
             except Exception, msg:
                 self.send_error(400, message=msg)
                 return

@@ -209,6 +209,17 @@ link = dict(default_resource_settings.items() + \
             "schema": {MIME['PSJSON']: SCHEMAS["link"]},
         }.items()
 )
+
+login = dict(default_resource_settings.items() + \
+        {
+            "name": "login",
+            "pattern": "/login$",
+            # "model_class": "periscope.models.Port",
+            # "collection_name": "ports",
+            # "schema": {MIME['PSJSON']: SCHEMAS["port"]},
+        }.items()
+)
+
 ports = dict(default_resource_settings.items() + \
         {
             "name": "ports",
@@ -621,12 +632,19 @@ auth_slice_settings= {
     "pattern": "/credentials/genislice",
     "schema": [MIME['PLAIN']]
 }
-
+auth_login_settings= {
+    "base_url": "",
+    "handler_class": "periscope.filters.dataAuth.UserCredHandler",
+    "name": "authenticate_user",
+    "pattern": "/login",
+    "schema": [MIME['PLAIN']]
+}
 AuthResources = {
+    "cred_login" : auth_login_settings,
     "cred_geniuser": auth_user_settings,
     "cred_genislice": auth_slice_settings
 }
-
+    
 
 if GEMINI_NODE_INFO is not None:
     logger = get_logger()

@@ -15,13 +15,13 @@ class Gemini(PPI):
 
     pp_type = PPI.PP_TYPES[PPI.PP_AUTH]
 
-    def pre_get(self, obj, app=None, req=None):
+    def pre_get(self, obj, app=None, req=None):        
         return obj
 
     def post_get(self, obj, app=None, req=None):
         return obj
 
-    def pre_post(self, obj, app=None, req=None):
+    def pre_post(self, obj, app=None, req=None,Handler=None):
         if self.__is_server(req):
             return obj
 
@@ -51,8 +51,8 @@ class Gemini(PPI):
 
     def post_post(self, obj, app=None, req=None):
         return obj
-
-    def process_query(self, obj, app=None, req=None):
+    
+    def process_query(self, obj, app=None, req=None,Handler=None):
         if self.__is_server(req):
             return obj
 

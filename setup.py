@@ -19,8 +19,9 @@ version = "0.1.dev"
 setup(
     name="periscope",
     version=version,
-    packages=["periscope", "periscope.test", "periscope.handlers"],
-    package_data={},
+    packages=["periscope", "periscope.test","periscope.filters", "periscope.handlers","periscope.abac","periscope.ssl"],
+    package_dir= {'periscope.abac': 'periscope/abac','periscope.ssl':'periscope/ssl'},
+    package_data={'periscope.abac' : ['*'],'periscope.ssl' : ['*']},
     author="Ahmed El-Hassany",
     author_email="ahassany@indiana.edu",
     license="http://www.apache.org/licenses/LICENSE-2.0",

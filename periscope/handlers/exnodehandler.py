@@ -159,7 +159,7 @@ class ExnodeHandler(NetworkResourceHandler):
             try:
                 for resource in resources:
                     for pp in self.application._ppi_classes:
-                        pp.pre_post(resource, self.application, self.request)
+                        pp.pre_post(resource, self.application, self.request,self)
             except Exception, msg:
                 self.send_error(400, message=msg)
                 return

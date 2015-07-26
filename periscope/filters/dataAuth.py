@@ -17,6 +17,10 @@ from periscope.pp_interface import PP_Error
 from periscope.pp_interface import PP_INTERFACE as PPI
 
 AttributeList = DB_AUTH['attrib_list']
+AuthDefault = DB_AUTH['auth_default']
+AuthField = DB_AUTH['auth_field']
+cookie_name = "attlist"
+argName = AuthField
 #time = 24 * 3600 * 365 * 20
 
 class AbacError(Exception):
@@ -24,29 +28,48 @@ class AbacError(Exception):
         self.msg = msg
     def __str__(self):
         return repr(self.msg)
-
-class DataAuth(PPI):
+    
+class DataAuth(PPI, nllog.DoesLogging):
     pp_type = PPI.PP_TYPES[PPI.PP_AUTH]
-    
-    def pre_get(self,obj, app=None, req=None):
+    def pre_get(self,obj, app=None, req=None,Handler=None):
+        self.log.info("Doing Pre get to get the attList ")
+        attlist = Handler.get_secure_cookie(cookie_name)
+        if attlist != None:
+            req.arguments[argName] = attlist
+        else:
+            req.arguments[argName] = None
         return obj
-    def pre_post(self,obj, app=None, req=None):
-        return obj
     
-    def post_get(self,obj, app=None, req=None):
+    def pre_post(self,obj, app=None, req=None,Handler=None):
+        """ If cert is provided - then login """
+        cert = Handler.get_argument("cert",None)
+        self.log.info("Trying to login in using cert ")
+        if cert:
+            attList = self.getAllowedAttributes(cert)
+            attListStr = ",".join(attList)
+            self.log.info("Logging in with attList "+ attListStr)
+            req.arguments[argName] = attListStr
+            Handler.set_secure_cookie(cookie_name,attListStr)
+            return obj
+        else:
+            """ Do Nothing """
+            return obj
+    
+    def post_get(self,obj, app=None, req=None):        
         return obj
     
     def post_post(self,obj, app=None, req=None):
         return obj
     
-    def process_query(self,obj, app=None, req=None):
-        cert = None
+    def process_query(self,obj, app=None, req=None,Handler=None):
+        cert = open(settings.SSL_OPTIONS['certfile']).read()
         attList = self.getAllowedAttributes(cert)
+        # print Handler.get_secure_cookie("asdas")
         if req != None:
             """ Get something from request - Probably a secure token and use it to get its attributes """
-            return self.add_secfilter_toquery()
+            return [{'secToken' : { '$in' : ['landsat']}}] #self.add_secfilter_toquery(attList)
         else:
-            return {}
+            return [{}]
 
     def __init__(self, server_cert = settings.SSL_OPTIONS['certfile'],
                  server_key = settings.SSL_OPTIONS['keyfile'],
@@ -54,6 +77,7 @@ class DataAuth(PPI):
         # do a few sanity checks
         assert os.path.isfile(server_cert)
         assert os.path.isdir(store)
+        nllog.DoesLogging.__init__(self)
         # the DB interface for auth info"
         self.auth_mem = []
         
@@ -70,7 +94,7 @@ class DataAuth(PPI):
         # If storing this on mongo, you will still need to write them to tmp
         # files to use the libabac routines (as far as I can tell).
         self.ctx.load_directory(self.ABAC_STORE_DIR)
-        
+        self.log.info("Initializing data Auth Filter for record level authorization")
         #out = self.ctx.credentials()
         #for x in out:
             #print "credential: %s <- %s" % (x.head().string(), x.tail().string())
@@ -118,21 +142,29 @@ class DataAuth(PPI):
             """ Get a list of attributes for this certificate """
             return { str(AuthField) : { "$in" : attList }}
 
+from periscope.handlers.ssehandler import SSEHandler
 # The authentication module
-class UserCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
-    cookie_name = "SECURE_TOKEN"
-    def get(self):
-        if not self.get_cookie(self.cookie_name):
-            self.set_cookie(self.cookie_name,"")
+class UserCredHandler(SSEHandler, nllog.DoesLogging):
+    def get (self,res_id= None,*args):
+        super(UserCredHandler,self).get(*args)
+        """Just send the login status """
+        attlist = self.get_secure_cookie(cookie_name)
+        if attlist == None:
+            self.write({ "loggedIn": False})
+        else:
+            self.write({ "loggedIn": True})
             
-    def post(self, res_id=None):
-        if self.request.body:
-            auth = self.application._auth
+    def post(self, res_id=None,*args):
+        if getattr(self.application, '_ppi_classes', None):
             try:
-                cert = self.request.get_ssl_certificate(binary_form=True)
-                auth.add_credential(cert, self.request.body)
+                for pp in self.application._ppi_classes:
+                    pp.pre_post(None, self.application, self.request,Handler=self)
             except Exception, msg:
                 self.send_error(400, message=msg)
-                return
+                return            
+        """ Just send the login status """
+        attlist = self.request.arguments[argName]
+        if attlist == None:
+            self.write({ "loggedIn": False})
         else:
-            self.send_error(400, message="Message body is empty!")
+            self.write({ "loggedIn": True})

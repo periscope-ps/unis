@@ -15,7 +15,7 @@ class PP_INTERFACE:
     pp_type = ''
 
     @abstractmethod
-    def pre_get(obj, app=None, req=None):
+    def pre_get(obj, app=None, req=None,Handler=None):
         return obj
     
     @abstractmethod
@@ -23,7 +23,7 @@ class PP_INTERFACE:
         return obj
 
     @abstractmethod
-    def pre_post(obj, app=None, req=None):
+    def pre_post(obj, app=None, req=None,Handler=None):
         return obj
 
     @abstractmethod
@@ -31,5 +31,5 @@ class PP_INTERFACE:
         return obj
 
     @abstractmethod
-    def process_query(obj, app=None, req=None):
+    def process_query(obj, app=None, req=None,Handler=None):
         return obj

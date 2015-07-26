@@ -47,7 +47,16 @@ class SSEHandler(tornado.web.RequestHandler):
     SSE_MIME = "text/event-stream"
     # Default client connection retry time.
     DEFAULT_RETRY = 5000
-
+    
+    def get(self,*args):
+        if getattr(self.application, '_ppi_classes', None):
+            try:                
+                for pp in self.application._ppi_classes:
+                    pp.pre_get(None, self.application, self.request,self)
+            except Exception, msg:
+                self.send_error(400, message=msg)
+                return
+        
     def get_last_event_id(self):
         """
         Returns the value of the last event id sent to the client or.
