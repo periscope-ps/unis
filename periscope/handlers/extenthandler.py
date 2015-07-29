@@ -23,6 +23,7 @@ class ExtentHandler(NetworkResourceHandler):
                    allow_delete=True,
                    tailable=False,
                    model_class=None,
+                   collection_name=None,
                    accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']],
                    content_types_mime=[MIME['SSE'], MIME['PSJSON'],
                                        MIME['PSBSON'], MIME['PSXML'], MIME['HTML']],
@@ -34,7 +35,8 @@ class ExtentHandler(NetworkResourceHandler):
                                               schemas_single=schemas_single, schemas_list=schemas_list,
                                               allow_get=allow_get, allow_post=allow_post, allow_put=allow_put,
                                               allow_delete=allow_delete, tailable=tailable, model_class=model_class,
-                                              accepted_mime=accepted_mime, content_types_mime=content_types_mime)
+                                              accepted_mime=accepted_mime, content_types_mime=content_types_mime,
+                                              collection_name=collection_name)
     
     def post_psjson(self, **kwargs):
         """
@@ -105,7 +107,7 @@ class ExtentHandler(NetworkResourceHandler):
         self.dblayer.insert(resources, callback=callback)
 
         for res in resources:
-            self._subscriptions.publish(res)
+            self._subscriptions.publish(res, self._collection_name)
 
             
     @tornado.web.asynchronous
@@ -152,12 +154,13 @@ class ExtentHandler(NetworkResourceHandler):
             query = { "id": resource["parent"] }
             callback = functools.partial(self._find_exnode_and_update, allocation = resource)
             self._cursor = self.exnode_layer.find(query, callback)
-            self._subscriptions.publish(resource)
+            self._subscriptions.publish(resource, self._collection_name)
         except ValueError as exp:
             self.write_error(500, message = "malformed json request - {exp}".format(exp = exp))
             return
         except Exception as exp:
             self.write_error(500, message = exp)
+            return
             
 
     @tornado.web.asynchronous
@@ -172,7 +175,6 @@ class ExtentHandler(NetworkResourceHandler):
             return
 
         try:
-            print response
             exnode = response[0]
         except Exception as exp:
             self.send_error(500, message = exp)

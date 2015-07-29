@@ -168,6 +168,7 @@ class PeriscopeApplication(tornado.web.Application):
                     allow_delete=allow_delete,
                     schemas_single=schema,
                     model_class=model_class,
+                    collection_name=collection_name,
                     **kwargs
                 ),
                 name=name

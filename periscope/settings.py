@@ -48,7 +48,7 @@ CLIENT_SSL_OPTIONS = {
 # Measurement Store settings.
 ######################################################################
 #UNIS_URL = "https://unis.incntre.iu.edu:8443"
-UNIS_URL = "http://localhost:9000"
+UNIS_URL = "http://localhost:8888"
 MS_ENABLE = True
 
 MS_CLIENT_CERT = "/usr/local/etc/certs/ms_cert.pem"
@@ -155,23 +155,27 @@ MIME = {
     'PSXML': 'application/perfsonar+xml',
 }
 
+#SCHEMA_HOST = 'localhost'
+SCHEMA_HOST = 'unis.incntre.iu.edu'
+
+_schema = "http://{host}/schema/{directory}/{name}"
 SCHEMAS = {
-    'networkresource': 'http://unis.incntre.iu.edu/schema/20140214/networkresource#',
-    'node': 'http://unis.incntre.iu.edu/schema/20140214/node#',
-    'domain': 'http://unis.incntre.iu.edu/schema/20140214/domain#',
-    'port': 'http://unis.incntre.iu.edu/schema/20140214/port#',
-    'link': 'http://unis.incntre.iu.edu/schema/20140214/link#',
-    'path': 'http://unis.incntre.iu.edu/schema/20140214/path#',
-    'network': 'http://unis.incntre.iu.edu/schema/20140214/network#',
-    'topology': 'http://unis.incntre.iu.edu/schema/20140214/topology#',
-    'service': 'http://unis.incntre.iu.edu/schema/20140214/service#',
-    'blipp': 'http://unis.incntre.iu.edu/schema/20140214/blipp#',
-    'metadata': 'http://unis.incntre.iu.edu/schema/20140214/metadata#',
-    'data' : 'http://unis.incntre.iu.edu/schema/20140214/data#',
-    'datum' : 'http://unis.incntre.iu.edu/schema/20140214/datum#',
-    'measurement': 'http://unis.incntre.iu.edu/schema/20140214/measurement#',
-    'exnode': 'http://unis.incntre.iu.edu/schema/exnode/5/exnode#',
-    'extent': 'http://unis.incntre.iu.edu/schema/exnode/5/extent#',
+    'networkresource': _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "networkresource#"),
+    'node':            _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "node#"),
+    'domain':          _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "domain#"),
+    'port':            _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "port#"),
+    'link':            _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "link#"),
+    'path':            _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "path#"),
+    'network':         _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "network#"),
+    'topology':        _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "topology#"),
+    'service':         _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "service#"),
+    'blipp':           _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "blipp#"),
+    'metadata':        _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "metadata#"),
+    'data':            _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "data#"),
+    'datum':           _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "datum#"),
+    'measurement':     _schema.format(host = SCHEMA_HOST, directory = "20140214", name = "measurement#"),
+    'exnode':          _schema.format(host = SCHEMA_HOST, directory = "exnode/4", name = "exnode#"),
+    'extent':          _schema.format(host = SCHEMA_HOST, directory = "exnode/4", name = "extent#"),
 }
 
 # Default settings that apply to almost all network resources

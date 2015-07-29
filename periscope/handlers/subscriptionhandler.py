@@ -27,13 +27,12 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
                 query = json.loads(query_string)
 
             if fields_string:
-                fields = fields_string.split(',')                
-            query['\\$schema'] = settings.SCHEMAS[resource_type]
+                fields = fields_string.split(',')
             if resource_id:
                 query['id'] = resource_id
-
+            
             # This handler only handles one channel, on open
-            self.channel = self._manager.createChannel(query, fields)
+            self.channel = self._manager.createChannel(query, resource_type, fields)
             self.listen()
         except Exception as exp:
             self.write_message('Error in subscription: %s' % exp)
@@ -125,7 +124,7 @@ class AggSubscriptionHandler(SubscriptionHandler):
                     return
                 
             # DO nothing if id is already registered
-            if self.idDict.get(id):                  
+            if self.idDict.get(id):
                 pass
             else:
                 query['id'] = id
