@@ -7,7 +7,7 @@ find more information about all these components [[https://github.com/GENI-GEMIN
 *** For Debian, but should adapt to any linux flavor
 First, you'll need a few basic things
 #+BEGIN_SRC
-$ sudo apt-get install python-setuptools python-dev
+$ sudo apt-get install python-setuptools python-dev redis-server python-dateutil
 #+END_SRC
 
 UNIS and the MS use MongoDB as their backend data store. Install it
@@ -20,6 +20,14 @@ You might also need swig
 #+BEGIN_SRC
 $ sudo apt-get install swig
 #+END_SRC
+
+UNIS requires several third-party python packages, install these with pip.  If you do not have pip installed, follow the instructions here: https://pip.pypa.io/en/latest/installing.html
+#+BEGIN_SRC
+$ pip install tornado dateutil
+#+END_SRC
+
+UNIS and the MS use ABAC for authentication purposes.  Install ABAC by following the instructions found here:
+http://abac.deterlab.net/
 
 Now run the setup script in top level of the repository. You can use
 =--prefix= or =--install-dir= to install it somewhere other than the
