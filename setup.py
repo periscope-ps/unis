@@ -19,7 +19,7 @@ version = "0.1.dev"
 setup(
     name="periscope",
     version=version,
-    packages=["periscope", "periscope.test","periscope.filters", "periscope.handlers","periscope.abac","periscope.ssl"],
+    packages=["periscope", "periscope.test","periscope.filters", "periscope.handlers","periscope.ssl"],
     package_dir= {'periscope.abac': 'periscope/abac','periscope.ssl':'periscope/ssl'},
     package_data={'periscope.abac' : ['*'],'periscope.ssl' : ['*']},
     author="Ahmed El-Hassany",
@@ -42,7 +42,7 @@ setup(
         "argparse",
         "httplib2",
         "jsonpath",
-	"M2Crypto"
+        "M2Crypto"
     ],
     dependency_links=[
         "http://github.com/ahassany/asyncmongo/tarball/getmore_ioloop#egg=asyncmongo-1.2.1",
