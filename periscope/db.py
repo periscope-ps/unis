@@ -5,7 +5,6 @@ Databases related classes
 import time
 import functools
 import settings
-import auth
 from json import JSONEncoder
 from netlogger import nllog
 from settings import DB_AUTH
@@ -76,17 +75,8 @@ class DBLayer(object, nllog.DoesLogging):
             timestamp = data.get(self.timestamp, int(time.time() * 1000000))
             data["_id"] = "%s:%s" % (res_id, timestamp)
             
-    def insert(self, data,cert=None,callback=None, **kwargs):
+    def insert(self, data, callback=None, **kwargs):
         """Inserts data to the collection."""
-        # TODO - Not sure how to deal with insert ,
-        # is filtering the data out as per attributes an option ?, Large inserts might kill the server or be slow
-        if cert == None:
-            """Select a default filter token"""
-            """ Should probably stop inserts and throw error """
-        else:
-            """ Get a list of attributes for this certificate """            
-            attList = self._auth.getAllowedAttributes(cert)
-            
         self.log.info("insert for Collection: [" + self._collection_name + "]")
         if isinstance(data, list) and not self.capped:
             for item in data:
