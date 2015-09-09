@@ -61,7 +61,7 @@ GEMINI_NODE_INFO = None
 ######################################################################
 
 # Enable GENI/ABAC auth support
-ENABLE_AUTH = True
+ENABLE_AUTH = False
 
 # Enable application wide debugging options
 DEBUG = True
