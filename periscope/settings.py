@@ -418,7 +418,7 @@ datas = dict(default_resource_settings.items() + \
             "pattern": "/data$", 
             "handler_class" : "periscope.handlers.datahandler.DataHandler",
             "model_class": "periscope.models.Data",
-            "collection_name": None,
+            "collection_name": "data",
             "schema": {MIME['PSJSON']: SCHEMAS["data"]},
         }.items()
 )
@@ -429,7 +429,7 @@ data = dict(default_resource_settings.items() + \
             "pattern": "/data/(?P<res_id>[^\/]*)$",
             "handler_class" : "periscope.handlers.datahandler.DataHandler",
             "model_class": "periscope.models.Data",
-            "collection_name": None,
+            "collection_name": "data",
             "schema": {MIME['PSJSON']: SCHEMAS["data"]},
         }.items()
 )
