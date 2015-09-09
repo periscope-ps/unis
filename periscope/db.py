@@ -21,11 +21,12 @@ class MongoEncoder(JSONEncoder):
             return JSONEncoder._iterencode(self, obj, markers)
 
 import pymongo
-if pymongo.version_tuple[1] > 1:
+if pymongo.version_tuple[1] > 1 or pymongo.version_tuple[0] > 2:
     from bson.objectid import ObjectId
     import bson.json_util
     dumps_mongo = bson.json_util.dumps
 else:
+    print(pymongo.version_tuple)
     from pymongo.objectid import ObjectId
     import json
     dumps_mongo = functools.partial(json.dumps, cls=MongoEncoder)

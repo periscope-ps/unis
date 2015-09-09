@@ -617,7 +617,7 @@ main_handler_settings = {
 # PRE/POST content processing module definitions.
 ######################################################################
 PP_MODULES=[]
-if (ENABLE_AUTH) 
+if (ENABLE_AUTH): 
     PP_MODULES.append(('periscope.filters.dataAuth','DataAuth')) #[('periscope.gemini', 'Gemini')]
 
 # Settings for the GEMINI-specific authentication handlers

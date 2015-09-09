@@ -14,7 +14,7 @@
 
 from setuptools import setup
 
-version = "0.1.dev"
+version = "0.2.dev"
 
 setup(
     name="periscope",
@@ -32,7 +32,7 @@ setup(
     install_requires=[
         "tornado",
         "tornado-redis",
-        "pymongo",
+        "pymongo==2.6.3",
         "asyncmongo",
         "unittest2",
         "netlogger>=4.3.0",

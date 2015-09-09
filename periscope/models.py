@@ -15,7 +15,7 @@ from periscope.utils import json_schema_merge_extends
 from settings import JSON_SCHEMAS_ROOT,SCHEMA_CACHE_DIR,SCHEMAS,UNIS_SCHEMAS_USE_LOCAL
 
 import pymongo
-if pymongo.version_tuple[1] > 1:
+if pymongo.version_tuple[1] > 1 or pymongo.version_tuple[0] > 2:
     from bson.objectid import ObjectId
 else:
     from pymongo.objectid import ObjectId
