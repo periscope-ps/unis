@@ -9,6 +9,7 @@ from netlogger import nllog
 import time
 import traceback
 from tornado.ioloop import IOLoop
+from tornado.httpclient import HTTPError
 import tornado.web
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict

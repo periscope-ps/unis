@@ -17,12 +17,11 @@ else:
 from periscope.db import DBLayer
 from periscope.db import dumps_mongo
 from periscope.utils import load_class
-from periscope.handlers import CollectionHandler
-from periscope.handlers import NetworkResourceHandler
-from periscope.handlers import SSEHandler
 from periscope.models import Topology
 from periscope.models import Node
 from periscope.models import schemaLoader
+from periscope.handlers.networkresourcehandler import NetworkResourceHandler
+from periscope.handlers.ssehandler import SSEHandler
 from periscope.test.base import PeriscopeHTTPTestCase
 
 MIME = {
