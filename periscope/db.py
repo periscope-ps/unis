@@ -91,7 +91,7 @@ class DBLayer(object, nllog.DoesLogging):
         self.log.info("Update for Collection: [" + self._collection_name + "]")
         return self.collection.update(query, data, callback=callback, **kwargs)
 
-    def remove(self, query, callback=None, **kwargs);
+    def remove(self, query, callback=None, **kwargs):
         """Remove objects from the database that matches a query."""        
         self.log.info("Delete for Collection: [" + self._collection_name + "]")
         return self.collection.remove(query, callback=callback, **kwargs)

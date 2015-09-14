@@ -40,7 +40,7 @@ class DataAuth(PPI, nllog.DoesLogging):
     def pre_post(self,obj, app=None, req=None,Handler=None):
         """ If cert is provided - then login """
         cert = Handler.get_argument("cert",None)
-        self.log.info("Trying to login in using cert ")
+        self.log.info("Trying to log in using cert ")
         if cert:
             attList = self.getAllowedAttributes(cert)
             attListStr = ",".join(attList)

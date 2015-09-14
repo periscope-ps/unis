@@ -22,6 +22,7 @@ from periscope.models import Node
 from periscope.models import schemaLoader
 from periscope.handlers.networkresourcehandler import NetworkResourceHandler
 from periscope.handlers.ssehandler import SSEHandler
+from periscope.handlers.collectionhandler import CollectionHandler
 from periscope.test.base import PeriscopeHTTPTestCase
 
 MIME = {
@@ -642,6 +643,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Bad request
         bad_request = Mock(body=valid_body)
         bad_request.headers.get.return_value = psjson_header
+        bad_request.full_url.return_value = "http://localhost:10001"
         bad_handler = NetworkResourceHandler(app,
                             bad_request,
                             dblayer=bad_dblayer_mock,
@@ -649,8 +651,9 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
         # Good request
+        good_full_url = Mock()
         good_request = Mock(body=json.dumps(valid_body))
-        good_request.headers.get.return_value = psjson_header
+        good_request.full_url.return_value = "http://localhost:10001"
         good_handler = NetworkResourceHandler(app,
                             good_request,
                             dblayer=good_dblayer_mock,
@@ -661,6 +664,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Different IDs
         id_request = Mock(body=json.dumps(valid_body))
         id_request.headers.get.return_value = psjson_header
+        id_request.full_url.return_value = "http://localhost:10001"
         id_handler = NetworkResourceHandler(app,
                             id_request,
                             dblayer=id_dblayer_mock,
@@ -842,10 +846,11 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
             {"ts": 1330921125000000}
         ]
         psjson_header = "%s; profile=%s" % (MIME['PSJSON'], schemas['networkresource'])
-                    
+        
         # Bad request
         bad_request = Mock(body=json.dumps({"id": 1}))
         bad_request.headers.get.return_value = psjson_header
+        bad_request.arguments.iter.return_value = dict(validate = True)
         bad_request.full_url.return_value = "http://localhost/resources"
         bad_handler = NetworkResourceHandler(app,
                             bad_request,
@@ -969,6 +974,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Good single
         goodsingle_request = Mock(name="aa", body=json.dumps(valid_body))
         goodsingle_request.headers.get.return_value = psjson_header
+        goodsingle_request.arguments.iter.return_value = dict(validate = True)
         goodsingle_request.full_url.return_value = "http://localhost/resources"
         goodsingle_handler = NetworkResourceHandler(app,
                             goodsingle_request,
@@ -1124,7 +1130,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
         super(CollectionHandlerIntegrationTest, self).setUp()
         self.default_resource_settings = {
             "base_url": "", 
-            "handler_class": "periscope.handlers.NetworkResourceHandler",
+            "handler_class": "periscope.handlers.networkresourcehandler.NetworkResourceHandler",
             "is_capped_collection": False,
             "capped_collection_size": 0,
             "id_field_name": "id",
@@ -1266,7 +1272,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                     u"description": u"LAMP node",
                     u"ports": [
                         {
-                            u"href": u"#/ports/0/",
+                            u"href": u"#/ports/0",
                             u"rel": u"full"
                         }
                     ],
@@ -1585,13 +1591,17 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                 }
             ],
         }
+        
+        conn_mock = Mock()
+        conn_mock.headers.get.return_value = { "X-Forwarded-For": "" }
+
         self.sync_db[self.collection_name].create_index(
                             [("id", 1), ("ts", 1)], unique=True)
         dblayer = DBLayer(self.async_db, self.collection_name,
             capped=True)
         content_type = MIME['PSJSON'] + '; profile=' + schemas['topology']
         request = HTTPRequest("GET", "http://example.com/topologies/1",
-                version="HTTP/1.1", connection=Mock())
+                              version="HTTP/1.1", connection=conn_mock)
         self._app.add_handlers(".*$", self._make_handlers())
         handler = CollectionHandler(self._app, request,
                 collections=self.collections_settings,
