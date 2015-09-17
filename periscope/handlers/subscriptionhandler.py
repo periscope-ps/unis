@@ -83,7 +83,7 @@ class AggSubscriptionHandler(SubscriptionHandler):
 
             self.idDict = dict()
             self.fields = fields
-	    self.resource_type = resource_type #[SGS-179]
+	    self.resource_type = resource_type # [SGS-179]
 
             # This handler works with many channels, on_message
             self.client = tornadoredis.Client()
@@ -129,7 +129,7 @@ class AggSubscriptionHandler(SubscriptionHandler):
                 pass
             else:
                 query['id'] = id
-                channel = self._manager.createChannel(query, self.resource_type, self.fields) #[SGS-179]
+                channel = self._manager.createChannel(query, self.resource_type, self.fields) # [SGS-179]
                 self.idDict[id] = channel
                 self.listen(channel)
                 self.log.info("subscribe=%s" % id)
