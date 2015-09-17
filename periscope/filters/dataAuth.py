@@ -39,18 +39,22 @@ class DataAuth(PPI, nllog.DoesLogging):
     
     def pre_post(self,obj, app=None, req=None,Handler=None):
         """ If cert is provided - then login """
-        cert = Handler.get_argument("cert",None)
-        self.log.info("Trying to login in using cert ")
-        if cert:
-            attList = self.getAllowedAttributes(cert)
-            attListStr = ",".join(attList)
-            self.log.info("Logging in with attList "+ attListStr)
-            req.arguments[argName] = attListStr
-            Handler.set_secure_cookie(cookie_name,attListStr)
-            return obj
-        else:
-            """ Do Nothing """
-            return obj
+        try:            
+            pkey = Handler.get_argument("userPublicKey",None)
+            cert = Handler.get_argument("userCert",None)
+            if cert and pkey:
+                self.log.info("Logging in with attList ")
+                attList = self.getAllowedAttributes(pkey,cert)
+                attListStr = ",".join(attList)
+                self.log.info("Logging in with attList "+ attListStr)
+                req.arguments[argName] = attListStr
+                # Handler.set_secure_cookie(cookie_name,attListStr)
+                return obj
+            else:
+                """ Do Nothing """
+                return obj
+        except Exception,msg:
+            self.log.info("Error in pre-post"+ str(msg))
     
     def post_get(self,obj, app=None, req=None):        
         return obj
@@ -70,12 +74,14 @@ class DataAuth(PPI, nllog.DoesLogging):
         # do a few sanity checks
         assert os.path.isfile(server_cert)
         assert os.path.isdir(store)
+        server_cert = "/opt/cred/unis_ID.pem"
+        server_key = "/opt/cred/unis_private.pem"
         nllog.DoesLogging.__init__(self)
         # the DB interface for auth info"
         self.auth_mem = []
         
         # a few constants
-        self.ABAC_STORE_DIR = store
+        self.ABAC_STORE_DIR = "/opt/cred"
         
         # setup the ABAC context
         self.ctx = ABAC.Context()
@@ -94,39 +100,28 @@ class DataAuth(PPI, nllog.DoesLogging):
             #print "issuer: \n%s" % x.issuer_cert()
             
             
-    def getAllowedAttributes(self,cert):
+    def getAllowedAttributes(self,pkey,cert):
         """ Get all allowed attributes for the cert """
         #cert = ABAC.ID_chunk(str(cert))
-        attrList = []
-        for i in AttributeList:
-            ok,query = self.query_attr(cert,i)
-            if ok:
-                attrList.append(i)
-                
-        return attrList
-        
-    def query_attr(self, cert, attr,cert_format=None):
-        cert2 = str(cert)
         try:
-            if cert_format == "DER":                
-                cert2 = ssl.DER_cert_to_PEM_cert(cert2)
-            # Expects a PEM format cert always
-            user = ABAC.ID_chunk(cert2)
-        except Exception, e:
-            raise AbacError("Could not load user ccccert: %s" % e)
-    
-        #out = self.ctx.credentials()
-        #for x in out:
-        #    print "%s <- %s" % (x.head().string(), x.tail().string())
-        role_str = self.server_id.keyid() + "." + str(attr)
-        (success, credentials) = self.ctx.query(role_str, user.keyid())
+            context = ABAC.Context()
+            context.load_directory(self.ABAC_STORE_DIR)
+            context.load_attribute_chunk(str(cert))
+            user = ABAC.ID_chunk(str(pkey))
+            self.log.info("User ID "+user.keyid())
+            attrList = []
+            for i in AttributeList:
+                role_str = self.server_id.keyid() + "." + str(i)
+                ok,query = context.query(role_str, user.keyid())
+                if ok:
+                    attrList.append(i)
+                else:
+                    self.log.info("Query for "+i+ " failed")
+            return attrList
+        except Exception,msg:
+            self.log.info("Error in getAllowed attributes"+ str(msg))
+            return []
 
-        #print ">>>>", success
-        #for c in credentials:
-        #    print "%s <- %s" % (c.head().string(), c.tail().string())
-
-        return success,credentials
-    
     def add_secfilter_toquery(self,attList=None):
         if attList == None:
             """Select a default filter token"""
@@ -152,12 +147,13 @@ class UserCredHandler(SSEHandler, nllog.DoesLogging):
             try:
                 for pp in self.application._ppi_classes:
                     pp.pre_post(None, self.application, self.request,Handler=self)
-            except Exception, msg:
+            except Exception, msg:                
                 self.send_error(400, message=msg)
-                return            
+                return
+                
         """ Just send the login status """
-        attlist = self.request.arguments[argName]
-        if attlist == None:
-            self.write({ "loggedIn": False})
+        if self.request.arguments.has_key(argName):
+            attlist = self.request.arguments[argName]
+            self.write({ "loggedIn": True, "attlist" : str(attlist)})
         else:
-            self.write({ "loggedIn": True})
+            self.write({ "loggedIn": False})

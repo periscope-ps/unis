@@ -85,7 +85,7 @@ DB_PORT = 27017
 DB_AUTH = {
     'auth_field' : "secToken",
     'auth_default' : None,
-    'attrib_list' : ("landsat","unauth"),
+    'attrib_list' : ('read',"landsat","unauth"),
 }
 
 # Asyncmongo specific connection configurations
