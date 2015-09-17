@@ -856,20 +856,19 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
         if self.Id not in resource:
             resource[self.Id] = res_id
-        
+
         if resource[self.Id] != res_id:
             self.send_error(400,
                 message="Different ids in the URL" + \
                  "'%s' and in the body '%s'" % (body[self.Id], res_id))
             return
         
-        #resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
-        
-        #if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
-        #    self.send_error(400,
-        #        message="Not valid body '%s'; expecting $schema: '%s'." % \
-        #        (resource["$schema"], self.schemas_single[self.accept_content_type]))
-        #    return
+        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
+        if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
+            self.send_error(400,
+                message="Not valid body '%s'; expecting $schema: '%s'." % \
+                (resource["$schema"], self.schemas_single[self.accept_content_type]))
+            return
 
         if 'selfRef' not in resource:
             resource['selfRef'] = "%s/%s" % \

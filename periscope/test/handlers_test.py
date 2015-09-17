@@ -757,10 +757,11 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     def test_put_good_request(self, on_put_mock):
         # Arrange
         request = {"id": "1", "ts": 1330921125000000, "name": 'host1'}
+        expected_query = { "id": "1" }
         excpeted = copy.deepcopy(request)
         excpeted[u"\\$schema"] = schemas['networkresource']
         dblayer_mock = Mock(spec=DBLayer)
-        dblayer_mock.insert.side_effect = \
+        dblayer_mock.update.side_effect = \
             lambda *args, **kwargs: kwargs['callback'](request, error=None)
         
         on_put_mock.side_effect = lambda self, *args, **kwargs: self.finish()
@@ -782,9 +783,11 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                                 "Connection": "close"})
         # Assert
         self.assertEqual(response.code, 200, msg=response.body)
-        self.assertEqual(dblayer_mock.insert.call_count, 1)
-        self.assertEqual(len(dblayer_mock.insert.call_args), 2)
-        self.assertEqual(dblayer_mock.insert.call_args[0][0], excpeted)
+        self.assertEqual(dblayer_mock.update.call_count, 1)
+        self.assertEqual(len(dblayer_mock.update.call_args), 2)
+        self.assertEqual(dblayer_mock.update.call_args[0][0], expected_query)
+        excpeted["selfRef"] = dblayer_mock.update.call_args[0][1].get("selfRef")
+        self.assertEqual(dblayer_mock.update.call_args[0][1], excpeted)
         self.assertTrue(on_put_mock.called)
         self.assertEqual(len(on_put_mock.call_args), 2)
         self.assertEqual(on_put_mock.call_args[0][1], request)
@@ -850,7 +853,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Bad request
         bad_request = Mock(body=json.dumps({"id": 1}))
         bad_request.headers.get.return_value = psjson_header
-        bad_request.arguments.iter.return_value = dict(validate = True)
+        bad_request.arguments = dict(validate = ["True"])
         bad_request.full_url.return_value = "http://localhost/resources"
         bad_handler = NetworkResourceHandler(app,
                             bad_request,
@@ -862,6 +865,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Good with ID request
         with_id_request = Mock(name="aa", body=json.dumps(valid_body_with_id))
         with_id_request.headers.get.return_value = psjson_header
+        with_id_request.arguments = dict(validate = ["True"])
         with_id_request.full_url.return_value = "http://localhost/resources"
         with_id_handler = NetworkResourceHandler(app,
                             with_id_request,
@@ -873,6 +877,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Good with NO ID request
         no_id_request = Mock(body=json.dumps(valid_body_no_id))
         no_id_request.headers.get.return_value = psjson_header
+        no_id_request.arguments = dict(validate = ["True"])
         no_id_request.full_url.return_value = "http://localhost/resources"
         no_id_handler = NetworkResourceHandler(app,
                             no_id_request,
@@ -884,6 +889,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Good Array with IDs request
         array_with_id_request = Mock(body=json.dumps(valid_array_with_id))
         array_with_id_request.headers.get.return_value = psjson_header
+        array_with_id_request.arguments = dict(validate = ["True"])
         array_with_id_request.full_url.return_value = "http://localhost/resources"
         array_with_id_handler = NetworkResourceHandler(app,
                             array_with_id_request,
@@ -895,6 +901,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Good Array with NO IDs request
         array_no_id_request = Mock(body=json.dumps(valid_array_no_id))
         array_no_id_request.headers.get.return_value = psjson_header
+        array_no_id_request.arguments = dict(validate = ["True"])
         array_no_id_request.full_url.return_value = "http://localhost/resources"
         array_no_id_handler = NetworkResourceHandler(app,
                             array_no_id_request,
@@ -974,7 +981,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Good single
         goodsingle_request = Mock(name="aa", body=json.dumps(valid_body))
         goodsingle_request.headers.get.return_value = psjson_header
-        goodsingle_request.arguments.iter.return_value = dict(validate = True)
+        goodsingle_request.arguments = dict(validate = ["True"])
         goodsingle_request.full_url.return_value = "http://localhost/resources"
         goodsingle_handler = NetworkResourceHandler(app,
                             goodsingle_request,
@@ -986,6 +993,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Bad single
         badsingle_request = Mock(name="aa", body=json.dumps(notvalid_body))
         badsingle_request.headers.get.return_value = psjson_header
+        badsingle_request.arguments = dict(validate = ["True"])
         badsingle_request.full_url.return_value = "http://localhost/resources"
         badsingle_handler = NetworkResourceHandler(app,
                             badsingle_request,
@@ -997,6 +1005,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Good Array request
         good_array_request = Mock(body=json.dumps(valid_array))
         good_array_request.headers.get.return_value = psjson_header
+        good_array_request.arguments = dict(validate = ["True"])
         good_array_request.full_url.return_value = "http://localhost/resources"
         good_array_handler = NetworkResourceHandler(app,
                             good_array_request,
@@ -1008,6 +1017,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Bad Array request
         bad_array_request = Mock(body=json.dumps(notvalid_array))
         bad_array_request.headers.get.return_value = psjson_header
+        bad_array_request.arguments = dict(validate = ["True"])
         bad_array_request.full_url.return_value = "http://localhost/resources"
         bad_array_handler = NetworkResourceHandler(app,
                             bad_array_request,
@@ -1592,16 +1602,13 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
             ],
         }
         
-        conn_mock = Mock()
-        conn_mock.headers.get.return_value = { "X-Forwarded-For": "" }
-
         self.sync_db[self.collection_name].create_index(
                             [("id", 1), ("ts", 1)], unique=True)
         dblayer = DBLayer(self.async_db, self.collection_name,
             capped=True)
         content_type = MIME['PSJSON'] + '; profile=' + schemas['topology']
         request = HTTPRequest("GET", "http://example.com/topologies/1",
-                              version="HTTP/1.1", connection=conn_mock)
+                              version="HTTP/1.1")
         self._app.add_handlers(".*$", self._make_handlers())
         handler = CollectionHandler(self._app, request,
                 collections=self.collections_settings,
@@ -1665,7 +1672,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
             capped=True)
         content_type = MIME['PSJSON'] + '; profile=' + schemas['topology']
         request = HTTPRequest("GET", "http://example.com/topologies/1",
-                version="HTTP/1.1", connection=Mock())
+                version="HTTP/1.1")
         self._app.add_handlers(".*$", self._make_handlers())
         handler = CollectionHandler(self._app, request,
                 collections=self.collections_settings,

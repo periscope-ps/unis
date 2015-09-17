@@ -20,14 +20,12 @@ class SubscriptionManager(object):
     def publish(self, resource, collection = None, trim_function = None):
         global __subscriptions__
         global __trc__
-        print "Publishing resource"
         
         for query in __subscriptions__:
             is_member = True
             tmpConditions = query["conditions"]
             
             if "collection" in query and query["collection"] != collection:
-                print "  {collection} : {query}".format(collection = collection, query = query["collection"])
                 continue
             
             for condition, value in tmpConditions.iteritems():
