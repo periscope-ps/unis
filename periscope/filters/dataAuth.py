@@ -128,7 +128,7 @@ class DataAuth(PPI, nllog.DoesLogging):
             return [{ str(AuthField) : AuthDefault }]
         else:
             """ Get a list of attributes for this certificate """
-            return [{ str(AuthField) : { "$in" : str(attList).split(",") }}]
+            return [{ "$or" : [{str(AuthField) : { "$in" : str(attList).split(",") }}, {str(AuthField) : AuthDefault}]}]
 
 from periscope.handlers.ssehandler import SSEHandler
 # The authentication module
@@ -154,6 +154,7 @@ class UserCredHandler(SSEHandler, nllog.DoesLogging):
         """ Just send the login status """
         if self.request.arguments.has_key(argName):
             attlist = self.request.arguments[argName]
+            self.set_secure_cookie(cookie_name,str(attlist))
             self.write({ "loggedIn": True, "attlist" : str(attlist)})
         else:
             self.write({ "loggedIn": False})
