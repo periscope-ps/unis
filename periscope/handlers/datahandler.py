@@ -110,9 +110,8 @@ class DataHandler(NetworkResourceHandler):
                 
                 push_data = {'id': self._res_id,
                              'data': body["data"],
-                             '\\$schema': settings.SCHEMAS["data"]
                              }
-                self._subscriptions.publish(push_data, self._collection_name, trim_published_resource)
+                self._subscriptions.publish(push_data, self._collection_name, self.trim_published_resource)
             else:
                 self.send_error(400, message="The collection for metadata ID '%s' does not exist" % self._res_id)
                 return
@@ -146,9 +145,8 @@ class DataHandler(NetworkResourceHandler):
                     
                     push_data = {'id': mids[i],
                                  'data': data[mids[i]],
-                                 '\\$schema': settings.SCHEMAS["data"]
                                  }
-                    self._subscriptions.publish(push_data)
+                    self._subscriptions.publish(push_data, self._collection_name, self.trim_published_resource)
                 else:
                     self.send_error(400, message="The collection for metadata ID '%s' does not exist" % mids[i])
                     return
@@ -227,7 +225,7 @@ class DataHandler(NetworkResourceHandler):
         self._query = query
         db_layer = self.application.get_db_layer(self._res_id, "ts", "ts",
                                                  True,  5000)
-        logger.info('periscope.datahandler._find '+ "".join(str(x) for x in options["sort"]))
+        self.log.info('periscope.datahandler._find '+ "".join(str(x) for x in options["sort"]))
         query.pop("id", None)
         options['ccallback'] = self.countCallback
         self.countFinished = False 

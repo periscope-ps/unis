@@ -12,7 +12,7 @@ def prune_exnodes(collection):
         do_remove = True
         for extent in exnode["extents"]:
             try:
-                if datetime.datetime.strptime(extent["lifetimes"][0]["end"], "%Y-%m-%d %H:%M:%S") > datetime.datetime.utcnow():
+                if datetime.datetime.strptime(extent["lifetimes"][0]["end"], "%Y-%m-%d %H:%M:%S") >= datetime.datetime.utcnow():
                     do_remove = False
                     break
 

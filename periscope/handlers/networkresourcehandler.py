@@ -9,6 +9,7 @@ from netlogger import nllog
 import time
 import traceback
 from tornado.ioloop import IOLoop
+from tornado.httpclient import HTTPError
 import tornado.web
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
@@ -422,14 +423,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     def get(self, res_id=None,*args):
         # PPI processing/checks
         super(NetworkResourceHandler,self).get(*args)        
-        return self.handle_find(*args)
+        return self.handle_find(res_id=res_id, *args)
 
-    @tornado.web.asynchronous
-    @tornado.web.removeslash
-    def post(self, res_id=None,*args):        
-        return self.handle_find(*args)
-    
-    def handle_find(self, res_id=None):
+    def handle_find(self, res_id=None, *args):
         """Handles HTTP GET"""
         accept = self.accept_content_type        
         if res_id:
@@ -457,7 +453,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                             new=True, is_list=is_list, query=query["query"])
         return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)
     
-    def _find(self, query, callback, fields=None, limit=None , skip=None,sort=None):
+    def _find(self, query, callback, fields=None, limit=None , skip=0, sort=None):
         #logger = settings.get_logger()        
         """Query the database.
 
@@ -656,7 +652,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
     @tornado.web.asynchronous
     @tornado.web.removeslash
-    def put(self, res_id=None):
+    def post(self, res_id=None):
         # Check if the schema for conetnt type is known to the server
         if self.accept_content_type not in self.schemas_single:
             message = "Schema is not defined for content of type '%s'" % \
@@ -860,20 +856,19 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
         if self.Id not in resource:
             resource[self.Id] = res_id
-        
+
         if resource[self.Id] != res_id:
             self.send_error(400,
                 message="Different ids in the URL" + \
                  "'%s' and in the body '%s'" % (body[self.Id], res_id))
             return
         
-        #resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
-        
-        #if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
-        #    self.send_error(400,
-        #        message="Not valid body '%s'; expecting $schema: '%s'." % \
-        #        (resource["$schema"], self.schemas_single[self.accept_content_type]))
-        #    return
+        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
+        if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
+            self.send_error(400,
+                message="Not valid body '%s'; expecting $schema: '%s'." % \
+                (resource["$schema"], self.schemas_single[self.accept_content_type]))
+            return
 
         if 'selfRef' not in resource:
             resource['selfRef'] = "%s/%s" % \
@@ -929,7 +924,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     @tornado.web.asynchronous
     @tornado.web.removeslash
     def delete(self, res_id=None):
-        # Check if the schema for conetnt type is known to the server
+        # Chec0k if the schema for conetnt type is known to the server
         if self.accept_content_type not in self.schemas_single:
             message = "Schema is not defiend fot content of type '%s'" \
                         % self.accept_content_type

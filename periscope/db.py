@@ -5,7 +5,6 @@ Databases related classes
 import time
 import functools
 import settings
-import auth
 from json import JSONEncoder
 from netlogger import nllog
 from settings import DB_AUTH
@@ -22,11 +21,12 @@ class MongoEncoder(JSONEncoder):
             return JSONEncoder._iterencode(self, obj, markers)
 
 import pymongo
-if pymongo.version_tuple[1] > 1:
+if pymongo.version_tuple[1] > 1 or pymongo.version_tuple[0] > 2:
     from bson.objectid import ObjectId
     import bson.json_util
     dumps_mongo = bson.json_util.dumps
 else:
+    print(pymongo.version_tuple)
     from pymongo.objectid import ObjectId
     import json
     dumps_mongo = functools.partial(json.dumps, cls=MongoEncoder)
@@ -76,17 +76,8 @@ class DBLayer(object, nllog.DoesLogging):
             timestamp = data.get(self.timestamp, int(time.time() * 1000000))
             data["_id"] = "%s:%s" % (res_id, timestamp)
             
-    def insert(self, data,cert=None,callback=None, **kwargs):
+    def insert(self, data, callback=None, **kwargs):
         """Inserts data to the collection."""
-        # TODO - Not sure how to deal with insert ,
-        # is filtering the data out as per attributes an option ?, Large inserts might kill the server or be slow
-        if cert == None:
-            """Select a default filter token"""
-            """ Should probably stop inserts and throw error """
-        else:
-            """ Get a list of attributes for this certificate """            
-            attList = self._auth.getAllowedAttributes(cert)
-            
         self.log.info("insert for Collection: [" + self._collection_name + "]")
         if isinstance(data, list) and not self.capped:
             for item in data:
@@ -100,7 +91,7 @@ class DBLayer(object, nllog.DoesLogging):
         self.log.info("Update for Collection: [" + self._collection_name + "]")
         return self.collection.update(query, data, callback=callback, **kwargs)
 
-    def remove(self, query, cert,callback=None, **kwargs):
+    def remove(self, query, callback=None, **kwargs):
         """Remove objects from the database that matches a query."""        
         self.log.info("Delete for Collection: [" + self._collection_name + "]")
         return self.collection.remove(query, callback=callback, **kwargs)

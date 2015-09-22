@@ -7,7 +7,7 @@ find more information about all these components [[https://github.com/GENI-GEMIN
 *** For Debian, but should adapt to any linux flavor
 First, you'll need a few basic things
 #+BEGIN_SRC
-$ sudo apt-get install python-setuptools python-dev
+$ sudo apt-get install python-setuptools python-dev redis-server python-dateutil
 #+END_SRC
 
 UNIS and the MS use MongoDB as their backend data store. Install it
@@ -20,6 +20,14 @@ You might also need swig
 #+BEGIN_SRC
 $ sudo apt-get install swig
 #+END_SRC
+
+UNIS requires several third-party python packages, install these with pip.  If you do not have pip installed, follow the instructions here: https://pip.pypa.io/en/latest/installing.html
+#+BEGIN_SRC
+$ pip install tornado dateutil
+#+END_SRC
+
+UNIS and the MS use ABAC for authentication purposes.  Install ABAC by following the instructions found here:
+http://abac.deterlab.net/
 
 Now run the setup script in top level of the repository. You can use
 =--prefix= or =--install-dir= to install it somewhere other than the
@@ -69,6 +77,31 @@ Now if you try =python periscope/app.py= again, you should be in
 business. Or at least you should get some errors that have to do with
 your config. Running with SSL or ABAC turned on may require some
 additional packages. See the configuration section.
+
+** Special note on ABAC 
+For enabling Auth, we need to install libabac from http://abac.deterlab.net/src/abac-0.1.9.tar.gz and do ~./configure~ , ~make~ and ~make install~ on it. This will also install creddy which can be used to generate the certificates and attribute rules.
+
+** Using Creddy to create ABAC rules 
+*** Generating a key pair
+#+BEGIN_SRC
+creddy --generate --cn <cnname>
+#+END_SRC
+
+*** Assigning an attribute to a principal by another principal
+Normally a main principal assigns attribute to each user 
+Something A <- B.b1
+#+BEGIN_SRC
+creddy --attribute --issuer <A_ID.pem> --key <A_private.pem> --role srand --subject-cert <B_ID.pem> --out <out.der>
+#+END_SRC
+
+*** Delegating principal to another role
+Creating a rule like A.a1 <- B.a2
+#+BEGIN_SRC
+creddy --attribute --issuer <A_ID.pem> --key <A_private.pem> --role srand --subject-cert <B_ID.pem> --subject-role <somerole> --out <out.der>
+#+END_SRC
+
+*** Verifying
+Verfication can be done by using crudge Webstart app on the folder of certificates
 
 ** Configuration
 Mostly done by editing periscope/settings.py

@@ -150,7 +150,7 @@ class UserCredHandler(SSEHandler, nllog.DoesLogging):
             except Exception, msg:                
                 self.send_error(400, message=msg)
                 return
-                
+            
         """ Just send the login status """
         if self.request.arguments.has_key(argName):
             attlist = self.request.arguments[argName]

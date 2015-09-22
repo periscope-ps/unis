@@ -65,7 +65,7 @@ GEMINI_NODE_INFO = None
 ######################################################################
 
 # Enable GENI/ABAC auth support
-ENABLE_AUTH = True
+ENABLE_AUTH = False
 
 # Enable application wide debugging options
 DEBUG = True
@@ -422,7 +422,7 @@ datas = dict(default_resource_settings.items() + \
             "pattern": "/data$", 
             "handler_class" : "periscope.handlers.datahandler.DataHandler",
             "model_class": "periscope.models.Data",
-            "collection_name": None,
+            "collection_name": "data",
             "schema": {MIME['PSJSON']: SCHEMAS["data"]},
         }.items()
 )
@@ -433,7 +433,7 @@ data = dict(default_resource_settings.items() + \
             "pattern": "/data/(?P<res_id>[^\/]*)$",
             "handler_class" : "periscope.handlers.datahandler.DataHandler",
             "model_class": "periscope.models.Data",
-            "collection_name": None,
+            "collection_name": "data",
             "schema": {MIME['PSJSON']: SCHEMAS["data"]},
         }.items()
 )
@@ -620,9 +620,9 @@ main_handler_settings = {
 ######################################################################
 # PRE/POST content processing module definitions.
 ######################################################################
-
-PP_MODULES = [('periscope.filters.dataAuth','DataAuth')] #[('periscope.gemini', 'Gemini')]
-#PP_MODULES = []
+PP_MODULES=[]
+if (ENABLE_AUTH): 
+    PP_MODULES.append(('periscope.filters.dataAuth','DataAuth')) #[('periscope.gemini', 'Gemini')]
 
 # Settings for the GEMINI-specific authentication handlers
 auth_user_settings= {
