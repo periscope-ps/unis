@@ -74,14 +74,14 @@ class DataAuth(PPI, nllog.DoesLogging):
         # do a few sanity checks
         assert os.path.isfile(server_cert)
         assert os.path.isdir(store)
-        server_cert = "/opt/cred/unis_ID.pem"
-        server_key = "/opt/cred/unis_private.pem"
+        server_cert = settings.AUTH_SERVER.get("cert")
+        server_key = settings.AUTH_SERVER.get("key")
         nllog.DoesLogging.__init__(self)
         # the DB interface for auth info"
         self.auth_mem = []
         
         # a few constants
-        self.ABAC_STORE_DIR = "/opt/cred"
+        self.ABAC_STORE_DIR = store
         
         # setup the ABAC context
         self.ctx = ABAC.Context()

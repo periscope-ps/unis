@@ -21,7 +21,11 @@ SCHEMA_CACHE_DIR = "/var/unis/.cache"
 GCF_PATH = "/opt/gcf/src/"
 sys.path.append(os.path.dirname(GCF_PATH))
 
-AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
+AUTH_STORE_DIR = "/opt/cred" #os.path.join(os.path.dirname(__file__), "abac")
+AUTH_SERVER = {
+    'cert' : os.path.join(AUTH_STORE_DIR,"unis_ID.pem"),
+    'key' : os.path.join(AUTH_STORE_DIR,"unis_private.pem"),
+}
 #AUTH_STORE_DIR = "/home/el/apps/unis-stuff/abac" #os.path.join(os.path.abspath(os.path.curdir),"abac") #
 
 JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
