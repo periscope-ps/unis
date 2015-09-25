@@ -70,7 +70,6 @@ class SubscriptionManager(nllog.DoesLogging):
                 return query["channel"]
             
         channel = uuid.uuid4().hex
-        print("Subscription added[{collection}]: {query}".format(collection = collection, query = conditions))
         self.subscriptions.append({ "channel": channel, "conditions": conditions, "fields": fields, "collection": collection, "subscribers": 1 })
         return channel
 
