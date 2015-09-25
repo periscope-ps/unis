@@ -7,13 +7,13 @@ import tornadoredis
 from netlogger import nllog
 
 import periscope.settings as settings
-from subscriptionmanager import SubscriptionManager
+import subscriptionmanager
 
 class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging):
     def __init__(self, *args, **kwargs):
         super(SubscriptionHandler, self).__init__(*args, **kwargs)
         nllog.DoesLogging.__init__(self)
-        self._manager = SubscriptionManager()
+        self._manager = subscriptionmanager.GetManager()
         self.listening = False
 
     def open(self, resource_type = None, resource_id = None):
@@ -60,6 +60,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
     
     def on_close(self):
         if self.client and self.client.subscribed:
+            self._manager.removeChannel(self.channel)
             self.client.unsubscribe(self.channel)
             self.client.disconnect()
             
@@ -102,6 +103,7 @@ class AggSubscriptionHandler(SubscriptionHandler):
 
     def dcChannel(self,id) :
         channel = self.idDict.get(id)
+        self._manager.removeChannel(channel)
         self.client.unsubscribe(channel)
         # Remove the id from the map
         self.log.info("unsubscribe=%s" % id)
