@@ -35,7 +35,6 @@ setup(
         "pymongo==2.6.3",
         "asyncmongo",
         "unittest2",
-        "ws4py",
         "netlogger>=4.3.0",
         "validictory>=validictory-0.8.1",
         "mock==0.8.0",
