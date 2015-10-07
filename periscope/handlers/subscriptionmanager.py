@@ -53,7 +53,6 @@ class SubscriptionManager(nllog.DoesLogging):
                 elif op == "equal":
                     return val1 == val2
                 elif op == "reg":
-                    print("reg: {val1} in {val2}".format(val1 = val1, val2 = val2))
                     return re.search(val2, val1)
                 elif op == "in":
                     for inner_val in val2:

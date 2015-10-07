@@ -26,6 +26,7 @@ from periscope.pp_interface import PP_INTERFACE as PPI
 # default port
 define("port", default=8888, help="run on the given port", type=int)
 define("address", default="0.0.0.0", help="default binding IP address", type=str)
+define("dbname", default=settings.DB_NAME, help="store data to a specific database", type=str)
 
 
 class PeriscopeApplication(tornado.web.Application):
@@ -326,6 +327,7 @@ class PeriscopeApplication(tornado.web.Application):
     def async_db(self):
         """Returns a reference to asyncmongo DB connection."""
         if not getattr(self, '_async_db', None):
+            settings.ASYNC_DB["dbname"] = options.dbname
             self._async_db = asyncmongo.Client(**settings.ASYNC_DB)
         return self._async_db
 
@@ -334,7 +336,7 @@ class PeriscopeApplication(tornado.web.Application):
         """Returns a reference to pymongo DB connection."""
         if not getattr(self, '_sync_db', None):
             conn = pymongo.Connection(**settings.SYNC_DB)
-            self._sync_db = conn[settings.DB_NAME]
+            self._sync_db = conn[options.dbname]
         return self._sync_db
 
 
