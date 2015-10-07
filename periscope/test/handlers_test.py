@@ -650,6 +650,8 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        bad_handler._transforms = dict()
+        
         # Good request
         good_full_url = Mock()
         good_request = Mock(body=json.dumps(valid_body))
@@ -660,6 +662,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        good_handler._transforms = dict()
         
         # Different IDs
         id_request = Mock(body=json.dumps(valid_body))
@@ -671,6 +674,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        id_handler._transforms = dict()
         
         # Act
         bad_handler.put_psjson("1")
@@ -809,6 +813,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        bad_handler._transforms = dict()
         # Good request
         ok_result = {u'connectionId': 1, u'ok': 1.0, u'err': None, u'n': 0}
         good_request = Mock()
@@ -819,6 +824,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        good_handler._transforms = dict()
         
         # Act
         bad_handler.on_put(bad_result, error="Some error")
@@ -861,6 +867,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        bad_handler._transforms = dict()
         
         # Good with ID request
         with_id_request = Mock(name="aa", body=json.dumps(valid_body_with_id))
@@ -873,6 +880,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        with_id_handler._transforms = dict()
         
         # Good with NO ID request
         no_id_request = Mock(body=json.dumps(valid_body_no_id))
@@ -885,6 +893,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        no_id_handler._transforms = dict()
         
         # Good Array with IDs request
         array_with_id_request = Mock(body=json.dumps(valid_array_with_id))
@@ -897,6 +906,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        array_with_id_handler._transforms = dict()
         
         # Good Array with NO IDs request
         array_no_id_request = Mock(body=json.dumps(valid_array_no_id))
@@ -909,6 +919,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        array_no_id_handler._transforms = dict()
     
         # Act
         bad_handler.post_psjson()
@@ -989,6 +1000,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        goodsingle_handler._transforms = dict()
         
         # Bad single
         badsingle_request = Mock(name="aa", body=json.dumps(notvalid_body))
@@ -1001,6 +1013,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        badsingle_handler._transforms = dict()
         
         # Good Array request
         good_array_request = Mock(body=json.dumps(valid_array))
@@ -1013,6 +1026,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        good_array_handler._transforms = dict()
         
         # Bad Array request
         bad_array_request = Mock(body=json.dumps(notvalid_array))
@@ -1025,6 +1039,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
+        bad_array_handler._transforms = dict()
         
         # Act
         goodsingle_handler.post_psjson()
@@ -1602,13 +1617,22 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
             ],
         }
         
+        mock_connection = Mock()
+        mock_stream = Mock()
+        mock_callback = Mock(side_effect = lambda callback: None)
+        mock_context = Mock()
+        mock_context.protocol = "http"
+        mock_stream.attach_mock(mock_callback, "set_close_callback")
+        mock_connection.attach_mock(mock_stream, "stream")
+        mock_connection.attach_mock(mock_context, "context")
+        
         self.sync_db[self.collection_name].create_index(
                             [("id", 1), ("ts", 1)], unique=True)
         dblayer = DBLayer(self.async_db, self.collection_name,
             capped=True)
         content_type = MIME['PSJSON'] + '; profile=' + schemas['topology']
         request = HTTPRequest("GET", "http://example.com/topologies/1",
-                              version="HTTP/1.1")
+                              version="HTTP/1.1", connection = mock_connection)
         self._app.add_handlers(".*$", self._make_handlers())
         handler = CollectionHandler(self._app, request,
                 collections=self.collections_settings,
@@ -1670,9 +1694,19 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                             [("id", 1), ("ts", 1)], unique=True)
         dblayer = DBLayer(self.async_db, self.collection_name,
             capped=True)
+        
+        mock_connection = Mock()
+        mock_stream = Mock()
+        mock_callback = Mock(side_effect = lambda callback: None)
+        mock_context = Mock()
+        mock_context.protocol = "http"
+        mock_stream.attach_mock(mock_callback, "set_close_callback")
+        mock_connection.attach_mock(mock_stream, "stream")
+        mock_connection.attach_mock(mock_context, "context")
+        
         content_type = MIME['PSJSON'] + '; profile=' + schemas['topology']
         request = HTTPRequest("GET", "http://example.com/topologies/1",
-                version="HTTP/1.1")
+                              version="HTTP/1.1", connection = mock_connection)
         self._app.add_handlers(".*$", self._make_handlers())
         handler = CollectionHandler(self._app, request,
                 collections=self.collections_settings,
@@ -1680,7 +1714,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                 base_url="/topologies",
                 model_class=Topology,
                 schemas_single={MIME['PSJSON']: schemas['topology']})
-
+        
         # Act
         topology_obj = Topology(topology, schemas_loader=schemaLoader)
         handler._complete_href_links(topology_obj, topology_obj)

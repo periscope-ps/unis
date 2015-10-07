@@ -19,15 +19,15 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
 
     def open(self, resource_type = None, resource_id = None):
         self.log.info("New websocket connection: {ip}".format(ip = self.request.remote_ip))
-
+        
         # Initialize the redis client for publishing.
         self.client = tornadoredis.Client()
         self.client.connect()
-
+        
         # Wait for further subscription information
         if not resource_type:
             return
-
+        
         query_string = self.get_argument("query", None)
         fields_string = self.get_argument("fields", None)
         query = {}
@@ -45,18 +45,19 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
             self._addSubscription(resource_type, query, fields)
         except ValueError as exp:
             self.write_message('Could not decode subscripition query: %s' % exp)
+            self.log.warn('Could not decode subscription query: {exp} - {query}'.format(exp = exp, query = query_string))
             self.client.disconnect()
             self.client = None
 
-        
+
     @tornado.gen.engine
     def listen(self, channel):
         yield tornado.gen.Task(self.client.subscribe, str(channel))
-
+        
         if not self.listening:
             self.client.listen(self.deliver)
             self.listening = True
-        
+            
     def on_message(self, msg):
         body = None
         try:
@@ -92,7 +93,6 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
             
     def check_origin(self, origin):
         return True
-    
     
     def _addSubscription(self, resource_type, query, fields):
         if resource_type:

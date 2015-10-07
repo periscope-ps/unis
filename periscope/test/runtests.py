@@ -20,6 +20,8 @@ UNIT_TEST_MODULES = [
     'periscope.test.models_test.JSONSchemaModelTest',
     'periscope.test.handlers_test.NetworkResourceHandlerTest',
     'periscope.test.handlers_test.SSEHandlerTest',
+    'periscope.test.subscriptions_test.SubscriptionTest',
+    'periscope.test.subscriptions_test.PublishingTest',
     'periscope.test.utils_test',
 ]
 
