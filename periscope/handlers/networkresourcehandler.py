@@ -16,7 +16,8 @@ from periscope.models import ObjectDict
 from asyncmongo.errors import IntegrityError
 from periscope.settings import MIME
 from ssehandler import SSEHandler
-from subscriptionmanager import SubscriptionManager
+
+import subscriptionmanager
 
 import bson
 if hasattr(bson, "dumps"):
@@ -101,7 +102,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self._content_types_mime = content_types_mime
         self._tailable = tailable
         self._model_class = model_class
-        self._subscriptions = SubscriptionManager()
+        self._subscriptions = subscriptionmanager.GetManager()
         self._collection_name = collection_name
         
         if self.schemas_single is not None and \

@@ -126,8 +126,8 @@ class EventsHandler(NetworkResourceHandler):
             generic = self.application.sync_db.command(command)
         except Exception as exp:
             self.send_error(400, message="At least one of the metadata ID is invalid.")
-            return
-              
+            return False
+        
         self.del_stat_fields(generic)
         specific={}
         if 'ts' in self.request.arguments.keys():       
@@ -154,6 +154,7 @@ class EventsHandler(NetworkResourceHandler):
         response[0]["generic"]=generic
         response[0]["queried"]=specific
 
+        return True
                                             
     @tornado.web.asynchronous
     @tornado.web.removeslash
@@ -186,7 +187,8 @@ class EventsHandler(NetworkResourceHandler):
             while obj:
                 index = index+1
                 mid = obj["metadata_URL"].split('/')[obj["metadata_URL"].split('/').__len__() - 1]
-                self.generate_response(query,mid,response,index)
+                if not self.generate_response(query,mid,response,index):
+                    return
                 obj = next(cursor, None)
             try:
                 json_response = dumps_mongo(response, indent=2)
@@ -203,13 +205,15 @@ class EventsHandler(NetworkResourceHandler):
                 if 'mids' in d.keys():
                     if isinstance(d["mids"],dict):
                         for m in d['mids']['$in']:
-                            self.generate_response(query,m,response,index)
+                            if not self.generate_response(query,m,response,index):
+                                return
                     else:
-                        self.generate_response(query,d['mids'],response,index)
+                        if not self.generate_response(query,d['mids'],response,index):
+                            return
             try:
                 json_response = dumps_mongo(response, indent=2)
                 self.write(json_response)
                 self.finish()
             except Exception as exp:
                 self.send_error(400, message="1 At least one of the metadata ID is invalid.")
-                return                
+                return
