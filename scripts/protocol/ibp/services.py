@@ -18,28 +18,12 @@ import settings
 import flags
 import allocation
 
-import exnodemanager.record as record
-
 from flags import print_error
 
 class ProtocolService(object):
     def __init__(self):
-        self._log = record.getLogger()
-
+        pass
     
-    '''
-    @input: address - A dict containing a host:port pair for the depot location
-    @optional:
-            password - the password to access the depot
-            timeout  - the length of time in seconds to wait for a response
-    @output:
-           Dict:
-             total - the total space on the depot
-             used  - the amount of data stored on the depot
-             volatile - the amount of data that can be removed if space is required
-             non-volatile - the amount of data that cannot be removed
-             max-duration - the maximum time in seconds data can be hosted on the depot without refreshing
-    '''
     def GetStatus(self, address, **kwargs):
     # Query the status of a Depot.
     
@@ -61,7 +45,6 @@ class ProtocolService(object):
                 return None
             result = result.split(" ")
         except Exception as exp:
-            self._log.warn("IBPProtocol.GetStatus: Failed to get the status of {host}:{port} - {err}".format(err = exp, **address))
             return None
             
         return dict(zip(["total", "used", "volatile", "used-volatile", "max-duration"], result))
@@ -69,20 +52,6 @@ class ProtocolService(object):
 
 
 
-    '''
-    @input: alloc - an Allocation containing metadata about the allocation
-    @optional:
-           reliability - One of either IBP_HARD or IBP_SOFT, when hard, allocations will not expire unless
-                         explicitly removed, when soft, allocations will expire after duration.
-           type        - One of BYTEARRAY, BUFFER, FIFO, CIRQ.
-           duration    - The amount of time, in seconds, that the allocation is reserved.
-           timeout     - The amount of time the connection will wait for a response.
-           max_size    - Changes the maximum size of the data stored by the allocation
-           cap_type    - The capability modified by the action
-           mode        - Defines the type of manage call.
-    @output:
-           The response from the depot (varies by manage mode)
-    '''
     def Manage(self, alloc, **kwargs):
         cap_type    = 0
         reliability = flags.IBP_HARD
@@ -125,20 +94,15 @@ class ProtocolService(object):
                 return None
             result = result.split(" ")
         except Exception as exp:
-            self._log.warn("IBPProtocol.Manage [{alloc}]: Could not connect to {host}:{port} - {err}".format(alloc = alloc.Id, err = exp, host = alloc.host, port = alloc.port))
             return None
 
         if result[0].startswith("-"):
-            self._log.warn("IBPProtocol.Manage [{alloc}]: Failed to manage allocation - {err}".format(alloc = alloc.Id, err = print_error(result[0])))
             return None
         else:
             return result
 
 
 
-    '''
-    See Manage, Probe is a decorator for manage.
-    '''
     def Probe(self, alloc, **kwargs):
         results = self.Manage(alloc, mode = flags.IBP_PROBE, **kwargs)
         if not results:
@@ -150,19 +114,6 @@ class ProtocolService(object):
  
 
    
-    '''
-    @input: 
-           depot - The address of the depot as a dict {host: host, port: port}
-           size  - The size of the desired allocation
-    @optional:
-           reliability - One of either IBP_HARD or IBP_SOFT, when hard, allocations will not expire unless
-                         explicitly removed, when soft, allocations will expire after duration.
-           type        - One of BYTEARRAY, BUFFER, FIFO, CIRQ.
-           duration    - The amount of time, in seconds, that the allocation is reserved.
-           timeout     - The amount of time the connection will wait for a response.
-    @output:
-           An Allocation object
-    '''
     def Allocate(self, depot, size, **kwargs):
     # Generate destination Allocation and Capabilities using the form below
     # IBPv031[0] IBP_ALLOCATE[1] reliability cap_type duration size timeout
@@ -187,12 +138,10 @@ class ProtocolService(object):
             result = result.split(" ")[1:]
 
         except Exception as exp:
-            self._log.warn("IBPProtocol.Allocate: Could not connect to {host}:{port} - {err}".format(err = exp, **depot))
             return None
 
         if result[0].startswith("-"):
-            self._log.warn("IBPProtocol.Allocate: Failed to allocate resource - {err}".format(err = print_error(result[0])))
-        
+            return None
 
         alloc = allocation.Allocation()
         alloc.SetReadCapability(result[0])
@@ -229,17 +178,6 @@ class ProtocolService(object):
 
 
 
-    '''
-    @input: 
-           alloc - An Allocation object describing the allocation
-           data  - The bytes to be stored
-           size  - The size of the data
-    @optional:
-           duration    - The amount of time, in seconds, that the allocation is reserved.
-           timeout     - The amount of time the connection will wait for a response.
-    @output:
-           The duration of the allocation
-    '''
     def Store(self, alloc, data, size, **kwargs):
         timeout  = settings.DEFAULT_TIMEOUT
         duration = settings.DEFAULT_DURATION
@@ -259,11 +197,9 @@ class ProtocolService(object):
                 return None
             result = result.split(" ")
         except Exception as exp:
-            self._log.warn("IBPProtocol.Store [{alloc}]: Could not connect to {host}:{port} - {err}".format(alloc = alloc.Id, err = exp, host = alloc.host, port = alloc.port))
             return None
             
         if result[0].startswith("-"):
-            self._log.warn("IBPProtocol.Store [{alloc}]: Failed to store resource - {err}".format(alloc = alloc.Id, err = print_error(result[0])))
             return None
         else:
             alloc.depotSize = size
@@ -271,17 +207,6 @@ class ProtocolService(object):
             return duration
 
 
-    '''
-    @input: 
-           source      - An Allocation object describing the source allocation
-           destination - An Allocation object describing the destination allocation
-    @optional:
-           duration    - The amount of time, in seconds, that the allocation is reserved.
-           timeout     - The amount of time the connection will wait for a response.
-           offset      - The data offset.
-    @output:
-           The duration of the allocation
-    '''
     def Send(self, source, destination, **kwargs):
     # Move an allocation from one {source} Depot to one {destination} depot
         timeout     = settings.DEFAULT_TIMEOUT
@@ -316,25 +241,15 @@ class ProtocolService(object):
                 return None
             result = result.split(" ")
         except Exception as exp:
-            self._log.warn("IBPProtocol.Send [{alloc}]: Could not connect to {host1}:{port1} - {e}".format(alloc = alloc.Id, host1 = source.host, port1 = source.port, e = exp))
             return None
 
         if result[0].startswith("-"):
-            self._log.warn("IBPProtocol.Send [{alloc}]: Failed to move allocation - {err}".format(alloc = alloc.Id, err = print_error(result[0])))
             return None
         else:
             return duration
                          
 
 
-    '''
-    @input: 
-           alloc - An Allocation object describing the allocation
-    @optional:
-           timeout     - The amount of time the connection will wait for a response.
-    @output:
-           The data stored in the allocation
-    '''
     def Load(self, alloc, **kwargs):
         timeout = settings.DEFAULT_TIMEOUT
         tmpCommand  = ""
@@ -356,11 +271,9 @@ class ProtocolService(object):
             if not result:
                 return None
         except Exception as exp:
-            self._log.warn("IBPProtocol.Load [{alloc}]: Could not connect to {host}:{port} - {err}".format(alloc = alloc.Id, err = exp, host = alloc.host, port = alloc.port))
             return None
             
         if result["headers"].startswith("-"):
-            self._log.warn("IBPProtocol.Load [{alloc}]: Failed to store resource - {err}".format(alloc = alloc.Id, err = print_error(result[0])))
             return None
         else:
             return result["data"]
@@ -377,12 +290,8 @@ class ProtocolService(object):
             header = sock.recv(1024)
             data = sock.recv(size)
         except socket.timeout as e:
-            self._log.warn("Socket Timeout - {0}".format(e))
-            self._log.warn("--Attempted to execute: {0}".format(command))
             return None
         except e:
-            self._log.warn("Socket error - {0}".format(3))
-            self._log.warn("--Attempted to execute: {0}".format(command))
             return None
         finally:
             sock.close()
@@ -403,12 +312,8 @@ class ProtocolService(object):
                 sock.send(data)
                 response = sock.recv(1024)
         except socket.timeout as e:
-            self._log.warn("Socket Timeout - {0}".format(e))
-            self._log.warn("--Attempted to execute: {0}".format(command))
             return None
         except e:
-            self._log.warn("Socket error - {0}".format(3))
-            self._log.warn("--Attempted to execut: {0}".format(command))
             return None
         finally:
             sock.close()
@@ -427,12 +332,8 @@ class ProtocolService(object):
             sock.send(command)
             response = sock.recv(1024)
         except socket.timeout as e:
-            self._log.warn("Socket Timeout - {0}".format(e))
-            self._log.warn("--Attempted to execute: {0}".format(command))
             return None
         except e:
-            self._log.warn("Socket error - {0}".format(3))
-            self._log.warn("--Attempted to execut: {0}".format(command))
             return None
         finally:
             sock.close()

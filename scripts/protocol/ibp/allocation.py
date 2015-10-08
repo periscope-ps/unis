@@ -14,11 +14,8 @@ depot.
 
 import datetime
 
-import exnodemanager.record as record
-
 class Allocation(object):
     def __init__(self, alloc = None):
-        self._log = record.getLogger()
 
         self.allocationType = "ibp"
         self.Id          = ""
@@ -68,8 +65,8 @@ class Allocation(object):
             self.SetManageCapability(alloc["mapping"]["manage"])
             self._raw = alloc
         except Exception as exp:
-            self._log.warn("{func:>20}| Unable to decode Allocation - {exp}".format(func = "Allocation", exp = exp))            
-    
+            pass
+        
     def Serialize(self):
         if not self._raw:
             self._raw = {}
@@ -105,15 +102,12 @@ class Allocation(object):
         try:
             tmpCap = Capability(read)
         except ValueError as exp:
-            self._log.warn("{func:>20}| Unable to create capability - {exp}".format(func = "SetReadCapability", exp = exp))
             return False
         
         if self.host:
             if tmpCap.host != self.host:
-                self._log.warn("{func:>20}| Host Mismatch, read and write hosts must be the same".format(func = "SetReadCapability"))
                 return False
             elif tmpCap.port != self.port:
-                self._log.warn("{func:>20}| Host Mismatch, read and write ports must be the same".format(func = "SetReadCapability"))
                 return False                
         else:
             self.host = tmpCap.host
@@ -126,15 +120,12 @@ class Allocation(object):
         try:
             tmpCap = Capability(write)
         except ValueError as exp:
-            self._log.warn("{func:>20}| Unable to create capability - {exp}".format(func = "SetWriteCapability", exp = exp))
             return False
         
         if self.host:
             if self.host != tmpCap.host:
-                self._log.warn("{func:>20}| Host Mismatch, read and write hosts must be the same".format(func = "SetWriteCapability"))
                 return False
             elif self.port != tmpCap.port:
-                self._log.warn("{func:>20}| Host Mismatch, read and write ports must be the same".format(func = "SetWriteCapability"))
                 return False
         else:
             self.host = tmpCap.host
@@ -146,15 +137,12 @@ class Allocation(object):
         try:
             tmpCap = Capability(manage)
         except ValueError as exp:
-            self._log.warn("{func:>20}| Unable to create capability - {exp}".format(func = "SetManageCapability", exp = exp))
             return False
         
         if self.host:
             if self.host != tmpCap.host:
-                self._log.warn("{func:>20}| Host Mismatch, read and manage hosts must be the same".format(func = "SetManageCapability"))
                 return False
             elif self.port != tmpCap.port:
-                self._log.warn("{func:>20}| Host Mismatch, read and manage ports must be the same".format(func = "SetManageCapability"))
                 return False
         else:
             self.host = tmpCap.host

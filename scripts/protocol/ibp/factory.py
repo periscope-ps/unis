@@ -3,17 +3,15 @@ import json
 import datetime
 import flags
 
-from exnodemanager.protocol.exceptions import AllocationException
-from exnodemanager.protocol.ibp.allocation import Allocation
-import exnodemanager.protocol.ibp.services as services
-import exnodemanager.record as record
+from exceptions import AllocationException
+from allocation import Allocation
+import services
 
 def buildAllocation(json):
     if type(json) is str:
         try:
             json = json.loads(json)
         except Exception as exp:
-            record.getLogger().warn("{func:>20}| Could not decode allocation - {exp}".format(func = "buildAllocation", exp = exp))
             raise AllocationException("Could not decode json")
     
     alloc = Allocation(json)
@@ -29,7 +27,6 @@ def buildAllocation(json):
 
 class IBPAdaptor(object):
     def __init__(self, alloc):
-        self._log = record.getLogger()
         self._service = services.ProtocolService()
         self._allocation = alloc
     
@@ -46,8 +43,6 @@ class IBPAdaptor(object):
             raise AllocationException("could not contact Depot")
         
         alloc_status = self._service.Probe(self._allocation)
-        self._log.debug("IBPAdapter.Check: {status}".format(status = alloc_status))
-        
         if not alloc_status:
             raise AllocationException("Could not retrieve status")
         
@@ -55,15 +50,15 @@ class IBPAdaptor(object):
             self._allocation.end = datetime.datetime.utcnow() + datetime.timedelta(seconds = int(alloc_status["duration"]))
         
         return True
-        
+    
     def Copy(self, destination, **kwargs):
-        host   = self._allocation.host
+        host   = self._allocation.host        
         port   = self._allocation.port
         offset = kwargs.get("offset", 0)
         size   = kwargs.get("size", self._allocation.depotSize - offset)
         
         dest_alloc = buildAllocation(self._allocation.Serialize())
-
+        
         response = self._service.Allocate(destination, size, **kwargs)
         if not response:
             return False
@@ -104,7 +99,6 @@ class IBPAdaptor(object):
         #####################
         # FOR DEBUGGING ONLY#
         status = self._service.Probe(self._allocation)
-        self._log.debug("Manage result: {status}".format(status = status))
         #####################
 
         if "duration" in kwargs:

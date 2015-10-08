@@ -33,7 +33,6 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
         query = {}
         fields = None
         
-        self.log.info("Adding subscription to websocket: {ip} - {query}".format(ip = self.request.remote_ip, query = query_string))
         try:
             if query_string:
                 query = json.loads(query_string)
@@ -72,7 +71,6 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
         fields = body.get("fields", None)
         resource_type = body.get("resourceType", None)
         
-        self.log.info("Adding subscription to websocket: {ip} - {query}".format(ip = self.request.remote_ip, query = json.dumps(query)))
         self._addSubscription(resource_type, query, fields)
         
     def deliver(self, msg):
@@ -96,6 +94,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
     
     def _addSubscription(self, resource_type, query, fields):
         if resource_type:
+            self.log.info("Adding subscription to websocket[{resource_type}]: {ip} - {query}".format(resource_type = resource_type, ip = self.request.remote_ip, query = query))
             channel = self._manager.createChannel(query, resource_type, fields)
             self.channels.append(channel)
             self.listen(channel)

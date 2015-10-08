@@ -1,6 +1,6 @@
 
 
-from exnodemanager.protocol.exceptions import AllocationException
+from ..exceptions import AllocationException
 
 class IBPException(AllocationException):
     ''' Generic exception for IBP related errors '''
