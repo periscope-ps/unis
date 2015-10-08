@@ -60,14 +60,14 @@ class Search(object):
                 
             return contains_data
 
-        children = collection.find({ "parent": exnode["id"] })
+        children = self._exnodes.find({ "parent": exnode["id"] })
     
         with concurrent.futures.ThreadPoolExecutor(max_workers = 15) as executor:
             for result in executor.map(search_children, children):
                 contains_data = contains_data | result
 
         if not contains_data:
-            collection.remove({"id": exnode["id"]})
+            self._exnodes.remove({"id": exnode["id"]})
             print "Removing Directory: {0}".format(exnode["name"])
         
         return contains_data
