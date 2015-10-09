@@ -22,7 +22,7 @@ class Search(object):
             alloc = factory.buildAllocation(allocation)
             if alloc:
                 print("Found live allocation: {alloc}".format(alloc = allocation["id"]))
-                return True
+                return allocation["id"]
             else:
                 self.remove_allocation(allocation)
                 return False
@@ -32,14 +32,20 @@ class Search(object):
             return False
                 
     def clean_exnode(self, exnode):
-        contains_data = False
+        valid_allocations = []
         restart = True
         tmpSize = 0
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers = 15) as executor:
+            for result in executor.map(self.test_allocation, exnode["extents"]):
+                if result:
+                    valid_allocations.append(result)
+
         
         while restart:
             restart = False
             for allocation in exnode["extents"]:
-                if allocation["offset"] == tmpSize:
+                if allocation["offset"] == tmpSize and allocation["id"] in valid_allocations:
                     tmpSize = tmpSize + allocation["size"]
                     restart = True
                     break
@@ -49,12 +55,10 @@ class Search(object):
                 print("--Incomplete Exnode: Deleting [{actual}/{expected}]".format(actual = tmpSize, expected = exnode["size"]))
                 self.remove_allocation(allocation)
                 return False
-        
-        with concurrent.futures.ThreadPoolExecutor(max_workers = 15) as executor:
-            for result in executor.map(self.test_allocation, exnode["extents"]):
-                contains_data = contains_data | result
-        return contains_data
+            
+        return len(valid_allocations) > 0
 
+    
 
     def prune_directories(self):
         root = self._exnodes.find({"parent": None})
