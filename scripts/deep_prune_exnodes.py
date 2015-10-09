@@ -24,16 +24,32 @@ class Search(object):
                 print("Found live allocation: {alloc}".format(alloc = allocation["id"]))
                 return True
             else:
-                remove_allocation(allocation)
+                self.remove_allocation(allocation)
                 return False
         except Exception as exp:
             print("Could not confirm allocation: {alloc} - {exp}".format(alloc = allocation["id"], exp = exp))
-            remove_allocation(allocation, allocs)
+            self.remove_allocation(allocation)
             return False
                 
     def clean_exnode(self, exnode):
         contains_data = False
+        restart = True
+        tmpSize = 0
+        
+        while restart:
+            restart = False
+            for allocation in exnode["extents"]:
+                if allocation["offset"] == tmpSize:
+                    tmpSize = tmpSize + allocation["size"]
+                    restart = True
+                    break
 
+        for allocation in exnode["extents"]:
+            if allocation["offset"] > tmpSize:
+                print("--Incomplete Exnode: Deleting [{actual}/{expected}]".format(actual = tmpSize, expected = exnode["size"]))
+                self.remove_allocation(allocation)
+                return False
+        
         with concurrent.futures.ThreadPoolExecutor(max_workers = 15) as executor:
             for result in executor.map(self.test_allocation, exnode["extents"]):
                 contains_data = contains_data | result
@@ -63,7 +79,7 @@ class Search(object):
         children = self._exnodes.find({ "parent": exnode["id"] })
     
         with concurrent.futures.ThreadPoolExecutor(max_workers = 15) as executor:
-            for result in executor.map(search_children, children):
+            for result in executor.map(self.search_children, children):
                 contains_data = contains_data | result
 
         if not contains_data:

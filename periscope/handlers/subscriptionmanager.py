@@ -28,8 +28,6 @@ class SubscriptionManager(nllog.DoesLogging):
         self.trc = tornadoredis.Client()
         self.subscriptions = []
 
-        self.trc.connect()
-
         if __manager__:
             self.log.warn("SubscriptionManager: Multiple instantiations of singleton SubscriptionManager")
 
@@ -111,7 +109,9 @@ class SubscriptionManager(nllog.DoesLogging):
             if is_member:
                 trim = trim_function or self.trim_published_resource
                 trimmed_resource = trim(resource, query["fields"])
+                self.trc.connect()
                 self.trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
+                self.trc.disconnect()
     
     
     # @description: createChannel registers a series of conditions to a channel for later use
