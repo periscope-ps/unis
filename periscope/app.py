@@ -52,10 +52,14 @@ class PeriscopeApplication(tornado.web.Application):
         # Make indexes if the collection is not capped
         if id_field_name != timestamp_field_name:
             self.sync_db[collection_name].ensure_index([
-                    (id_field_name, 1),
-                    (timestamp_field_name, -1)
-                ],
-                unique=True)            
+                (id_field_name, 1),
+                (timestamp_field_name, -1)
+            ],
+                                                       unique=True)
+            self.sync_db[collection_name].ensure_index([
+                (timestamp_field_name, -1)
+            ],
+                                                       unique=True)
         
         # Prepare the DBLayer
         db_layer = DBLayer(self.async_db,
@@ -308,7 +312,7 @@ class PeriscopeApplication(tornado.web.Application):
        
                 http_client = AsyncHTTPClient()
   
-                content_type = MIME['PSJSON'] + '; profile=' + SCHEMAS['service']     
+                content_type = MIME['PSJSON'] + '; profile=' + SCHEMAS['service']
                 http_client.fetch(service_url,
                                   method="POST",
                                   body=json.dumps(service),
