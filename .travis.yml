@@ -1,0 +1,25 @@
+language: python
+
+python:
+ - "2.7"
+
+virtualenv:
+      system_site_packages: true
+
+# command to install dependencies
+install: 
+ - "sudo apt-get install swig python-dev python-m2crypto redis-server"
+ - "sudo start redis-server"
+ - "pip install --allow-all-external jsonpath --allow-unverified jsonpath -r requirements.txt"
+ - "sudo mkdir /var/unis"
+ - "sudo chown ${USER} /var/unis"
+
+script: python periscope/test/runtests.py
+
+notifications:
+  slack: crest-networks:nctOxrMsZdnYU8jGrkpSjpvf
+  email:
+    on_success: never
+    on_failure: change
+    recipients:
+	- dlt@crest.iu.edu
