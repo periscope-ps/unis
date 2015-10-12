@@ -22,4 +22,4 @@ notifications:
     on_success: never
     on_failure: change
     recipients:
-	- dlt@crest.iu.edu
+      - dlt@crest.iu.edu
