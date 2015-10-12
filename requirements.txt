@@ -1,0 +1,13 @@
+tornado
+tornado-redis
+pymongo==2.6.3
+asyncmongo
+unittest2
+netlogger>=4.3.0
+validictory>=validictory-0.8.1
+mock==0.8.0
+jsonpointer>=0.2
+argparse
+httplib2
+jsonpath
+M2Crypto
