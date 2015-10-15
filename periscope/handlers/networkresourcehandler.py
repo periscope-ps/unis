@@ -7,13 +7,13 @@ import functools
 import urllib2
 from netlogger import nllog
 import time
+import datetime
 import traceback
 from tornado.ioloop import IOLoop
 from tornado.httpclient import HTTPError
 import tornado.web
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
-from asyncmongo.errors import IntegrityError
 from periscope.settings import MIME
 from ssehandler import SSEHandler
 
@@ -112,14 +112,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if tailable and allow_delete:
             raise ValueError("Capped collections do not support" + \
                             "delete operation")
-
+    
     @property
     def dblayer(self):
         """Returns a reference to the DB Layer."""
         if not getattr(self, "_dblayer", None):
             raise TypeError("No DB layer is defined for this handler.")
         return self._dblayer
-
+    
     @property
     def accept_content_type(self):
         """
@@ -203,14 +203,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         else:
             return False
                         
-    def countCallback(self, response, error):
-        if (response[u'ok']):
-            self.set_header('X-Count', str(response[u'n']))            
-        self.countFinished = True
-        if (self.mainFinished):
-            """ Main will take care of finishing """                        
-            self.finish()
-                        
+
     def write_error(self, status_code, **kwargs):
         """
         Overrides Tornado error writter to produce different message
@@ -370,8 +363,17 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         sort = self.get_argument("sort", default=None)
         query.pop("sort", None)
         if sort:
-            sort = convert_value_type("sort", sort, "string")
-            
+            sortDict = {}
+            sortStr = convert_value_type("sort", sort, "string")
+            """ Parse sort options and create the array """
+            sortStr = sortStr.split(",")
+            for opt in sortStr:
+                pair = opt.split(":")
+                sortDict[pair[0]] = pair[1]
+            sortDict[self.timestamp] = "-1"
+            sort = sortDict.items()
+
+                
         query_ret = []
         for arg in query:
             if isinstance(query[arg], list) and len(query[arg]) > 1:
@@ -414,220 +416,89 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 query_ret["query"].update({"$and": ret})        
         ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip , "sort" : sort , "cert" : cert}
         return ret_val
-
-    def _get_cursor(self):
-        """Returns reference to the database cursor."""
-        return self._cursor
-
+    
+    
+    
     @tornado.web.asynchronous
     @tornado.web.removeslash
-    def get(self, res_id=None,*args):
-        # PPI processing/checks
-        super(NetworkResourceHandler,self).get(*args)        
-        return self.handle_find(res_id=res_id, *args)
+    @tornado.web.coroutine
+    def get(self, res_id = None, *args):
+        super(NetworkResrouceHandler, self).get(*args)
 
-    def handle_find(self, res_id=None, *args):
-        """Handles HTTP GET"""
-        accept = self.accept_content_type        
-        if res_id:
-            self._res_id = unicode(res_id)
-        else:
-            self._res_id = None
+        # Parse arguments and set up query
         try:
             parsed = self._parse_get_arguments()
-        except Exception, msg:
-            return self.send_error(403, message=msg)
-        query = parsed["query"]
-        fields = parsed["fields"]
-        limit = parsed["limit"]
-        skip = parsed["skip"]        
-        sort = parsed["sort"]
+            options = dict(query  = parsed["query"]["query"],
+                           fields = parsed["fields"],
+                           limit  = parsed["limit"],
+                           sort   = parsed["sort"],
+                           skip   = parsed["skip"])
+            if res_id:
+                options["query"][self.Id] = res_id
+                
+            options["query"]["status"] = { "$ne": "DELETED" }
+        except Exception as exp:
+            self.send_error(403, message = exp)
+            return
         
-        is_list = not res_id        
-        if query["list"]:
-            is_list = True
-        if is_list == False:
-            limit = 1
-        if is_list:
-            query["query"]["status"] = {"$ne": "DELETED"}            
-        callback = functools.partial(self._get_on_response,
-                            new=True, is_list=is_list, query=query["query"])
-        return self._find(query["query"], callback, fields=fields, limit=limit,skip=skip,sort=sort)
-    
-    def _find(self, query, callback, fields=None, limit=None , skip=0, sort=None):
-        #logger = settings.get_logger()        
-        """Query the database.
-
-        Parameters:
-
-        callback: a function to be called back in case of new data.
-                callback function should have `response`, `error`,
-                and `new` fields. `new` is going to be True.
-        """
         keep_alive = self.supports_streaming or self.supports_sse()
-        if self._res_id:
-            query[self.Id] = self._res_id
-        options = dict(query=query, callback=callback)#, await_data=True)
-        # Makes it a tailable cursor
         if keep_alive and self._tailable:
-            options.update(dict(tailable=True, timeout=False))
-        if fields:
-            options["fields"] = fields
-        if limit:
-            options["limit"] = limit
-        if "sort" not in options:
-            options["sort"] = []        
-        IsTsPresent = False
-        if sort :                         
-            """ Parse sort options and create the array """
-            sortStr = sort                        
-            """ Split it and then add it to array"""
-            sortOpt = sortStr.split(",")
-            for opt in sortOpt :
-                x = opt.split(":")
-                if x[0] == "ts":
-                    IsTsPresent = True
-                try :                    
-                    options["sort"].append((x[0],int(x[1])))                
-                except:
-                    """ Ignore , """
-                    #print "Sort takes integer argument 1 or -1 "                
-                    #self.set_header('X-error', "Sort takes integer argument 1 or -1")
-        if not IsTsPresent:
-            options["sort"].append(("ts", -1))
-        options['skip']=skip
-        options['ccallback'] = self.countCallback
-        self._query = query            
-        self.countFinished = False 
-        self.mainFinished = False
-        self._cursor = self.dblayer.find(**options)
-
-    def _get_more(self, cursor, callback):
-        """Calls the given callback if there is data available on the cursor.
-
-        Parameters:
-
-        cursor: database cursor returned from a find operation.
-        callback: a function to be called back in case of new data.
-            callback function should have `response`, `error`,
-            and `new` fields. `new` is going to be False.
-        """
-        # If the client went away,
-        # clean up the  cursor and close the connection
-        if not self.request.connection.stream.socket:
-            self._remove_cursor()
+            # This spins off a perpetual connection
+            self._get_tailable(query = options["query"], fields = options["fields"])
+        else:
+            cursor = self.dblayer.find(options)
+            
+            accept = self.accept_content_type
+            self.set_header("Content-Type", accept + "; profile=" + self.schemas_single[accept])
+            
+            count = yield cursor.count()
+            self.set_header('X-Count', count))
+            
+            
+            if count > 1:
+                self.write('[')
+                
+            # Write first entry
+            yield cursor.fetch_next
+            resource = cursor.next_object()
+            json_resonse = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+            self.write(json_response)
+            
+            while (yield cursor.fetch_next):
+                self.write(',')
+                resource = cursor.next_object()
+                json_resonse = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+                self.write(json_response)
+                
+            if count > 1:
+                self.write(']')
+                
             self.finish()
-            return
-        # If the cursor is not alive, issue new find to the database
-        if cursor and cursor.alive:
-            cursor.get_more(callback)
-        else:
-            callback.keywords["response"] = []
-            callback.keywords["error"] = None
-            callback.keywords["last_batch"] = True
-            callback()
 
-    def _remove_cursor(self):
-        """Clean up the opened database cursor."""
-        if getattr(self, '_cursor', None):
-            del self._cursor
 
-    def _get_on_response(self, response, error, new=False,
-                        is_list=False, query=None, last_batch=False):       
-
-        """callback for get request
-
-        Parameters:
-            response: the response body from the database
-            error: any error messages from the database.
-            new: True if this is the first time to call this method.
-            is_list: If True listing is requered, for example /nodes,
-                    otherwise it's a single object like /nodes/node_id
-        """
-        if error:
-            self.send_error(500, message=error)
-            return
-        keep_alive = self.supports_streaming
-        if new and not response and not is_list:
-            self.send_error(404)
-            return
-        if response and not is_list:
-            response = response[0]
-            if response.get("status", None) == "DELETED":
-                self.set_status(410)
-                self._remove_cursor()
+    @tornado.gen.coroutine
+    def _get_tailable(query, fields):
+        cursor = self.dblayer.find(query      = query,
+                                   fields     = fields,
+                                   tailable   = True,
+                                   await_data = True)
+        self.write('[')
+        first = True
+        while True:
+            if not cursor.alive:
+                self.write(']')
                 self.finish()
-                return
-        cursor = self._get_cursor()
-        response_callback = functools.partial(self._get_on_response,
-                                    new=False, is_list=is_list)
-        get_more_callback = functools.partial(self._get_more,
-                                    cursor, response_callback)
+            if (yield cursor.fetch_next):
+                if not first:
+                    self.write(',')
+                else:
+                    first = False
+                resource = cursor.next_object()
+                json_resonse = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+                self.write(json_response)
 
-        # This will be called when self._get_more returns empty response
-        if not new and not response and keep_alive and not last_batch:
-            IOLoop.instance().add_callback(get_more_callback)
-            return
-
-        accept = self.accept_content_type
-        self.set_header("Content-Type",
-                    accept + "; profile=" + self.schemas_single[accept])
-
-        if accept == MIME['PSJSON'] or accept == MIME['JSON']:
-            json_response = dumps_mongo(response,
-                                indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
-            # Mongo sends each batch a separate list, this code fixes that
-            # and makes all the batches as part of single list
-            if is_list:
-                if not new and response:
-                    json_response = "," + json_response.lstrip("[")
-                if not last_batch:
-                    json_response = json_response.rstrip("]")
-                if last_batch:
-                    if not response:
-                        json_response = "]"
-                    else:
-                        json_response += "]"
-            else:
-                if not response:
-                    json_response = ""
-            self.write(json_response)
-        else:
-            # TODO (AH): HANDLE HTML, SSE and other formats
-            json_response = dumps_mongo(response,
-                                indent=2).replace('\\\\$', '$')
-            # Mongo sends each batch a separate list, this code fixes that
-            # and makes all the batches as part of single list
-            if is_list:
-                if not new and response:
-                    json_response = "," + json_response.lstrip("[")
-                if not last_batch:
-                    json_response = json_response.rstrip("]")
-                if last_batch:
-                    if not response:
-                        json_response = "]"
-                    else:
-                        json_response += "]"
-            else:
-                if not response:
-                    json_response = ""
-            self.write(json_response)
-
-        if keep_alive and not last_batch:
-            self.flush()
-            self.mainFinished = True
-            get_more_callback()  
-        else:
-            if last_batch:
-                self._remove_cursor()
-                self.mainFinished = True
-                if self.countFinished:
-                    """ Count will take care of finishing """
-                    self.finish()
-            else:
-                self.mainFinished = False
-                get_more_callback()
-
+                
+    
     def _validate_psjson_profile(self):
         """
         Validates if the profile provided with the content-type is valid.
@@ -665,7 +536,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             message = "NetworkResource ID should not be defined."
             self.send_error(400, message=message)
             return
-
+        
         # Load the appropriate content type specific POST handler
         if self.content_type == MIME['PSJSON']:
             self.post_psjson()
@@ -747,7 +618,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 return
 
         
-        # PPI processing/checks        
+        # PPI processing/checks
         if getattr(self.application, '_ppi_classes', None):
             try:
                 for resource in resources:
@@ -770,7 +641,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         """
         
         if error:
-            if isinstance(error, IntegrityError):
+            if isinstance(error):
                 self.send_error(409,
                     message="Could't process the POST request '%s'" % \
                         str(error).replace("\"", "\\\""))

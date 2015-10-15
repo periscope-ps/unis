@@ -50,7 +50,7 @@ class SSEHandler(tornado.web.RequestHandler):
     
     def get(self,*args):
         if getattr(self.application, '_ppi_classes', None):
-            try:                
+            try:
                 for pp in self.application._ppi_classes:
                     pp.pre_get(None, self.application, self.request,self)
             except Exception, msg:

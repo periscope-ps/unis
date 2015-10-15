@@ -88,19 +88,8 @@ DB_AUTH = {
     'attrib_list' : ("landsat","unauth"),
 }
 
-# Asyncmongo specific connection configurations
-ASYNC_DB = {
-    'pool_id': DB_HOST + "_pool",
-    'host': DB_HOST,
-    'port': DB_PORT,
-    'mincached': 1,
-    'maxcached': 5,
-    'maxconnections': 200,
-    'dbname': DB_NAME,
-}
-
 # Pymonog specific connection configurations
-SYNC_DB = {
+DB_CONFIG = {
     'host': DB_HOST,
     'port': DB_PORT,
 }
@@ -532,12 +521,6 @@ catSubscription = {
     "name"          : "categorySubscription",
     "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)$",
     "handler_class" : "periscope.handlers.subscriptionhandler.SubscriptionHandler"
-}
-catAggSubscription = {
-    "base_url"      : "",
-    "name"          : "categoryAggregateSubscription",
-    "pattern"       : "/subscribeAgg/(?P<resource_type>[^\/]*)$",
-    "handler_class" : "periscope.handlers.subscriptionhandler.AggSubscriptionHandler"
 }
 
 querySubscription = {
