@@ -58,7 +58,7 @@ class EventsHandler(NetworkResourceHandler):
         raise tornado.gen.Return(count)
 
     @tornado.gen.coroutine
-    def _write_get(self, cursor):
+    def _write_get(self, cursor, is_list = False):
         response = []
         count = yield cursor.count()
         if not count:

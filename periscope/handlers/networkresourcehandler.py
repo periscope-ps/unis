@@ -436,7 +436,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 options.pop("limit", None)
             if res_id:
                 options["query"][self.Id] = res_id
-                
+
+            is_list = "query" in options and options["query"]
             options["query"]["status"] = { "$ne": "DELETED"  }
         except Exception as exp:
             self.write_error(403, message = exp)
@@ -454,7 +455,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 return
             
             try:
-                count = yield self._write_get(cursor)
+                count = yield self._write_get(cursor, is_list)
             except Exception as exp:
                 self.write_error(500, message = "Failure during post processing - {exp}".format(exp = exp))
                 return
@@ -476,12 +477,13 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         raise tornado.gen.Return(count)
     
     @tornado.gen.coroutine
-    def _write_get(self, cursor):
+    def _write_get(self, cursor, is_list = False):
         count = yield cursor.count()
+        is_list = count > 1 or is_list
         if not count:
             self.write('[]')
             raise tornado.gen.Return(count)
-        elif count > 1:
+        elif is_list:
             self.write('[\n')
 
         # Write first entry
@@ -498,7 +500,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
             self.write(json_response)
             
-        if count > 1:
+        if is_list:
             self.write('\n]')
             
         raise tornado.gen.Return(count)
