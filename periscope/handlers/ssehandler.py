@@ -153,6 +153,7 @@ class SSEHandler(tornado.web.RequestHandler):
                 self._supports_sse = True
                 self._last_event_id = self.request.headers.get("Last-Event-ID",
                                             None)
+                print("Header 1")
                 self.set_header("Cache-Control", "no-cache")
                 self.set_header("Content-Type", self.SSE_MIME)
                 if self.DEFAULT_RETRY:
@@ -166,6 +167,7 @@ class SSEHandler(tornado.web.RequestHandler):
                               for (k, v) in kwargs.iteritems())
                 getattr(self, self.request.method.lower())(*args, **kwargs)
                 if self._auto_finish and not self._finished:
+                    print("Finish SSE")
                     self.finish()
         except Exception, e:
             self._handle_request_exception(e)

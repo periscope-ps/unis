@@ -52,17 +52,14 @@ class DBLayer(object, nllog.DoesLogging):
         """Returns a reference to the default mongodb collection."""
         return self._client[self._collection_name]
     
-    @tornado.gen.coroutine
-    def find(self, query, callback=None, ccallback = None,**kwargs):
+    def find(self, query = {}, **kwargs):
         """Finds one or more elements in the collection."""
         self.log.info("find for Collection: [" + self._collection_name + "]")
         fields = kwargs.pop("fields", {})
         fields["_id"] = 0
-        cursor = yield self.collection.find(query, fields=fields, **kwargs)
-        if ccallback:
-            self._client['$cmd'].find_one({'count' : self._collection_name , 'query' : query}, _is_command=True, callback=ccallback)
+        cursor = self.collection.find(query, fields=fields, **kwargs)
         
-        raise tornado.gen.Return(findCursor)
+        return cursor
     
     def _insert_id(self, data):
         if "_id" not in data and not self.capped:

@@ -3,200 +3,112 @@
 import json
 import functools
 from tornado.ioloop import IOLoop
+from tornado.httpclient import AsyncHTTPClient
 import tornado.web
+import tornado.gen
 
-
+import periscope.settings as settings
 from periscope.settings import MIME
 from networkresourcehandler import NetworkResourceHandler
 from periscope.db import dumps_mongo
 
 
 class ExnodeHandler(NetworkResourceHandler):
-    def initialize(self, dblayer, base_url,
-                   Id="id",
-                   timestamp="ts",
-                   schemas_single=None,
-                   schemas_list=None,
-                   allow_get=False,
-                   allow_post=True,
-                   allow_put=True,
-                   allow_delete=True,
-                   tailable=False,
-                   model_class=None,
-                   collection_name=None,
-                   accepted_mime=[MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']],
-                   content_types_mime=[MIME['SSE'], MIME['PSJSON'],
-                                       MIME['PSBSON'], MIME['PSXML'], MIME['HTML']],
-                   collections={},
-                   models={}):
-        self.allocation_layer = collections["extents"]
-        self.allocation_model = models["extents"]
-        super(ExnodeHandler, self).initialize(dblayer=dblayer, base_url=base_url, Id=Id, timestamp=timestamp, 
-                                              schemas_single=schemas_single, schemas_list=schemas_list,
-                                              allow_get=allow_get, allow_post=allow_post, allow_put=allow_put,
-                                              allow_delete=allow_delete, tailable=tailable, model_class=model_class,
-                                              accepted_mime=accepted_mime, content_types_mime=content_types_mime,
-                                              collection_name=collection_name)
-    
-    @tornado.web.asynchronous
-    @tornado.web.removeslash
-    def post(self, res_id=None):
-        if self.accept_content_type not in self.schemas_single:
-            message = "Schema is not defined for content of type '%s'" % (self.accept_content_type)
-            self.send_error(500, message = message)
-            return
-        
-        if res_id:
-            message = "NetworkResource ID should not be defined."
-            self.send_error(500, message = message)
-            return
-        
-        try:
-            if self.request.body.endswith('}') or self.request.body.endswith('}'):
-                resource = json.loads(self.request.body)
-            else:
-                end = self.request.body.rfind("}") + 1
-                resource = json.loads(self.request.body[:end])
-        except Exception as exp:
-            self.send_error(500, message = "Could not parse json - {exp}".format(exp = exp))
-            return
-        
+    @tornado.gen.coroutine
+    def _process_resource(self, resource, res_id = None, run_validate = True):
+        resource = yield super(ExnodeHandler, self)._process_resource(resource, res_id, run_validate)
         if resource["mode"] == "directory":
-            query = {}
-            query["parent"] = resource["parent"]
-            query["name"]   = resource["name"]
-            callback = functools.partial(self._on_get_siblings, _candidateExnode = self.request)
-            self._cursor = self.dblayer.find(query, callback)
+            query = { "parent": resource["parent"], "name": resource["name"] }
+            cursor = self.dblayer.find(query)
+            
+            count = yield cursor.count()
+            if count:
+                yield cursor.fetch_next
+                oldResource = cursor.next_object()
+                resource["$schema"]  = oldResource.get("$schema", self.schemas_single[MIME['PSJSON']])
+                resource["selfRef"]  = oldResource["selfRef"]
+                resource["modified"] = resource[self.timestamp]
+                resource[self.timestamp] = oldResource[self.timestamp]
+                resource[self.Id]        = oldResource[self.Id]
         else:
-            self.post_psjson(exnode = resource)
-        
-    @tornado.web.asynchronous
-    @tornado.web.removeslash
-    def _on_get_siblings(self, response, error, _candidateExnode = None):
-        if error:
-            self.send_error(500, message = error)
-            return
+            yield [ self._insert_extents(extent, resource[self.Id]) for extent in resource["extents"] ]
+            resource.pop("extents", None)
+            
+        raise tornado.gen.Return(resource)
+            
+                        
 
-        if response:
-            # There is already an exnode sibling with that name
-            # Get the Id of the old exnode and update the content
-            #  with the content of the new exnode
-            body     = json.loads(_candidateExnode.body)
-            resource = self._model_class(body)
-            
-            res_id = response[0].get(self.Id)
-            resource["$schema"]  = response[0].get("$schema", self.schemas_single[MIME['PSJSON']])
-            resource["selfRef"]  = response[0].get("selfRef")
-            resource["modified"] = resource[self.timestamp]
-            resource[self.Id]    = response[0].get("id")
-            res_refs = []
-            ref = {}
-            ref[self.Id] = res_id
-            ref[self.timestamp] = resource[self.timestamp]
-            res_refs.append(ref)
-            resource = dict(resource._to_mongoiter())
-            
-            query = {}
-            query[self.Id] = res_id
-            
-            callback = functools.partial(self.on_post, res_refs = res_refs, return_resources = True, extents = [])
-            self.dblayer.update(query, resource, callback = callback)
-            self._subscriptions.publish(resource, self._collection_name)
+    def _insert_extents(self, extent, parent):
+        http_client = AsyncHTTPClient()
+        extent["parent"] = parent
+        url = "{protocol}://{host}/extents"
+        return tornado.gen.Task(
+            http_client.fetch,
+            url.format(protocol = self.request.protocol,
+                       host     = self.request.host),
+            method = "POST",
+            body   = dumps_mongo(extent),
+            request_timeout = 180,
+            validate_cert = False,
+            client_cert     = settings.CLIENT_SSL_OPTIONS['certfile'],
+            client_key      = settings.CLIENT_SSL_OPTIONS['keyfile'],
+            headers         = { "Cache-Control": "no-cache",
+                                "Content-Type": MIME["PSJSON"],
+                                "connection": "close" }
+        )
+
+    @tornado.gen.coroutine
+    def _insert(self, resource):
+        if "modified" in resource:
+            query = { self.Id: resource[self.Id] }
+            yield self.dblayer.update(query, resource)
         else:
-            # This is a unique exnode
-            # Execute normal post
-            self.request = _candidateExnode
-            self.post_psjson(exnode = json.loads(self.request.body))
+            yield self.dblayer.insert(resource)
 
-    def post_psjson(self, **kwargs):
-        """
-        Handles HTTP POST request with Content Type of PSJSON.
-        """
-        profile = self._validate_psjson_profile()
-        run_validate = True
-        if self.get_argument("validate", None) == 'false':
-            run_validate = False
-            
-        if not profile:
-            return
-        
-        try:
-            resources = []
-            if isinstance(kwargs["exnode"], list):
-                for item in kwargs["exnode"]:
-                    resources.append(self._model_class(item))
+
+    def _find(self, **kwargs):
+        self._include_allocations = True
+        if "fields" in kwargs and kwargs["fields"]:
+            if "extents" not in kwargs["fields"]:
+                self._include_allocations = False
             else:
-                resources = [self._model_class(kwargs["exnode"])]
-        except Exception as exp:
-            self.send_error(400, message="malformatted request " + str(exp))
-            return
+                kwargs["fields"]["mode"] = True
         
-        # Validate schema
-        res_refs =[]
-        for index in range(len(resources)):
-            try:
-                item = resources[index]
-                item["selfRef"] = "%s/%s" % \
-                                  (self.request.full_url().split('?')[0], item[self.Id])
-                item["$schema"] = item.get("$schema", self.schemas_single[MIME['PSJSON']])
-                if item["$schema"] != self.schemas_single[self.accept_content_type]:
-                    self.send_error(400,
-                                    message="Not valid body '%s'; expecting $schema: '%s'." % \
-                                    (item["$schema"], self.schemas_single[self.accept_content_type]))
-                    return
-
-
-                if item["mode"] == "file":
-                    item["extents"] = self.update_allocations(item)
-                if run_validate == True:
-                    item._validate()
-                res_ref = {}
-                res_ref[self.Id] = item[self.Id]
-                res_ref[self.timestamp] = item[self.timestamp]
-                res_refs.append(res_ref)
-                resources[index] = dict(item._to_mongoiter())
-            except Exception as exp:
-                self.send_error(400, message="Not valid body '%s'." % exp)
-                return
-
-        # PPI processing/checks
-        if getattr(self.application, '_ppi_classes', None):
-            try:
-                for resource in resources:
-                    for pp in self.application._ppi_classes:
-                        pp.pre_post(resource, self.application, self.request,self)
-            except Exception, msg:
-                self.send_error(400, message=msg)
-                return
-
-        callback = functools.partial(self.on_post,
-                                     res_refs=res_refs, return_resources=True, **kwargs)
-        self.dblayer.insert(resources, callback=callback)
-
-        for res in resources:
-            self._subscriptions.publish(res, self._collection_name)
-
-
-    def update_allocations(self, resource):
-        allocations = []
-
-        try:
-            for alloc in resource["extents"]:
-                tmpAllocation = self.allocation_model(alloc)
-                tmpAllocation["parent"] = resource[self.Id]
-                tmpAllocation["selfRef"] = "%s/%s/%s" % (self.request.full_url().split('?')[0].rsplit('/', 1)[0],
-                                                         "extents",
-                                                         tmpAllocation[self.Id])
-
-                mongo_alloc = dict(tmpAllocation._to_mongoiter())
-                allocations.append(mongo_alloc)
-                self._subscriptions.publish(tmpAllocation, "extents")
-                
-            self.allocation_layer.insert(allocations, lambda *_, **__: None)
-        except Exception as exp:
-            raise NameError(exp)
-
-        for alloc in allocations:
-            alloc.pop("_id", None)
+        return super(ExnodeHandler, self)._find(**kwargs)
             
-        return allocations
+    @tornado.gen.coroutine
+    def _post_get(self, resource):
+        if resource["mode"] == "directory" or not self._include_allocations:
+            raise tornado.gen.Return(resource)
+        
+        try:
+            extents = yield self._get_extents(resource[self.Id])
+            resource["extents"] = json.loads(extents.body)
+        except Exception as exp:
+            raise Exception("Could not load extent data - {exp}".format(exp = exp))
+        
+        raise tornado.gen.Return(resource)
+    
+    def _get_extents(self, parent):
+        http_client = AsyncHTTPClient()
+        url = "{protocol}://{host}/extents?parent={parent}"
+        return tornado.gen.Task(
+            http_client.fetch,
+            url.format(protocol = self.request.protocol,
+                       host     = self.request.host,
+                       parent   = parent),
+            method = "GET",
+            request_timeout = 180,
+            validate_cert = False,
+            client_cert     = settings.CLIENT_SSL_OPTIONS['certfile'],
+            client_key      = settings.CLIENT_SSL_OPTIONS['keyfile'],
+            headers         = { "Cache-Control": "no-cache",
+                                "Content-Type": MIME["PSJSON"],
+                                "connection": "close" }
+        )
+    
+    
+    @tornado.gen.coroutine
+    def _put_resource(self, resource):
+        resource.pop("extents", None)
+        super(ExnodeHandler, self)._put_resource(self, resource)

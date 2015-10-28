@@ -442,6 +442,27 @@ measurement = dict(default_resource_settings.items() + \
         }.items()
 )
 
+extents = dict(default_resource_settings.items() + \
+         {
+             "name"                   : "extents",
+             "pattern"                : "/extents$",
+             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
+             "model_class"            : "periscope.models.Extent",
+             "collection_name"        : "extents",
+             "schema": {MIME['PSJSON']: SCHEMAS["extent"]}
+         }.items()
+)
+extent = dict(default_resource_settings.items() + \
+         {
+             "name"                   : "extent",
+             "pattern"                : "/extents/(?P<res_id>[^\/]*)$",
+             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
+             "model_class"            : "periscope.models.Extent",
+             "collection_name"        : "extents",
+             "schema": {MIME['PSJSON']: SCHEMAS["extent"]}
+         }.items()
+)
+
 exnodes = dict(default_resource_settings.items() + \
          {
              "name"                   : "exnodes",
@@ -450,13 +471,6 @@ exnodes = dict(default_resource_settings.items() + \
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
-             "collections": [
-                 { "name": "extents", "collection_name": "extents" }
-             ],
-             "models": [
-                 { "name": "extents", "model_class": "periscope.models.Extent" }
-             ],
-             "allow_put": False
          }.items()
 )
 exnode = dict(default_resource_settings.items() + \
@@ -467,45 +481,6 @@ exnode = dict(default_resource_settings.items() + \
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
-             "collections": [
-                 { "name": "extents", "collection_name": "extents" }
-             ],
-             "models": [
-                 { "name": "extents", "model_class": "periscope.models.Extent" }
-             ]
-         }.items()
-)
-
-extents = dict(default_resource_settings.items() + \
-         {
-             "name"                   : "extents",
-             "pattern"                : "/extents$",
-             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
-             "model_class"            : "periscope.models.Extent",
-             "collection_name"        : "extents",
-             "schema": {MIME['PSJSON']: SCHEMAS["extent"]},
-             "collections": [
-                 { "name": "exnodes", "collection_name": "exnodes" }
-             ],
-             "models": [
-                 { "name": "exnodes", "model_class": "periscope.models.Extent" }
-             ]
-         }.items()
-)
-extent = dict(default_resource_settings.items() + \
-         {
-             "name"                   : "extent",
-             "pattern"                : "/extents/(?P<res_id>[^\/]*)$",
-             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
-             "model_class"            : "periscope.models.Extent",
-             "collection_name"        : "extents",
-             "schema": {MIME['PSJSON']: SCHEMAS["extent"]},
-             "collections": [
-                 { "name": "exnodes", "collection_name": "exnodes" }
-             ],
-             "models": [
-                 { "name": "exnodes", "model_class": "periscope.models.Extent" }
-             ]
          }.items()
 )
 
@@ -583,7 +558,6 @@ Resources = {
 Subscriptions = {
     "itemSubscription"  : itemSubscription,
     "catSubscription"   : catSubscription,
-    "catAggSubscription"   : catAggSubscription,
     "querySubscription" : querySubscription,
 }
 

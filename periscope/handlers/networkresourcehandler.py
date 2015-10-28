@@ -3,15 +3,14 @@
 import copy
 import json
 import re
-import functools
 import urllib2
 from netlogger import nllog
 import time
-import datetime
 import traceback
-from tornado.ioloop import IOLoop
 from tornado.httpclient import HTTPError
 import tornado.web
+import tornado.gen
+
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
 from periscope.settings import MIME
@@ -36,7 +35,8 @@ def decode(str):
             break
         str = dec
     return dec
-        
+
+
 class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     """Generic Network resources handler"""
 
@@ -161,7 +161,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     def content_type(self):
         """
         Returns the content type of the client's request
-
+        
         See:
             
             http://www.w3.org/Protocols/rfc2616/rfc2616-sec12.html
@@ -187,12 +187,12 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 "Unsupported content type '%s'" %
                     self.request.headers.get("Content-Type", ""))
         return self._content_type
-
+    
     @property
     def supports_streaming(self):
         """
         Returns true if the client asked for HTTP Streaming support.
-
+        
         Any request that is of type text/event-stream or application/json
         with Connection = keep-alive is considered a streaming request
         and it's up to the client to close the HTTP connection.
@@ -203,7 +203,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         else:
             return False
                         
-
+        
     def write_error(self, status_code, **kwargs):
         """
         Overrides Tornado error writter to produce different message
@@ -223,15 +223,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 result += '"%s": "%s",' % (key, kwargs[key])
             result = result.rstrip(",") + "}\n"
             self.write(result)
-            
             self.finish()
 
     def set_default_headers(self):
         # Headers to allow cross domains requests to UNIS
         self.set_header('Access-Control-Allow-Origin', '*')
         self.set_header('Access-Control-Allow-Headers', 'x-requested-with')
-    
-    
+        
+        
     def _parse_get_arguments(self):
         """Parses the HTTP GET areguments given by the user."""
         def convert_value_type(key, value, val_type):
@@ -373,7 +372,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             sortDict[self.timestamp] = "-1"
             sort = sortDict.items()
 
-                
+            
         query_ret = []
         for arg in query:
             if isinstance(query[arg], list) and len(query[arg]) > 1:
@@ -383,7 +382,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query[arg] = ",".join(query[arg])
             if query[arg].startswith("reg="):
                 param = decode(query[arg][4:])
-                #print "Using regex ", param
                 val = re.compile(process_value(arg,param), re.IGNORECASE)
                 query_ret.append({arg: val})
                 continue
@@ -418,12 +416,13 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         return ret_val
     
     
-    
+
+    # Template Method for GET
     @tornado.web.asynchronous
     @tornado.web.removeslash
-    @tornado.web.coroutine
+    @tornado.gen.coroutine
     def get(self, res_id = None, *args):
-        super(NetworkResrouceHandler, self).get(*args)
+        super(NetworkResourceHandler, self).get(*args)
 
         # Parse arguments and set up query
         try:
@@ -433,12 +432,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                            limit  = parsed["limit"],
                            sort   = parsed["sort"],
                            skip   = parsed["skip"])
+            if not options["limit"]:
+                options.pop("limit", None)
             if res_id:
                 options["query"][self.Id] = res_id
                 
-            options["query"]["status"] = { "$ne": "DELETED" }
+            options["query"]["status"] = { "$ne": "DELETED"  }
         except Exception as exp:
-            self.send_error(403, message = exp)
+            self.write_error(403, message = exp)
             return
         
         keep_alive = self.supports_streaming or self.supports_sse()
@@ -446,42 +447,72 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             # This spins off a perpetual connection
             self._get_tailable(query = options["query"], fields = options["fields"])
         else:
-            cursor = self.dblayer.find(options)
+            try:
+                cursor = self._find(**options)
+            except Exception as exp:
+                self.write_error(404, message = "Could not find resource - {exp}".format(exp = exp))
+                return
             
-            accept = self.accept_content_type
-            self.set_header("Content-Type", accept + "; profile=" + self.schemas_single[accept])
+            try:
+                count = yield self._write_get(cursor)
+            except Exception as exp:
+                self.write_error(500, message = "Failure during post processing - {exp}".format(exp = exp))
+                return
             
-            count = yield cursor.count()
-            self.set_header('X-Count', count))
+            yield self._add_response_headers(count)
+            self.set_status(201)
+            self.finish()
             
-            
-            if count > 1:
-                self.write('[')
-                
-            # Write first entry
-            yield cursor.fetch_next
+    def _find(self, **kwargs):
+        return self.dblayer.find(**kwargs)
+    
+    @tornado.gen.coroutine
+    def _add_response_headers(self, count):
+        accept = self.accept_content_type
+        self.set_header("Content-Type", accept + "; profile=" + self.schemas_single[accept])
+        
+        self.set_header('X-Count', count)
+
+        raise tornado.gen.Return(count)
+    
+    @tornado.gen.coroutine
+    def _write_get(self, cursor):
+        count = yield cursor.count()
+        if not count:
+            self.write('[]')
+            raise tornado.gen.Return(count)
+        elif count > 1:
+            self.write('[\n')
+
+        # Write first entry
+        yield cursor.fetch_next
+        resource = cursor.next_object()
+        resource = yield self._post_get(resource)
+        json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+        self.write(json_response)
+        
+        while (yield cursor.fetch_next):
+            self.write(',\n')
             resource = cursor.next_object()
-            json_resonse = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+            resource = yield self._post_get(resource)
+            json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
             self.write(json_response)
             
-            while (yield cursor.fetch_next):
-                self.write(',')
-                resource = cursor.next_object()
-                json_resonse = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
-                self.write(json_response)
-                
-            if count > 1:
-                self.write(']')
-                
-            self.finish()
-
+        if count > 1:
+            self.write('\n]')
+            
+        raise tornado.gen.Return(count)
 
     @tornado.gen.coroutine
-    def _get_tailable(query, fields):
-        cursor = self.dblayer.find(query      = query,
-                                   fields     = fields,
-                                   tailable   = True,
-                                   await_data = True)
+    def _post_get(self, resource):
+        raise tornado.gen.Return(resource)
+    
+    @tornado.gen.coroutine
+    def _get_tailable(self, query, fields):
+        cursor = self._find(query      = query,
+                            fields     = fields,
+                            tailable   = True,
+                            await_data = True)
         self.write('[')
         first = True
         while True:
@@ -496,9 +527,251 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 resource = cursor.next_object()
                 json_resonse = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
                 self.write(json_response)
-
                 
     
+    # Template Method for POST
+    @tornado.web.asynchronous
+    @tornado.web.removeslash
+    @tornado.gen.coroutine
+    def post(self, res_id=None):
+        try:
+            self._validate_request(res_id)
+        except ValueError as exp:
+            self.write_error(400, message = "Validation Error - {exp}".format(exp = exp))
+            return
+        
+        run_validate = (self.get_argument("validate", None) != 'false')
+        
+        """
+        Decode and create the resources
+        """
+        try:
+            resources = self._get_json()
+        except ValueError as exp:
+            self.write_error(400, message = exp)
+            return
+        
+        if not isinstance(resources, list):
+            resources = [resources]
+        
+        try:
+            for index in range(len(resources)):
+                tmpResource = yield self._process_resource(resources[index], res_id, run_validate)
+                resources[index] = dict(tmpResource._to_mongoiter())
+        except Exception as exp:
+            self.write_error(400, message="Not valid body - {exp}".format(exp = exp))
+            return
+        
+        """
+        Insert resources
+        """
+        try:
+            yield self._insert(resources)
+        except Exception as exp:
+            self.write_error(409, message = "Could not process the POST request - {exp}".format(exp = exp))
+            return
+        
+        """
+        Return new records
+        """        
+        try:
+            yield self._post_return(resources)
+        except ValueError as exp:
+            self.write_error(409, message = "Could not process reponse - {exp}".format(exp = exp))
+            return
+        except Exception as exp:
+            self.write_error(404, message = "Post did not return any data - {exp}".format(exp = exp))
+            return
+        
+        accept = self.accept_content_type
+        self.set_header("Content-Type", accept + \
+                        " ;profile="+ self.schemas_single[accept])
+        self.set_status(201)
+        self.finish()
+
+    @tornado.gen.coroutine
+    def _insert(self, resources):
+        yield self.dblayer.insert(resources)
+
+    @tornado.gen.coroutine
+    def _process_resource(self, resource, res_id = None, run_validate = True):
+        tmpResource = self._model_class(resource)
+        tmpResource = self._add_post_metadata(tmpResource, res_id)
+
+        if run_validate == True:
+            tmpResource._validate()
+            
+        ppi_classes = getattr(self.application, '_ppi_classes', [])
+        for pp in ppi_classes:
+            pp.pre_post(tmpResource, self.application, self.request, Handler = self)
+            
+        raise tornado.gen.Return(tmpResource)
+
+    @tornado.gen.coroutine
+    def _post_return(self, resources):
+        query = {"$or": [ { self.Id: res[self.Id], self.timestamp: res[self.timestamp] } for res in resources ] }
+        yield self._return_resources(query)
+        
+        
+    # Template Method for PUT
+    @tornado.web.asynchronous
+    @tornado.web.removeslash
+    @tornado.gen.coroutine
+    def put(self, res_id=None):
+        try:
+            self._validate_request(res_id, require_id = True)
+        except ValueError as exp:
+            self.write_error(400, message = "Validation Error - {exp}".format(exp = exp))
+            return
+        
+        try:
+            resource = self._get_json()
+            resource = self._model_class(resource, auto_id = False)
+            resource = self._add_post_metadata(resource)
+        except ValueError as exp:
+            self.write_error(400, message = exp)
+            return
+        
+        if self.Id not in resource:
+            resource[self.Id] = res_id
+            
+        if resource[self.Id] != res_id:
+            self.write_error(400,
+                message="Different ids in the URL" + \
+                 "'%s' and in the body '%s'" % (body[self.Id], res_id))
+            return
+        
+        try:
+            resource._validate()
+        except Exception as exp:
+            self.write_error(400, message="Not valid body " + str(exp))
+            return
+        
+        """
+        Update resources
+        """
+        try:
+            self._put_resource(resource)
+        except Exception as exp:
+            self.write_error(409, message = "Could not process the POST request - {exp}".format(exp = exp))
+            return
+        
+        accept = self.accept_content_type
+        self.set_header("Content-Type", accept + \
+                        " ;profile="+ self.schemas_single[accept])
+        self.set_status(201)
+        
+        try:
+            query = { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp]  }
+            yield self._return_resources(query)
+        except ValueError as exp:
+            self.write_error(409, message = "Could not process reponse - {exp}".format(exp = exp))
+            return
+        self.finish()
+    
+    @tornado.gen.coroutine
+    def _update(self, query, resource):
+        yield self.dblayer.update(query, resource)
+
+    @tornado.gen.coroutine
+    def _put_resource(self, resource):
+        query = { self.Id: resource[self.Id] }
+        yield self._update(query, dict(resource._to_mongoiter()))
+
+    
+    @tornado.web.asynchronous
+    @tornado.web.removeslash
+    @tornado.gen.coroutine
+    def delete(self, res_id=None):
+        try:
+            self._validate_request(res_id, require_id = True)
+        except ValueError as exp:
+            self.write_error(400, message = "Validation Error - {exp}".format(exp = exp))
+            return
+        
+        res_ids = []
+        cursor = self._find(query = { self.Id: res_id }, projection = { "_id": False, self.Id: True })
+        while (yield cursor.fetch_next):
+            resource = cursor.next_object()
+            res_ids.append(resource[self.Id])
+            
+        update = { "status": "DELETED", self.timestamp: int(time.time() * 1000000) }
+        query = {"$or": res_ids }
+        yield self.dblayer.update(query, update)
+        self.finish()
+
+        
+    def _get_json(self):
+        if self.content_type == MIME['PSBSON']:
+            if bson_valid:
+                if not bson_valid(self.request.body):
+                    raise ValueError("validate: not a bson document")
+            try:
+                body = bson_decode(self.request.body)
+            except Exception as exp:
+                raise ValueError("decode: not a bson document")
+            
+        elif self.content_type == MIME['PSJSON']:
+            try:
+                body = json.loads(self.request.body)
+            except Exception as exp:
+                raise ValueError("malformatted json request - {exp}.".format(exp = exp))
+        else:
+            raise ValueError("No Post method is implemented for this content type")
+        
+        return body
+
+    def _validate_request(self, res_id, allow_id = False, require_id = False):
+        if self.accept_content_type not in self.schemas_single:
+            message = "Schema is not defined for content of type '%s'" % \
+                      (self.accept_content_type)
+            self.write_error(500, message=message)
+            return False
+        if not allow_id and res_id:
+            message = "NetworkResource ID should not be defined."
+            raise ValueError(message)
+        if require_id and not res_id:
+            message = "NetworkResource ID is not defined."
+            raise ValueError(message)
+        
+        self._validate_psjson_profile()
+        
+        return True
+    
+    def _add_post_metadata(self, resource, res_id = None):
+        if res_id:
+            resource[self.Id] = res_id
+        
+        resource["selfRef"] = "{host}/{rid}".format(host = self.request.full_url().split('?')[0],
+                                                       rid  = resource[self.Id])
+        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
+        
+        if resource["$schema"] != self.schemas_single[self.accept_content_type]:
+            raise ValueError("Bad schema")
+        return resource
+
+    @tornado.gen.coroutine
+    def _return_resources(self, query):
+        try:
+            cursor = self._find(query = query)
+            response = []
+            while (yield cursor.fetch_next):
+                resource = cursor.next_object()
+                response.append(ObjectDict._from_mongo(resource))
+                self._subscriptions.publish(resource, self._collection_name)
+        
+            if len(response) == 1:
+                location = self.request.full_url().split('?')[0]
+                if not location.endswith(response[0][self.Id]):
+                    location = location + "/" + response[0][self.Id]
+
+                self.set_header("Location", location)
+                self.write(dumps_mongo(response[0], indent=2))
+            else:
+                self.write(dumps_mongo(response, indent=2))
+        except Exception as exp:
+            raise ValueError(exp)
+        
     def _validate_psjson_profile(self):
         """
         Validates if the profile provided with the content-type is valid.
@@ -511,324 +784,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 self.schemas_single[self.accept_content_type]
         match = re.match(regex, content_type)
         if not match:
-            self.send_error(400, message="Bad Content Type '%s'" % content_type)
-            return None
+            raise ValueError("Bad Content Type {content_type}".format(content_type = content_type))
         profile = match.groupdict().get("profile", None)
         if not profile:
-            self.send_error(400, message="Bad Content Type '%s'" % content_type)
-            return None
+            raise ValueError("Bad Content Type {content_type}".format(content_type = content_type))
         if profile != self.schemas_single[self.accept_content_type]:
-            self.send_error(400, message="Bad schema '%s'" % profile)
-            return None
+            raise ValueError("Bad Schema {schema}".format(schema = profile))
         return profile
-
-    @tornado.web.asynchronous
-    @tornado.web.removeslash
-    def post(self, res_id=None):
-        # Check if the schema for conetnt type is known to the server
-        if self.accept_content_type not in self.schemas_single:
-            message = "Schema is not defined for content of type '%s'" % \
-                        (self.accept_content_type)
-            self.send_error(500, message=message)
-            return
-        # POST requests don't work on specific IDs
-        if res_id:
-            message = "NetworkResource ID should not be defined."
-            self.send_error(400, message=message)
-            return
-        
-        # Load the appropriate content type specific POST handler
-        if self.content_type == MIME['PSJSON']:
-            self.post_psjson()
-        elif self.content_type == MIME['PSBSON']:
-            self.post_psbson()
-        else:
-            self.send_error(500,
-                message="No POST method is implemented fot this content type")
-            return
-        return
-
-    def post_psbson(self):
-        """
-        Handles HTTP POST request with Content Type of PSBSON.
-        """
-        if bson_valid:
-            if not bson_valid(self.request.body):
-                self.send_error(400, message="validate: not a bson document")
-                return
-
-        try:
-            body = bson_decode(self.request.body)
-        except Exception as exp:
-            self.send_error(400, message="decode: not a bson document")
-
-        self.request.body = json.dumps(body)
-        return self.post_psjson()
-
-    def post_psjson(self, **kwargs):
-        """
-        Handles HTTP POST request with Content Type of PSJSON.
-        """
-        profile = self._validate_psjson_profile()
-        run_validate = True
-        if self.get_argument("validate", None) == 'false':
-            run_validate = False
-            
-        if not profile:
-            return
-        try:
-            body = json.loads(self.request.body)
-        except Exception as exp:
-            self.send_error(400, message="malformatted json request '%s'." % exp)
-            return
-        
-        try:
-            resources = []
-            if isinstance(body, list):
-                for item in body:
-                    resources.append(self._model_class(item))
-            else:
-                resources = [self._model_class(body)]
-        except Exception as exp:
-            self.send_error(400, message="malformatted request " + str(exp))
-            return
-        
-        # Validate schema
-        res_refs =[]
-        for index in range(len(resources)):
-            try:
-                item = resources[index]
-                item["selfRef"] = "%s/%s" % \
-                                  (self.request.full_url().split('?')[0], item[self.Id])
-                item["$schema"] = item.get("$schema", self.schemas_single[MIME['PSJSON']])
-                if item["$schema"] != self.schemas_single[self.accept_content_type]:
-                    self.send_error(400,
-                                    message="Not valid body '%s'; expecting $schema: '%s'." % \
-                                    (item["$schema"], self.schemas_single[self.accept_content_type]))
-                    return
-                if run_validate == True:
-                    item._validate()
-                res_ref = {}
-                res_ref[self.Id] = item[self.Id]
-                res_ref[self.timestamp] = item[self.timestamp]
-                res_refs.append(res_ref)
-                resources[index] = dict(item._to_mongoiter())
-            except Exception as exp:
-                self.send_error(400, message="Not valid body '%s'." % exp)
-                return
-
-        
-        # PPI processing/checks
-        if getattr(self.application, '_ppi_classes', None):
-            try:
-                for resource in resources:
-                    for pp in self.application._ppi_classes:
-                        pp.pre_post(resource, self.application, self.request,Handler=self)
-            except Exception, msg:
-                self.send_error(400, message=msg)
-                return
-
-        callback = functools.partial(self.on_post,
-                                     res_refs=res_refs, return_resources=True, **kwargs)
-        self.dblayer.insert(resources, callback=callback)
-
-        for res in resources:
-            self._subscriptions.publish(res, self._collection_name)
-
-    def on_post(self, request, error=None, res_refs=None, return_resources=True, **kwargs):
-        """
-        HTTP POST callback to send the results to the client.
-        """
-        
-        if error:
-            if isinstance(error):
-                self.send_error(409,
-                    message="Could't process the POST request '%s'" % \
-                        str(error).replace("\"", "\\\""))
-            else:
-                self.send_error(500,
-                    message="Could't process the POST request '%s'" % \
-                        str(error).replace("\"", "\\\""))
-            return
-        
-        if return_resources:
-            query = {"$or": []}
-            for res_ref in res_refs:
-                query["$or"].append(res_ref)
-            self.dblayer.find(query, self._return_resources)
-        else:
-            accept = self.accept_content_type
-            self.set_header("Content-Type", accept + \
-                " ;profile="+ self.schemas_single[accept])
-            if len(res_refs) == 1:
-                self.set_header("Location",
-                    "%s/%s" % (self.request.full_url().split('?')[0], res_refs[0][self.Id]))
-            self.set_status(201)
-            self.finish()
-
-    def _return_resources(self, request, error=None):
-        unescaped = []
-        accept = self.accept_content_type
-        self.set_header("Content-Type", accept + \
-                " ;profile="+ self.schemas_single[accept])
-        self.set_status(201)
-        try:
-            for res in request:
-                unescaped.append(ObjectDict._from_mongo(res))
-            
-            if len(unescaped) == 1:
-                location = self.request.full_url().split('?')[0]
-                if not location.endswith(unescaped[0][self.Id]):
-                    location = location + "/" + unescaped[0][self.Id]
-                self.set_header("Location", location)
-                self.write(dumps_mongo(unescaped[0], indent=2))
-            else:
-                self.write(dumps_mongo(unescaped, indent=2))
-        except Exception as exp:
-            #print "Failed to return POST: %s" % (str(exp).replace("\"", "\\\""))
-            self.send_error(500,
-                    message="Could't process the POST request '%s'" % \
-                        str(exp).replace("\"", "\\\""))
-            return
-        self.finish()
-
-    @tornado.web.asynchronous
-    @tornado.web.removeslash
-    def put(self, res_id=None):
-        # Check if the schema for conetnt type is known to the server
-        if self.accept_content_type not in self.schemas_single:
-            message = "Schema is not defiend fot content of type '%s'" \
-                        % self.accept_content_type
-            self.send_error(500, message=message)
-            return
-        # PUT requests only work on specific IDs
-        if res_id is None:
-            message = "NetworkResource ID is not defined."
-            self.send_error(400, message=message)
-            return
-
-        # Load the appropriate content type specific PUT handler
-        if self.content_type == MIME['PSJSON']:
-            self.put_psjson(unicode(res_id))
-        else:
-            self.send_error(500,
-                message="No put method is implemented fot this content type")
-            return
-
-    def put_psjson(self, res_id):
-        """
-        Validates and inserts HTTP PUT request with Content-Type of psjon.
-        """
-        try:
-            body = json.loads(self.request.body)
-            resource = self._model_class(body, auto_id=False)
-        except Exception as exp:
-            self.send_error(400, message="malformatted json request '%s'." % exp)
-            return
-
-        if self.Id not in resource:
-            resource[self.Id] = res_id
-
-        if resource[self.Id] != res_id:
-            self.send_error(400,
-                message="Different ids in the URL" + \
-                 "'%s' and in the body '%s'" % (body[self.Id], res_id))
-            return
-        
-        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
-        if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
-            self.send_error(400,
-                message="Not valid body '%s'; expecting $schema: '%s'." % \
-                (resource["$schema"], self.schemas_single[self.accept_content_type]))
-            return
-
-        if 'selfRef' not in resource:
-            resource['selfRef'] = "%s/%s" % \
-                (self.request.full_url().split('?')[0], resource[self.Id])
-
-        # Validate schema
-        try:
-            resource._validate()
-        except Exception as exp:
-            self.send_error(400, message="Not valid body " + str(exp))
-            return
-        
-        query = {}
-        query[self.Id] = resource[self.Id]
-        
-        res_ref = {}
-        res_ref[self.Id] = resource[self.Id]
-        res_ref[self.timestamp] = resource[self.timestamp]
-        callback = functools.partial(self.on_put, res_ref=res_ref, 
-            return_resource=True)
-        self.dblayer.update(query, dict(resource._to_mongoiter()), callback=callback)
-        self._subscriptions.publish(resource, self._collection_name)
-
-    def on_put(self, response, error=None, res_ref=None, return_resource=True):
-        """
-        HTTP PUT callback to send the results to the client.
-        """
-        if error:
-            if str(error).find("Integrity") > -1:
-                self.send_error(409,
-                    message="Could't process the PUT request '%s'" % \
-                            str(error).replace("\"", "\\\""))
-            else:
-                self.send_error(500,
-                    message="Could't process the PUT request '%s'" % \
-                            str(error).replace("\"", "\\\""))
-            return
-        
-        accept = self.accept_content_type
-        profile = self.schemas_single[accept]
-        if return_resource:
-            query = {"$or": [res_ref]}
-            self.dblayer.find(query, self._return_resources)
-        else:
-            self.set_header("Content-Type", accept + \
-                ";profile=" +profile)
-            self.set_status(201)
-            self.finish()
-
-    def on_connection_close(self):
-        self._remove_cursor()
-    
-    @tornado.web.asynchronous
-    @tornado.web.removeslash
-    def delete(self, res_id=None):
-        # Chec0k if the schema for conetnt type is known to the server
-        if self.accept_content_type not in self.schemas_single:
-            message = "Schema is not defiend fot content of type '%s'" \
-                        % self.accept_content_type
-            self.send_error(500, message=message)
-            return
-        # PUT requests only work on specific IDs
-        if res_id is None:
-            message = "NetworkResource ID is not defined."
-            self.send_error(400, message=message)
-            return
-        
-        self._res_id = unicode(res_id)
-        
-        self._find({}, callback=self.on_delete)
-    
-    def on_delete(self, response, error=None):
-        if error is not None:
-            message = str(error)
-            self.send_error(400, message=message)
-            return
-        if len(response) == 0:
-            self.send_error(404)
-            return
-        deleted = copy.copy(response[0])
-        deleted["status"] = "DELETED"
-        deleted["ts"] = int(time.time() * 1000000) 
-        self.dblayer.insert(deleted, callback=self.finish_delete)
-        
-    def finish_delete(self, response, error=None):
-        if error is not None:
-            message = str(error)
-            self.send_error(400, message=message)
-            return
-        self.finish()
-

@@ -8,7 +8,7 @@ import tornado.web
 import tornado.ioloop
 import json
 import functools
-import socketx
+import socket
 from tornado.options import define
 from tornado.options import options
 from tornado import gen
@@ -52,14 +52,14 @@ class PeriscopeApplication(tornado.web.Application):
         if id_field_name != timestamp_field_name:
             self.db[collection_name].ensure_index([ (id_field_name, 1), (timestamp_field_name, -1)],
                                                   unique = True)
-            self.db[collection_name].ensure_index([ (id_field_name, 1), (timestamp_field_name, -1)],
+            self.db[collection_name].ensure_index([ (timestamp_field_name, -1)],
                                                   unique = True)
         
         # Create Layer
         db_layer = DBLayer(self.db,
                            collection_name,
                            is_capped_collection,
-                           is_field_name,
+                           id_field_name,
                            timestamp_field_name)
         
         return db_layer
@@ -226,7 +226,7 @@ class PeriscopeApplication(tornado.web.Application):
         self._db = None
         self._ppi_classes = []
         handlers = []
-
+        
         # import and initialize pre/post content processing modules
         for pp in settings.PP_MODULES:
             mod = __import__(pp[0], fromlist=pp[1])
@@ -238,10 +238,10 @@ class PeriscopeApplication(tornado.web.Application):
                     self._ppi_classes.append(c())
             else:
                 print "Not a valid PPI class: %s" % c.__name__
-
+                
         if settings.ENABLE_AUTH:
             from periscope.auth import ABACAuthService
-
+            
             self._auth = ABACAuthService(settings.SSL_OPTIONS['certfile'],
                                          settings.SSL_OPTIONS['keyfile'],
                                          settings.AUTH_STORE_DIR,

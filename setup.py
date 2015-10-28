@@ -32,7 +32,8 @@ setup(
     install_requires=[
         "tornado",
         "tornado-redis",
-        "motor"
+        "pymongo",
+        "motor",
         "unittest2",
         "netlogger>=4.3.0",
         "validictory>=validictory-0.8.1",
