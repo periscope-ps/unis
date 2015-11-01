@@ -6,6 +6,7 @@ import tornado.web
 from motor import MotorClient
 
 import periscope.settings as settings
+from periscope.db import dumps_mongo
 from periscope.settings import MIME
 from networkresourcehandler import NetworkResourceHandler
 
@@ -23,17 +24,17 @@ class DataHandler(NetworkResourceHandler):
     
     def _add_post_metadata(self, resource, res_id = None):
         if res_id:
-            tmpResource["mid"] = res_id
+            resource["mid"] = res_id
             
-        tmpResource["selfRef"] = "{host}/{rid}".format(host = self.request.full_url().split('?')[0],
-                                                       rid  = tmpResource[self.Id])
-        tmpResource["$schema"] = tmpResource.get("$schema", self.schemas_single[MIME['PSJSON']])
+        resource["selfRef"] = "{host}/{rid}".format(host = self.request.full_url().split('?')[0],
+                                                       rid  = resource[self.Id])
+        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         
-        if tmpResource["$schema"] != self.schemas_single[self.accept_content_type]:
-            self.send_error(400, message="Not valid schema - got {got}, expected {expected}".format(got      = tmpResource["$schema"],
+        if resource["$schema"] != self.schemas_single[self.accept_content_type]:
+            self.send_error(400, message="Not valid schema - got {got}, expected {expected}".format(got      = resource["$schema"],
                                                                                                     expected = self.schemas_single[self.accept_content_type]))
             raise ValueError("Bad schema")
-        return tmpResource
+        return resource
     
     @tornado.gen.coroutine
     def _insert(self, resources):
@@ -47,27 +48,27 @@ class DataHandler(NetworkResourceHandler):
         db_commands = []
         for mid, data in mids.iteritems():
             if mid in collections:
+                push_data = { 'id': mid, 'data': data }
+                self._subscriptions.publish(push_data, self._collection_name, self.trim_published_resource)
                 db_commands.append(self.application.db[mid].insert(data))
             results = yield db_commands
             
     @tornado.gen.coroutine
     def _post_return(self, resources):
+        #self.write('[]')
         response = []
         mids = {}
         for resource in resources:
             if resource["mid"] not in mids:
-                mid[resources["mid"]] = { "$or": [] }
-            mids[resource["mid"]]["$or"].append( { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp] } )
+                mids[resource["mid"]] = { "$or": [] }
+            mids[resource["mid"]]["$or"].append( { self.timestamp: resource[self.timestamp] } )
             
-            results = []
-            for mid, query in mids.iteritems():
-                try:
-                    yield self._return_resources(mid, query)
-                except tornado.gen.Return as result:
-                    results.append(result)
-                    
-        for result in results:
-            response.extend(result)
+        results = []
+        for mid, query in mids.iteritems():
+            results = yield self._return_resources(mid, query)
+            
+            for result in results:
+                response.extend(result)
             
         self.write(dumps_mongo(response, indent=2))
     
@@ -75,11 +76,9 @@ class DataHandler(NetworkResourceHandler):
     def _return_resources(self, mid, query):
         cursor = self.application.db[mid].find(query)
         response = []
-        while (yield cursor.fetch_next()):
+        while (yield cursor.fetch_next):
             resource = cursor.next_object()
             response.append(ObjectDict._from_mongo(resource))
-            push_data = { 'id': mid, 'data': [ resource ] }
-            self._subscriptions.publish(resource, self._collection_name, self.trim_published_resource)
             
         if len(response) == 1:
             location = self.request.full_url().split('?')[0]
@@ -97,7 +96,7 @@ class DataHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def get(self, res_id=None):
         if not res_id:
-            #self.send_error(500, message = "Data request must include a metadata id")
+            self.write_error(403, message = "Data request must include a metadata id")
             return
         
         # Parse arguments and set up query
@@ -113,6 +112,7 @@ class DataHandler(NetworkResourceHandler):
                 options["query"][self.Id] = res_id
                 
             options["query"]["status"] = { "$ne": "DELETED"  }
+            options["fields"] = { "_id": 0 }
         except Exception as exp:
             self.write_error(403, message = exp)
             return
@@ -128,13 +128,13 @@ class DataHandler(NetworkResourceHandler):
             
         yield cursor.fetch_next
         resource = cursor.next_object()
-        self.write(json.dumps(resource, indent = 2).replace('\\\\$', '$').replace('$DOT$', '.'))
+        self.write(dumps_mongo(resource, indent = 2).replace('\\\\$', '$').replace('$DOT$', '.'))
         
         for i in range(1, count):
             yield cursor.fetch_next
             self.write(',\n')
             resource = cursor.next_object()
-            self.write("{result}".format(result = json.dumps(resource, indent =2 )).replace('\\\\$', '$').replace('$DOT$', '.'))
+            self.write(dumps_mongo(resource, indent =2 ).replace('\\\\$', '$').replace('$DOT$', '.'))
             
         if count > 1:
             self.write('\n]')

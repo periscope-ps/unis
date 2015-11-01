@@ -16,8 +16,8 @@ from periscope.db import dumps_mongo
 
 class EventsHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
-    def _insert(self, resource):
-        print("INSERT EVENTS")
+    def _insert(self, resources):
+        resource = resources[0]
         http_client = AsyncHTTPClient()
         response = yield http_client.fetch(resource["metadata_URL"],
                                            validate_cert=False,
@@ -27,28 +27,27 @@ class EventsHandler(NetworkResourceHandler):
         if response.error:
             self.send_error(400, message="metadata is not found '%s'." % response.error)
         else:
-            body = json.loads(response.body)
+            body = json.loads(response.body)[0]
             collections = yield self.application.db.collection_names()
-            if body["id"] not in collections:
-                self.application.get_db_layer(body["id"],"ts", "ts", True, resource["collection_size"])
-                self.set_header("Location","%s/data/%s" % (self.request.full_url().split('?')[0], body["id"]))
-                post_body["ts"] = int(time.time() * 1000000)
-                post_body["id"] = body["id"]
-                yield self.dblayer.insert(post_body)
+            if body[self.Id] not in collections:
+                self.application.get_db_layer(body[self.Id], "ts", "ts", True, resource["collection_size"])
+                self.set_header("Location","%s/data/%s" % (self.request.full_url().split('?')[0], body[self.Id]))
+                resource[self.timestamp] = int(time.time() * 1000000)
+                resource[self.Id] = body[self.Id]
+                yield self.dblayer.insert(resource)
             else:
                 raise ValueError("event collection exists already")
             
     def _find(self, **options):
-        print("GET EVENTS")
-        options["query"].pop("status")
+        options["query"].pop("status", None)
         if not options["query"]:
             return self.dblayer.find()
-        elif self.Id in options["query"]:
-            return self.dblayer.find(query = { self.Id: options["query"][self.Id] })
+        elif self.Id in options["query"] or "$or" in options["query"]:
+            return self.dblayer.find(**options)
         else:
             self._query = options["query"]
             return None
-
+            
     @tornado.gen.coroutine
     def _add_response_headers(self, cursor):
         count = 1
@@ -60,41 +59,43 @@ class EventsHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _write_get(self, cursor, is_list = False):
         response = []
-        count = yield cursor.count()
-        if not count:
-            self.write('[]')
-            raise tornado.gen.Return(count)
-        
         if cursor:
+            count = yield cursor.count()
+            if not count:
+                self.write('[]')
+                raise tornado.gen.Return(count)
+        
             while (yield cursor.fetch_next):
                 resource = cursor.next_object()
                 mid = resource["metadata_URL"].split('/')[resource["metadata_URL"].split('/').__len__() - 1]
-                res = yield self.generate_response(mid)
-                if not res:
-                    return
-                else:
-                    response.insert(0, res)
+                try:
+                    res = yield self.generate_response(mid)
+                except ValueError as exp:
+                    raise ValueError(exp)
+                response.insert(0, res)
         else:
+            count = 0
             for d in self._query["$and"]:
-                index=index+1
                 if 'mids' in d.keys():
                     if isinstance(d["mids"],dict):
                         for m in d['mids']['$in']:
-                            res = yield self.generate_response(m)
-                            if not res:
-                                return
-                            else:
-                                response.insert(0, res)
-                    else:
-                        res = yield self.generate_response(d['mids'])
-                        if not res:
-                            return
-                        else:
+                            try:
+                                res = yield self.generate_response(m)
+                            except ValueError as exp:
+                                raise ValueError(exp)
+                            count += 1
                             response.insert(0, res)
-                            
+                    else:
+                        try:
+                            res = yield self.generate_response(d['mids'])
+                        except ValueError as exp:
+                            raise ValueError(exp)
+                        count += 1
+                        response.insert(0, res)
+                        
         json_response = dumps_mongo(response, indent=2)
         self.write(json_response)
-        raise tornado.gen.Return(count)            
+        raise tornado.gen.Return(count)
         
     @tornado.gen.coroutine
     def _return_resoures(self, query):
@@ -130,7 +131,7 @@ class EventsHandler(NetworkResourceHandler):
             command={"collStats": mid,"scale":1}
             generic = yield self.application.db.command(command)
         except Exception as exp:
-            self.send_error(400, message="At least one of the metadata ID is invalid.")
+            raise ValueError("At least one of the metadata ID is invalid.")
             raise tornado.gen.Return(None)
         
         self.del_stat_fields(generic)

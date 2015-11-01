@@ -22,16 +22,17 @@ def GetManager():
 class SubscriptionManager(nllog.DoesLogging):
     def __init__(self):
         global __manager__
-
+        
         nllog.DoesLogging.__init__(self)
-
+        
         self.trc = tornadoredis.Client()
+        self.trc.connect()
         self.subscriptions = []
-
+        
         if __manager__:
             self.log.warn("SubscriptionManager: Multiple instantiations of singleton SubscriptionManager")
-
-
+            
+            
     # @description: publish informs all remote subscribers that a change has been
     #               made to the provided resource.
     # @input:       resource is a json object corrosponding to the resource in question.
@@ -109,11 +110,12 @@ class SubscriptionManager(nllog.DoesLogging):
             if is_member:
                 trim = trim_function or self.trim_published_resource
                 trimmed_resource = trim(resource, query["fields"])
-                self.trc.connect()
-                self.trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
-                self.trc.disconnect()
-    
-    
+                try:
+                    self.trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
+                except Exception as exp:
+                    pass
+                
+                
     # @description: createChannel registers a series of conditions to a channel for later use
     #                 when publishing resources.
     # @input:       conditions is a dictionary of conditions which are matched against resources

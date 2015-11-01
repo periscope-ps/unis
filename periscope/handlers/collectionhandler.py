@@ -62,13 +62,11 @@ class CollectionHandler(NetworkResourceHandler):
                 raise ValueError("Invalid href in resource")
         
         links = yield [ self._create_child(key, tmpResource) for key in self._collections.keys() if key in tmpResource ]
-        print(links)
         for values in links:
             tmpResource[values["collection"]] = []
             for instance in values["hrefs"]:
                 tmpResource[values["collection"]].append({ "href": instance["selfRef"], "rel": "full" })
                 
-        print(tmpResource)
         #if run_validate:
         #    tmpResource._validate()
             
@@ -94,8 +92,7 @@ class CollectionHandler(NetworkResourceHandler):
         )
         if response.code >= 400:
             raise Exception("Could not add child resource")
-
-        print(response.body)
+        
         response = json.loads(response.body)
         if not isinstance(response, list):
             resposne = [response]

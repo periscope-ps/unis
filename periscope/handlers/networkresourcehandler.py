@@ -359,7 +359,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if skip:
             skip = convert_value_type("skip", skip, "integer")
             
-        sort = self.get_argument("sort", default=None)
+        sort = self.get_argument("sort", default = [])
         query.pop("sort", None)
         if sort:
             sortDict = {}
@@ -368,8 +368,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             sortStr = sortStr.split(",")
             for opt in sortStr:
                 pair = opt.split(":")
-                sortDict[pair[0]] = pair[1]
-            sortDict[self.timestamp] = "-1"
+                sortDict[pair[0]] = int(pair[1])
+            sortDict[self.timestamp] = -1
+            sort = sortDict.items()
+        else:
+            sortDict = { self.timestamp: -1 }
             sort = sortDict.items()
 
             
@@ -406,7 +409,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         # do any PPI query updates if there was an original query
         if getattr(self.application, '_ppi_classes', None):
             for pp in self.application._ppi_classes:
-                ret = []                
+                ret = []
                 ret = pp.process_query(ret, self.application, self.request,Handler=self)
                 if query_ret["list"]:
                     for item in query_ret["query"]["$and"]:
@@ -440,7 +443,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             is_list = "query" in options and options["query"]
             options["query"]["status"] = { "$ne": "DELETED"  }
         except Exception as exp:
-            self.write_error(403, message = exp)
+            self.send_error(403, message = exp)
+            self.log.error(exp)
             return
         
         keep_alive = self.supports_streaming or self.supports_sse()
@@ -451,13 +455,17 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             try:
                 cursor = self._find(**options)
             except Exception as exp:
-                self.write_error(404, message = "Could not find resource - {exp}".format(exp = exp))
+                message = message = "Could not find resource - {exp}".format(exp = exp)
+                self.send_error(404, message = message)
+                self.log.error(message)
                 return
             
             try:
                 count = yield self._write_get(cursor, is_list)
             except Exception as exp:
-                self.write_error(500, message = "Failure during post processing - {exp}".format(exp = exp))
+                message = "Failure during post processing - {exp}".format(exp = exp)
+                self.send_error(404, message = message)
+                self.log.error(message)
                 return
             
             yield self._add_response_headers(count)
@@ -539,7 +547,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         try:
             self._validate_request(res_id)
         except ValueError as exp:
-            self.write_error(400, message = "Validation Error - {exp}".format(exp = exp))
+            message = "Validation Error - {exp}".format(exp = exp)
+            self.send_error(400, message = message)
+            self.log.error(message)
             return
         
         run_validate = (self.get_argument("validate", None) != 'false')
@@ -550,7 +560,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         try:
             resources = self._get_json()
         except ValueError as exp:
-            self.write_error(400, message = exp)
+            self.send_error(400, message = exp)
+            self.log.error(exp)
             return
         
         if not isinstance(resources, list):
@@ -561,7 +572,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 tmpResource = yield self._process_resource(resources[index], res_id, run_validate)
                 resources[index] = dict(tmpResource._to_mongoiter())
         except Exception as exp:
-            self.write_error(400, message="Not valid body - {exp}".format(exp = exp))
+            message="Not valid body - {exp}".format(exp = exp)
+            self.send_error(400, message = message)
+            self.log.error(message)
             return
         
         """
@@ -570,20 +583,26 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         try:
             yield self._insert(resources)
         except Exception as exp:
-            self.write_error(409, message = "Could not process the POST request - {exp}".format(exp = exp))
+            message = "Could not process the POST request - {exp}".format(exp = exp)
+            self.send_error(409, message = message)
+            self.log.error(message)
             return
         
         """
         Return new records
         """        
-        try:
-            yield self._post_return(resources)
-        except ValueError as exp:
-            self.write_error(409, message = "Could not process reponse - {exp}".format(exp = exp))
-            return
-        except Exception as exp:
-            self.write_error(404, message = "Post did not return any data - {exp}".format(exp = exp))
-            return
+        #try:
+        yield self._post_return(resources)
+        #except ValueError as exp:
+        #    message = "Could not process reponse - {exp}".format(exp = exp)
+        #    self.send_error(409, message = message)
+        #    self.log.error(message)
+        #    return
+        #except Exception as exp:
+        #    message = "Post did not return any data - {exp}".format(exp = exp)
+        #    self.send_error(404, message = message)
+        #    self.log.error(message)
+        #    return
         
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + \
@@ -623,7 +642,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         try:
             self._validate_request(res_id, require_id = True)
         except ValueError as exp:
-            self.write_error(400, message = "Validation Error - {exp}".format(exp = exp))
+            message = "Validation Error - {exp}".format(exp = exp)
+            self.send_error(400, message = message)
+            self.log.error(message)
             return
         
         try:
@@ -631,22 +652,25 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             resource = self._model_class(resource, auto_id = False)
             resource = self._add_post_metadata(resource)
         except ValueError as exp:
-            self.write_error(400, message = exp)
+            self.send_error(400, message = exp)
+            self.log.error(message)
             return
         
         if self.Id not in resource:
             resource[self.Id] = res_id
             
         if resource[self.Id] != res_id:
-            self.write_error(400,
-                message="Different ids in the URL" + \
-                 "'%s' and in the body '%s'" % (body[self.Id], res_id))
+            message = "Different ids in the URL {eid}' and in the body {rid}".format(eid = body[self.Id], rid = res_id)
+            self.send_error(400, message = message)
+            self.log.error(message)
             return
         
         try:
             resource._validate()
         except Exception as exp:
-            self.write_error(400, message="Not valid body " + str(exp))
+            message="Not valid body " + str(exp)
+            self.send_error(400, message = message)
+            self.log.error(message)
             return
         
         """
@@ -655,7 +679,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         try:
             self._put_resource(resource)
         except Exception as exp:
-            self.write_error(409, message = "Could not process the POST request - {exp}".format(exp = exp))
+            message = "Could not process the PUT request - {exp}".format(exp = exp)
+            self.send_error(409, message = message)
+            self.log.error(message)
             return
         
         accept = self.accept_content_type
@@ -667,7 +693,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query = { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp]  }
             yield self._return_resources(query)
         except ValueError as exp:
-            self.write_error(409, message = "Could not process reponse - {exp}".format(exp = exp))
+            message = message = "Could not process reponse - {exp}".format(exp = exp)
+            self.send_error(409, message = message)
+            self.log.error(message)
             return
         self.finish()
     
@@ -688,7 +716,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         try:
             self._validate_request(res_id, require_id = True)
         except ValueError as exp:
-            self.write_error(400, message = "Validation Error - {exp}".format(exp = exp))
+            message = "Validation Error - {exp}".format(exp = exp)
+            self.send_error(400, message = message)
+            self.log.error(message)
             return
         
         res_ids = []
@@ -727,14 +757,17 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if self.accept_content_type not in self.schemas_single:
             message = "Schema is not defined for content of type '%s'" % \
                       (self.accept_content_type)
-            self.write_error(500, message=message)
+            self.send_error(500, message=message)
+            self.log.error(message)
             return False
-        if not allow_id and res_id:
-            message = "NetworkResource ID should not be defined."
-            raise ValueError(message)
-        if require_id and not res_id:
-            message = "NetworkResource ID is not defined."
-            raise ValueError(message)
+        if not require_id:
+            if not allow_id and res_id:
+                message = "NetworkResource ID should not be defined."
+                raise ValueError(message)
+        else:
+            if not res_id:
+                message = "NetworkResource ID is not defined."
+                raise ValueError(message)
         
         self._validate_psjson_profile()
         
