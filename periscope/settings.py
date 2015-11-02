@@ -47,7 +47,7 @@ CLIENT_SSL_OPTIONS = {
 ######################################################################
 # Measurement Store settings.
 ######################################################################
-#UNIS_URL = "https://unis.incntre.iu.edu:8443"
+#UNIS_URL = "https://unis.crest.iu.edu:8443"
 UNIS_URL = "http://localhost:8888"
 MS_ENABLE = True
 
@@ -156,7 +156,7 @@ MIME = {
 }
 
 #SCHEMA_HOST = 'localhost'
-SCHEMA_HOST = 'unis.incntre.iu.edu'
+SCHEMA_HOST = 'unis.crest.iu.edu'
 
 _schema = "http://{host}/schema/{directory}/{name}"
 SCHEMAS = {
