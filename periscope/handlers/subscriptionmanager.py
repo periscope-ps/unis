@@ -26,6 +26,7 @@ class SubscriptionManager(nllog.DoesLogging):
         nllog.DoesLogging.__init__(self)
 
         self.trc = tornadoredis.Client()
+        self.trc.connect()
         self.subscriptions = []
 
         if __manager__:
@@ -109,9 +110,7 @@ class SubscriptionManager(nllog.DoesLogging):
             if is_member:
                 trim = trim_function or self.trim_published_resource
                 trimmed_resource = trim(resource, query["fields"])
-                self.trc.connect()
                 self.trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
-                self.trc.disconnect()
     
     
     # @description: createChannel registers a series of conditions to a channel for later use
