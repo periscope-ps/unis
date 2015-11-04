@@ -30,9 +30,12 @@ class ExnodeHandler(NetworkResourceHandler):
                 resource["modified"] = resource[self.timestamp]
                 resource[self.timestamp] = oldResource[self.timestamp]
                 resource[self.Id]        = oldResource[self.Id]
+            else:
+                resource.pop("modified", None)
         else:
             yield [ self._insert_extents(extent, resource[self.Id]) for extent in resource["extents"] ]
             resource.pop("extents", None)
+            resource.pop("modified", None)
             
         raise tornado.gen.Return(resource)
             
@@ -56,16 +59,11 @@ class ExnodeHandler(NetworkResourceHandler):
                                 "Content-Type": MIME["PSJSON"],
                                 "connection": "close" }
         )
-
+    
     @tornado.gen.coroutine
-    def _insert(self, resource):
-        if "modified" in resource:
-            query = { self.Id: resource[self.Id] }
-            yield self.dblayer.update(query, resource)
-        else:
-            yield self.dblayer.insert(resource)
-
-
+    def _insert(self, resources):
+        yield [ self.dblayer.update( { self.Id: resource[self.Id] }, resource) if "modified" in resource else self.dblayer.insert(resource) for resource in resources ]
+        
     def _find(self, **kwargs):
         self._include_allocations = True
         if "fields" in kwargs and kwargs["fields"]:
@@ -78,7 +76,7 @@ class ExnodeHandler(NetworkResourceHandler):
             
     @tornado.gen.coroutine
     def _post_get(self, resource):
-        if resource["mode"] == "directory" or not self._include_allocations:
+        if not self._include_allocations or resource["mode"] == "directory":
             raise tornado.gen.Return(resource)
         
         try:
@@ -111,4 +109,4 @@ class ExnodeHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _put_resource(self, resource):
         resource.pop("extents", None)
-        super(ExnodeHandler, self)._put_resource(self, resource)
+        super(ExnodeHandler, self)._put_resource(resource)

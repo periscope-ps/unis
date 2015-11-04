@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140214/data#",
+    "id": "http://unis.crest.iu.edu/schema/20140214/data#",
     "description": "Measurement data",
     "name": "Data",
     "type": "object",
@@ -20,7 +20,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/datum#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/datum#"
                     }
                 ]
             }

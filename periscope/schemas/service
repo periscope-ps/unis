@@ -1,11 +1,11 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140214/service#",
+    "id": "http://unis.crest.iu.edu/schema/20140214/service#",
     "description": "Service",
     "name": "Service",
     "type": "object",
     "extends": {
-        "$ref": "http://unis.incntre.iu.edu/schema/20140214/networkresource#"
+        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
     },
     "properties": {
         "accessPoint": {

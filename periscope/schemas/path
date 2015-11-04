@@ -1,12 +1,12 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140214/path#",
+    "id": "http://unis.crest.iu.edu/schema/20140214/path#",
     "description": "A connected Path between two Network resources",
     "name": "Path",
     "type": "object",
     "additionalProperties": true,
     "extends": {
-        "$ref": "http://unis.incntre.iu.edu/schema/20140214/networkresource#"
+        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
     },
     "properties": {
         "directed": {

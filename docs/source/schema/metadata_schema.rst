@@ -21,7 +21,7 @@ entirely through hypermedia provided dynamically by the application server.
 
 JSON Schema
 -----------
-See `<http://unis.incntre.iu.edu/schema/20120709/metadata>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/metadata>`_.
 
 
 Attributes
@@ -49,7 +49,7 @@ Example
 The following is a simple Metadata representation example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/metadata#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/metadata#",
         "id": "123",
         "selfRef": "http://example.com/metadata/123",
         "ts": 1336775637000,
@@ -59,7 +59,7 @@ The following is a simple Metadata representation example::
         },
         "eventType": "some event type",
         "parameters": {
-            "datumSchema": "http://unis.incntre.iu.edu/schema/20120709/datum#",
+            "datumSchema": "http://unis.crest.iu.edu/schema/20120709/datum#",
             "collectionInterval": 30000
         }
     }

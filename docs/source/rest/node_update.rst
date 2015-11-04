@@ -55,11 +55,11 @@ Updating a Node
     PUT /nodes/1 HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/node#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/node#
     Content-Length: 248
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
         "name": "node1",
         "urn": "urn:ogf:network:domain=example.com:node=node1",
         "description": "This node has been updated",
@@ -73,14 +73,14 @@ Updating a Node
 *Note* that the `ts` was updated by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/node#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/node#
     Location: https://example.com/nodes/1
     
     {
         "id": "1", 
         "ts": 1336864012847944, 
         "selfRef": "https://example.com/nodes/4faeed0cf4735352b700000f", 
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
         "name": "node1",
         "urn": "urn:ogf:network:domain=example.com:node=node1", 
         "description": "This node has been updated", 

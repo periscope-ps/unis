@@ -12,7 +12,7 @@ A Path is an ordered list of connected
 
 JSON Schema
 -----------
-See `<http://unis.incntre.iu.edu/schema/20120709/path>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/path>`_.
 
 
 Attributes
@@ -38,7 +38,7 @@ Example
 The following is a simple Path representation example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
         "id": "pathid",
         "selfRef": "http://example.com/paths/pathid",
         "ts": 1336775637000,

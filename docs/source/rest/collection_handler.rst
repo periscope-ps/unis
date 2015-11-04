@@ -64,11 +64,11 @@ The following is a simple :ref:`Topology <topology_schema>` example::
 
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/topology#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/topology#",
         "id": "1",
         "nodes": [
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
                 "name": "node1",
                 "urn": "urn:ogf:network:domain=example.com:node=node1",
                 "description": "This is a sample node",
@@ -84,7 +84,7 @@ The following is a simple :ref:`Topology <topology_schema>` example::
                 ]
             },
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
                 "name": "node2",
                 "urn": "urn:ogf:network:domain=example.com:node=node2",
                 "description": "This is a sample node2",
@@ -98,19 +98,19 @@ The following is a simple :ref:`Topology <topology_schema>` example::
         ],
         "ports": [
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
                 "name": "port1",
                 "urn": "urn:ogf:network:domain=example.com:port=port1",
                 "capacity": 1000
             },
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
                 "name": "port2",
                 "urn": "urn:ogf:network:domain=example.com:port=port2",
                 "capacity": 10000000
             },
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
                 "name": "port3",
                 "urn": "urn:ogf:network:domain=example.com:port=port3",
                 "capacity": 10000000000

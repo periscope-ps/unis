@@ -62,11 +62,11 @@ List all Links
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/link#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/link#
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/link#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/link#",
             "id": "link1",
             "selfRef": "https://example.com/links/link1"
             "ts": 1337711394175048, 
@@ -84,7 +84,7 @@ List all Links
             }
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/link#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/link#",
             "id": "link2",
             "selfRef": "https://example.com/links/link2",
             "ts": 1337711394175048, 

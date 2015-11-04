@@ -11,7 +11,7 @@ A Port might have zero or more forwarding rules.
 
 JSON Schema
 -----------
-See `<http://unis.incntre.iu.edu/schema/20120709/port>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/port>`_.
 
 
 Attributes
@@ -43,7 +43,7 @@ Example
 The following is a simple Port representation example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
         "id": "123",
         "selfRef": "https://example.com/port/123",
         "ts": 1336775637000,

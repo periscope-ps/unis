@@ -62,11 +62,11 @@ List all Topologies
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/topology#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/topology#
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/topology#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/topology#",
             "id": "1",
             "selfRef": "https://example.com/topologies/1",
             "ts": 1338579183933748,

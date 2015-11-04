@@ -11,7 +11,7 @@ a :ref:`Network Resource <networkresource_schema>`.
 
 JSON Schema
 -----------
-See `<http://unis.incntre.iu.edu/schema/20120709/service>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/service>`_.
 
 Attributes
 ~~~~~~~~~~
@@ -46,7 +46,7 @@ Example::
 The following is a simple service resource example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/service#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/service#",
         "status": "ON",
         "id": "4fb4050bf4735379a7000000",
         "selfRef": "https://example.com/services/4fb4050bf4735379a7000000",

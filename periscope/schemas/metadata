@@ -1,13 +1,13 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140214/metadata#",
+    "id": "http://unis.crest.iu.edu/schema/20140214/metadata#",
     "description": "Metadata",
     "name": "Metadata",
     "type": "object",
     "additionalProperties": false,
     "properties": {
         "$schema": {
-            "default": "http://unis.incntre.iu.edu/schema/20140214/metadata#",
+            "default": "http://unis.crest.iu.edu/schema/20140214/metadata#",
             "format": "uri",
             "required": false,
             "type": "string"
@@ -44,7 +44,7 @@
             "additionalProperties": true,
             "properties": {
                 "datumSchema": {
-                    "default": "http://unis.incntre.iu.edu/schema/20140214/datum#",
+                    "default": "http://unis.crest.iu.edu/schema/20140214/datum#",
                     "format": "uri",
                     "required": false,
                     "type": "string"

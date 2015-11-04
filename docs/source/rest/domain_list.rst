@@ -62,11 +62,11 @@ List all Domains
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/domain#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/domain#
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/domain#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/domain#",
             "id": "1",
             "ts": 1337976574414305,
             "selfRef": "https://example.com/domains/1",

@@ -566,7 +566,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         
         if not isinstance(resources, list):
             resources = [resources]
-        
+            
         try:
             for index in range(len(resources)):
                 tmpResource = yield self._process_resource(resources[index], res_id, run_validate)
@@ -653,7 +653,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             resource = self._add_post_metadata(resource)
         except ValueError as exp:
             self.send_error(400, message = exp)
-            self.log.error(message)
+            self.log.error(str(exp))
             return
         
         if self.Id not in resource:
@@ -776,7 +776,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     def _add_post_metadata(self, resource, res_id = None):
         if res_id:
             resource[self.Id] = res_id
-        
+            
         resource["selfRef"] = "{host}/{rid}".format(host = self.request.full_url().split('?')[0],
                                                        rid  = resource[self.Id])
         resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])

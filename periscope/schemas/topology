@@ -1,13 +1,13 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140214/topology#",
+    "id": "http://unis.crest.iu.edu/schema/20140214/topology#",
     "description": "Topology",
     "name": "Topology",
     "type": "object",
     "additionalProperties": false,
     "properties": {
         "$schema": {
-            "default": "http://unis.incntre.iu.edu/schema/20140214/topology#",
+            "default": "http://unis.crest.iu.edu/schema/20140214/topology#",
             "description": "The schema of the this file. (AH) maybe this isn't needed and can be embedded in the HTTP header",
             "format": "uri",
             "required": false,
@@ -162,7 +162,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/port#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/port#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -176,7 +176,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/node#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/node#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -190,7 +190,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/link#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/link#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -204,7 +204,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/path#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/path#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -218,7 +218,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/network#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/network#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -232,7 +232,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/domain#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/domain#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"

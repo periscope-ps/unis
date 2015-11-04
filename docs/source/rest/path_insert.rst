@@ -53,10 +53,10 @@ Insert single Path
     POST /paths HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/path#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/path#
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
         "urn": "urn:ogf:network:domain=example.com:path=path1",
         "description": "This is a sample path",
         "name": "path1",
@@ -90,11 +90,11 @@ Insert single Path
 *Note* that the `id`, `ts` and `selfRef` were created by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/path#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/path#
     Location: https://example.com/paths/4fb18fddf473533226000000
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
         "id": "4fb18fddf473533226000000",
         "ts": 1337036765364994,
         "selfRef": "https://example.com/paths/4fb18fddf473533226000000",
@@ -135,12 +135,12 @@ Insert list of Paths
     POST /paths HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/path#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/path#
     Content-Length: 248
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
             "name": "path1",
             "urn": "urn:ogf:network:domain=example.com:path=path1",
             "description": "This is a sample path",
@@ -169,7 +169,7 @@ Insert list of Paths
             ]
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
             "name": "path2",
             "urn": "urn:ogf:network:domain=example.com:path=path2",
             "description": "This is a sample path",
@@ -200,11 +200,11 @@ Insert list of Paths
 `Location` HTTP header is not returned for the list of the Paths.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/path#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/path#
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
             "id": "4fb19107f473533226000002",
             "description": "This is a sample path",
             "selfRef": "https://example.com/paths/4fb19107f473533226000002",
@@ -236,7 +236,7 @@ Insert list of Paths
             ]
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
             "id": "4fb19107f473533226000003",
             "selfRef": "https://example.com/paths/4fb19107f473533226000003",
             "urn": "urn:ogf:network:domain=example.com:path=path2",

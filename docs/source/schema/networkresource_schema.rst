@@ -26,7 +26,7 @@ objects. However, UNIS has been designed with native REST API in mind [REST]_.
 JSON Schema
 -----------
 
-See `<http://unis.incntre.iu.edu/schema/20120709/networkresource>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/networkresource>`_.
 
 
 Attributes
@@ -75,7 +75,7 @@ Example
 The following is a simple network resource example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/networkresource#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/networkresource#",
         "id": "resource1",
         "selfRef": "http://example.com/resource1",
         "ts": 1336775637000,

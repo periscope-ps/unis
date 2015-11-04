@@ -1,12 +1,12 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140214/tsdatum#",
+    "id": "http://unis.crest.iu.edu/schema/20140214/tsdatum#",
     "description": "Single piece of time-series measurement data",
     "name": "Datum",
     "type": "object",
     "additionalProperties": true,
     "extends": {
-        "$ref": "http://unis.incntre.iu.edu/schema/20140214/datum#"
+        "$ref": "http://unis.crest.iu.edu/schema/20140214/datum#"
     },
     "properties": {
         "v": {

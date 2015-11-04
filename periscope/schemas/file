@@ -1,11 +1,11 @@
 {
     "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140909/file#",
+    "id": "http://unis.crest.iu.edu/schema/20140909/file#",
     "description": "A file is a subclass of exnode",
     "name": "file",
     "type": "object",
     "extends": {
-        "$ref": "http://unis.incntre.iu.edu/schema/20140909/exnode#"
+        "$ref": "http://unis.crest.iu.edu/schema/20140909/exnode#"
     },
     "required": ["parent", "extents"],
     "properties": {
@@ -13,7 +13,7 @@
     	    "description": "A pointer to a parent exnode, null if adrift",
     	    "anyOf": [
 		{
-		    "$ref": "http://unis.incntre.iu.edu/schema/20140909/exnode#"
+		    "$ref": "http://unis.crest.iu.edu/schema/20140909/exnode#"
 		},
 		{
                     "$ref": "http://json-schema.org/draft-03/links#"
@@ -32,7 +32,7 @@
     	    "items": {
 		"anyOf": [
 		    {
-			"$ref": "http://unis.incntre.iu.edu/schema/20140909/extent#"
+			"$ref": "http://unis.crest.iu.edu/schema/20140909/extent#"
 		    },
 		    {
 			"$ref": "http://json-schema.org/draft-04/links#"

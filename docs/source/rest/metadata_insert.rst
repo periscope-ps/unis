@@ -55,18 +55,18 @@ Insert single Metadata
     POST /metadata HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/metadata#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/metadata#
     Content-Length: 248
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/metadata#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/metadata#",
         "subject": {
             "href": "https://example.com/ports/1",
             "rel": "full"
         },
         "eventType": "some event type",
         "parameters": {
-            "datumSchema": "http://unis.incntre.iu.edu/schema/20120709/datum#",
+            "datumSchema": "http://unis.crest.iu.edu/schema/20120709/datum#",
             "collectionInterval": 30000
         }
     }
@@ -76,11 +76,11 @@ Insert single Metadata
 *Note* that the `id`, `ts` and `selfRef` were created by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/metadata#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/metadata#
     Location: https://example.com/metadata/4fb2b024f473535056000000
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/metadata#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/metadata#",
         "ts": 1337110564767952,
         "id": "4fb2b024f473535056000000",
         "selfRef": "https://example/com/metadata/4fb2b024f473535056000000",
@@ -91,6 +91,6 @@ Insert single Metadata
         "eventType": "some event type",
         "parameters": {
             "collectionInterval": 30000,
-            "datumSchema": "http://unis.incntre.iu.edu/schema/20120709/datum#"
+            "datumSchema": "http://unis.crest.iu.edu/schema/20120709/datum#"
         }
     }

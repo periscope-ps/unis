@@ -55,11 +55,11 @@ Updating a Port
     PUT /ports/1 HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/port#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/port#
     Content-Length: 248
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
         "name": "port1",
         "urn": "urn:ogf:network:domain=example.com:port=port1",
         "capacity": 10000000000,
@@ -74,14 +74,14 @@ Updating a Port
 *Note* that the `ts` was updated by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/port#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/port#
     Location: http://examples.com/ports/1
     
     {
         "id": "1", 
         "ts": 1336864012847944, 
         "selfRef": "https://example.com/ports/4fb04b3af473530a0f000000", 
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
         "name": "port1",
         "urn": "urn:ogf:network:domain=example.com:port=port1",
         "capacity": 10000000000,

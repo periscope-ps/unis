@@ -71,12 +71,12 @@ Get Network
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/network#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/network#
 
     {
         "id": "1",
         "ts": 1338494769852401,
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/network#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/network#",
         "selfRef": "https://example.com/networks/1",
         "ports": [
             {

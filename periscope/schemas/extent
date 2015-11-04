@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140909/extent#",
+    "id": "http://unis.crest.iu.edu/schema/20140909/extent#",
     "description": "An extent is some chunk of data, somewhere",
     "name": "extent",
     "type": "object",

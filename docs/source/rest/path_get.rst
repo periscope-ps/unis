@@ -70,10 +70,10 @@ Get Path
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/path#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/path#
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
         "id": "4fb18fddf473533226000000",
         "ts": 1337036765364994,
         "selfRef": "https://example.com/paths/4fb18fddf473533226000000",
