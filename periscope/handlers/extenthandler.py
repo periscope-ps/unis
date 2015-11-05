@@ -74,11 +74,6 @@ class ExtentHandler(NetworkResourceHandler):
                 item["selfRef"] = "%s/%s" % \
                                   (self.request.full_url().split('?')[0], item[self.Id])
                 item["$schema"] = item.get("$schema", self.schemas_single[MIME['PSJSON']])
-                if item["$schema"] != self.schemas_single[self.accept_content_type]:
-                    self.send_error(400,
-                                    message="Not valid body '%s'; expecting $schema: '%s'." % \
-                                    (item["$schema"], self.schemas_single[self.accept_content_type]))
-                    return
                 if run_validate == True:
                     item._validate()
                 res_ref = {}

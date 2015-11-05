@@ -730,11 +730,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 item["selfRef"] = "%s/%s" % \
                                   (self.request.full_url().split('?')[0], item[self.Id])
                 item["$schema"] = item.get("$schema", self.schemas_single[MIME['PSJSON']])
-                if item["$schema"] != self.schemas_single[self.accept_content_type]:
-                    self.send_error(400,
-                                    message="Not valid body '%s'; expecting $schema: '%s'." % \
-                                    (item["$schema"], self.schemas_single[self.accept_content_type]))
-                    return
                 if run_validate == True:
                     item._validate()
                 res_ref = {}
@@ -865,12 +860,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             return
         
         resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
-        if resource["$schema"] != self.schemas_single[MIME['PSJSON']]:
-            self.send_error(400,
-                message="Not valid body '%s'; expecting $schema: '%s'." % \
-                (resource["$schema"], self.schemas_single[self.accept_content_type]))
-            return
-
         if 'selfRef' not in resource:
             resource['selfRef'] = "%s/%s" % \
                 (self.request.full_url().split('?')[0], resource[self.Id])
