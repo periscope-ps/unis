@@ -781,8 +781,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                                                        rid  = resource[self.Id])
         resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         
-        if resource["$schema"] != self.schemas_single[self.accept_content_type]:
-            raise ValueError("Bad schema")
         return resource
 
     @tornado.gen.coroutine

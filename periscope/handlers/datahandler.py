@@ -30,10 +30,6 @@ class DataHandler(NetworkResourceHandler):
                                                        rid  = resource[self.Id])
         resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         
-        if resource["$schema"] != self.schemas_single[self.accept_content_type]:
-            self.send_error(400, message="Not valid schema - got {got}, expected {expected}".format(got      = resource["$schema"],
-                                                                                                    expected = self.schemas_single[self.accept_content_type]))
-            raise ValueError("Bad schema")
         return resource
     
     @tornado.gen.coroutine
