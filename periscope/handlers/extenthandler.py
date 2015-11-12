@@ -18,7 +18,7 @@ class ExtentHandler(NetworkResourceHandler):
             raise ValueError("Extent may not include id field in POST, use PUT for updates")
         
         tmpResource = self._model_class(resource)
-        tmpResource = self._add_post_metadata(tmpResource, res_id)
+        tmpResource = self._add_post_metadata(tmpResource)
         
         if run_validate == True:
             tmpResource._validate()

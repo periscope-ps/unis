@@ -617,7 +617,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     @tornado.gen.coroutine
     def _process_resource(self, resource, res_id = None, run_validate = True):
         tmpResource = self._model_class(resource)
-        tmpResource = self._add_post_metadata(tmpResource, res_id)
+        tmpResource = self._add_post_metadata(tmpResource)
 
         if run_validate == True:
             tmpResource._validate()
@@ -650,7 +650,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         try:
             resource = self._get_json()
             resource = self._model_class(resource, auto_id = False)
-            resource = self._add_post_metadata(resource)
+            resource = self._add_put_metadata(resource)
         except ValueError as exp:
             self.send_error(400, message = exp)
             self.log.error(str(exp))
@@ -773,12 +773,15 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         
         return True
     
-    def _add_post_metadata(self, resource, res_id = None):
-        if res_id:
-            resource[self.Id] = res_id
-            
+    def _add_post_metadata(self, resource):
         resource["selfRef"] = "{host}/{rid}".format(host = self.request.full_url().split('?')[0],
-                                                       rid  = resource[self.Id])
+                                    rid  = resource[self.Id])
+        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
+        
+        return resource        
+
+    def _add_put_metadata(self, resource):
+        resource["selfRef"] = self.request.full_url().split('?')[0]
         resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         
         return resource

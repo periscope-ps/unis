@@ -33,14 +33,15 @@ class ExnodeHandler(NetworkResourceHandler):
             else:
                 resource.pop("modified", None)
         else:
+            print resource["extents"]
             yield [ self._insert_extents(extent, resource[self.Id]) for extent in resource["extents"] ]
             resource.pop("extents", None)
             resource.pop("modified", None)
             
         raise tornado.gen.Return(resource)
-            
-                        
-
+    
+    
+    
     def _insert_extents(self, extent, parent):
         http_client = AsyncHTTPClient()
         extent["parent"] = parent
