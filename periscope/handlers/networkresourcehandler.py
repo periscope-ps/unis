@@ -721,14 +721,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             self.log.error(message)
             return
         
-        res_ids = []
-        cursor = self._find(query = { self.Id: res_id }, projection = { "_id": False, self.Id: True })
-        while (yield cursor.fetch_next):
-            resource = cursor.next_object()
-            res_ids.append(resource[self.Id])
-            
         update = { "status": "DELETED", self.timestamp: int(time.time() * 1000000) }
-        query = {"$or": res_ids }
+        query = { self.Id: res_id }
         yield self.dblayer.update(query, update)
         self.finish()
 

@@ -85,7 +85,7 @@ class DBLayer(object, nllog.DoesLogging):
     def update(self, query, data,cert=None, callback=None, **kwargs):
         """Updates data found by query in the collection."""
         self.log.info("Update for Collection: [" + self._collection_name + "]")
-        results = yield self.collection.update(query, data, callback=callback, **kwargs)
+        results = yield self.collection.update(query, { '$set': data }, callback=callback, **kwargs)
         
         raise tornado.gen.Return(results)
 
