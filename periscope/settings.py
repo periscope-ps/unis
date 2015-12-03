@@ -266,6 +266,14 @@ getSchema = dict( \
             "handler_class": "periscope.handlers.schemahandler.SchemaHandler",                            
         }.items()
 )
+getParent = dict( \
+        {
+            "name": "getFolder",
+            "pattern": "/getFolder$",
+            "base_url":"",
+            "handler_class": "periscope.handlers.exnodehandler.FolderHandler",
+        }.items()
+)
 service = dict(default_resource_settings.items() + \
         {
             "name": "service",

@@ -32,7 +32,7 @@ setup(
     install_requires=[
         "tornado",
         "tornado-redis",
-        "pymongo",
+        "pymongo==2.8.0",
         "motor",
         "unittest2",
         "netlogger>=4.3.0",

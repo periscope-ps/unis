@@ -3,6 +3,7 @@
 import json
 import functools
 from tornado.ioloop import IOLoop
+from netlogger import nllog
 from tornado.httpclient import AsyncHTTPClient
 import tornado.web
 import tornado.gen
@@ -12,7 +13,24 @@ from periscope.settings import MIME
 from networkresourcehandler import NetworkResourceHandler
 from periscope.db import dumps_mongo
 
-
+class FolderHandler(tornado.web.RequestHandler,nllog.DoesLogging):
+    def initialize(self, dblayer,base_url):
+        nllog.DoesLogging.__init__(self)
+        self._dblayer = dblayer
+        
+    @tornado.web.asynchronous
+    @tornado.gen.coroutine
+    def get(self,res_id=None):
+        par = self.get_argument("parent",default=None)
+        val = yield self._dblayer.getRecParentNames(par)
+        self.log.info("Getting recurrsive folder ids for: [" + self._dblayer._collection_name + "]" + " with Parent " + par)
+        if (val == None):
+            self.write(json.dumps([]))
+        else:
+            self.write(json.dumps(val))
+        self.set_header('Content-Type', 'application/json')
+        self.finish()
+        
 class ExnodeHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _process_resource(self, resource, res_id = None, run_validate = True):
@@ -74,7 +92,7 @@ class ExnodeHandler(NetworkResourceHandler):
                 kwargs["fields"]["mode"] = True
         
         return super(ExnodeHandler, self)._find(**kwargs)
-            
+
     @tornado.gen.coroutine
     def _post_get(self, resource):
         if not self._include_allocations or resource["mode"] == "directory":
