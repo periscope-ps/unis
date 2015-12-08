@@ -54,7 +54,7 @@ class DBLayer(object, nllog.DoesLogging):
     
     def find(self, query = {}, **kwargs):
         """Finds one or more elements in the collection."""
-        self.log.info("find for Collection: [" + self._collection_name + "]")
+        self.log.debug("find for Collection: [" + self._collection_name + "]")
         fields = kwargs.pop("fields", {})
         fields["_id"] = 0
         cursor = self.collection.find(query, fields=fields, **kwargs)
@@ -70,7 +70,7 @@ class DBLayer(object, nllog.DoesLogging):
     @tornado.gen.coroutine
     def insert(self, data, callback=None, **kwargs):
         """Inserts data to the collection."""
-        self.log.info("insert for Collection: [" + self._collection_name + "]")
+        self.log.debug("insert for Collection: [" + self._collection_name + "]")
         if isinstance(data, list) and not self.capped:
             for item in data:
                 self._insert_id(item)
@@ -84,7 +84,7 @@ class DBLayer(object, nllog.DoesLogging):
     @tornado.gen.coroutine
     def update(self, query, data,cert=None, callback=None, **kwargs):
         """Updates data found by query in the collection."""
-        self.log.info("Update for Collection: [" + self._collection_name + "]")
+        self.log.debug("Update for Collection: [" + self._collection_name + "]")
         results = yield self.collection.update(query, { '$set': data }, callback=callback, **kwargs)
         
         raise tornado.gen.Return(results)
@@ -94,7 +94,7 @@ class DBLayer(object, nllog.DoesLogging):
         """ Gets all the child folder ids recurssively for a given folder - specially for exnodes"""
         if par :
             cursor = self.collection.find({"parent" : par})
-            # self.log.info("find for Collection: [" + self._collection_name + "]")
+            self.log.debug("find for Collection: [" + self._collection_name + "]")
             map[par] = 1
             while (yield cursor.fetch_next):
                 resource = cursor.next_object()
@@ -110,7 +110,7 @@ class DBLayer(object, nllog.DoesLogging):
     @tornado.gen.coroutine
     def remove(self, query, callback=None, **kwargs):
         """Remove objects from the database that matches a query."""
-        self.log.info("Delete for Collection: [" + self._collection_name + "]")
+        self.log.debug("Delete for Collection: [" + self._collection_name + "]")
         results = yield  self.collection.remove(query, callback=callback, **kwargs)
         
         raise tornado.gen.Return(results)
