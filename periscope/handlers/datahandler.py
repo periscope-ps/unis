@@ -3,7 +3,6 @@
 import json
 import functools
 import tornado.web
-from motor import MotorClient
 
 import periscope.settings as settings
 from periscope.db import dumps_mongo
@@ -113,34 +112,32 @@ class DataHandler(NetworkResourceHandler):
             self.write_error(403, message = exp)
             return
 
-        cursor = self.application.db[res_id].find(tailable=True, await_data=True, **options)
-        count = yield cursor.count()
+        # we don't want to wait here since this is a direct query on the state of the collection
+        # we could have an SSE endpoint that implemented a hanging GET, allowing more data
+        # over the HTTP connection as it arrived
+        cursor = self.application.db[res_id].find(tailable=False, await_data=False, **options)
+        count = yield cursor.count(with_limit_and_skip=True)
         
         if not count:
             self.write('[]')
             return
-        elif count > 1:
+        elif count >= 1:
             self.write('[\n')
             
-        yield cursor.fetch_next
-        resource = cursor.next_object()
-        self.write(dumps_mongo(resource, indent = 2).replace('\\\\$', '$').replace('$DOT$', '.'))
-        
-        for i in range(1, count):
-            yield cursor.fetch_next
-            self.write(',\n')
+        print count
+        citem = 0
+        while (yield cursor.fetch_next):
             resource = cursor.next_object()
-            self.write(dumps_mongo(resource, indent =2 ).replace('\\\\$', '$').replace('$DOT$', '.'))
-            
-        if count > 1:
-            self.write('\n]')
-
+            self.write(dumps_mongo(resource, indent = 2).replace('\\\\$', '$').replace('$DOT$', '.'))
+            citem = citem + 1
+            if citem == count:
+                self.write('\n]')
+            else:
+                self.write(',\n')
         
         yield self._add_response_headers(count)
         self.set_status(201)
         self.finish()
-
-        
     
     def trim_published_resource(self, resource, fields):
         return {resource['id']: resource['data']}
