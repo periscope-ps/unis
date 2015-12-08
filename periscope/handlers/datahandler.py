@@ -50,6 +50,9 @@ class DataHandler(NetworkResourceHandler):
             
     @tornado.gen.coroutine
     def _post_return(self, resources):
+        # don't return data posts to measurement collectors
+        return
+
         #self.write('[]')
         response = []
         mids = {}
