@@ -51,7 +51,6 @@ class ExnodeHandler(NetworkResourceHandler):
             else:
                 resource.pop("modified", None)
         else:
-            print resource["extents"]
             yield [ self._insert_extents(extent, resource[self.Id]) for extent in resource["extents"] ]
             resource.pop("extents", None)
             resource.pop("modified", None)

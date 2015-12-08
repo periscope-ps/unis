@@ -127,7 +127,6 @@ class DataHandler(NetworkResourceHandler):
         elif count >= 1:
             self.write('[\n')
             
-        print count
         citem = 0
         while (yield cursor.fetch_next):
             resource = cursor.next_object()
