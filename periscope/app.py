@@ -174,18 +174,6 @@ class PeriscopeApplication(tornado.web.Application):
             )
         )
         return handler
-    def _make_getparent_handler(self,name,pattern,base_url,handler_class):
-        db_layer = self.get_db_layer("exnodes", "id", "ts", False, 0)
-        scm_handler = (
-            tornado.web.URLSpec(base_url + pattern, handler_class,
-                                dict(
-                                    dblayer=db_layer,
-                                    base_url=base_url+pattern,
-                                    ), 
-                                    name=name
-                                )
-            )
-        return scm_handler
     def _make_getSchema_handler(self,name,pattern,base_url,handler_class):         
         scm_handler = (
             tornado.web.URLSpec(base_url + pattern, handler_class,
@@ -267,7 +255,6 @@ class PeriscopeApplication(tornado.web.Application):
             handlers.append(self._make_subscription_handler(**settings.Subscriptions[sub]))
         handlers.append(self._make_getSchema_handler(**settings.getSchema))
         handlers.append(self._make_main_handler(**settings.main_handler_settings))
-        handlers.append(self._make_getparent_handler(**settings.getParent))
         tornado.web.Application.__init__(self, handlers,
                     default_host="localhost", **settings.APP_SETTINGS)
         

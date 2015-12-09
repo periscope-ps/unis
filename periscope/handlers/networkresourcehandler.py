@@ -230,7 +230,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self.set_header('Access-Control-Allow-Origin', '*')
         self.set_header('Access-Control-Allow-Headers', 'x-requested-with')
         
-        
+    @tornado.gen.coroutine
     def _parse_get_arguments(self):
         """Parses the HTTP GET areguments given by the user."""
         def convert_value_type(key, value, val_type):
@@ -261,39 +261,44 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                         message="'%s' is not of type '%s'" % (key, val_type))
             raise HTTPError(400,
                         message="Unkown value type '%s' for '%s'." % (val_type, key))
-            
+
+        @tornado.gen.coroutine
         def process_value(key, value):
             val = None
             in_split = value.split(",")
             if len(in_split) > 1:
-                return process_in_query(key, in_split)[key]
-            operators = ["lt", "lte", "gt", "gte","not","eq","null"]
+                raise tornado.gen.Return((yield process_in_query(key, in_split)[key]))
+            operators = ["lt", "lte", "gt", "gte","not","eq","null","recfind"]
             for op in operators:
                 if value.startswith(op + "="):
                     if op == "not":
-                        tmpVal = re.compile("^"+process_value(key, value.lstrip(op + "=")) + "$", re.IGNORECASE)
+                        tmpVal = re.compile("^"+(yield process_value(key, value.lstrip(op + "="))) + "$", re.IGNORECASE)
                     elif op == "eq":                        
-                        tmpVal = process_value(key, value.lstrip(op + "="))
+                        tmpVal = yield process_value(key, value.lstrip(op + "="))
                         tmpVal = float(tmpVal)
-                        return tmpVal
+                        raise tornado.gen.Return(tmpVal)
                     elif op =="null":
-                        return None
+                        raise tornado.gen.Return(None)
+                    elif op == "recfind":
+                        tmpVal = yield process_value(key, value.lstrip(op + "="))
+                        par = yield self.dblayer.getRecParentNames(tmpVal,{})
+                        raise tornado.gen.Return({"$in" : par})
                     else:                        
-                        tmpVal = process_value(key, value.lstrip(op + "="))
+                        tmpVal = yield process_value(key, value.lstrip(op + "="))
                         if op in ["lt", "lte", "gt", "gte"]:
                             tmpVal = float(tmpVal)
 
                     val = {"$"+ op : tmpVal}
-                    return val
+                    raise tornado.gen.Return(val)
             value_types = ["integer", "number", "string", "boolean"]
             for t in value_types:
                 if value.startswith(t + ":"):
                     val = convert_value_type(key, value.split(t + ":")[1], t)
-                    return val
+                    raise tornado.gen.Return(val)
             if key in ["ts", "ttl"] or op in ["lt", "lte", "gt", "gte"]:
                 val = convert_value_type(key, value, "number")
-                return val
-            return value
+                raise tornado.gen.Return(val)
+            raise tornado.gen.Return(value)
 
         def process_exists_query(key, value):
             value = value[7:]
@@ -302,16 +307,17 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             if value == "false":
                 or_q.append({ key: None })
             return  { "$or": or_q }
-            
-                
+                    
+        @tornado.gen.coroutine
         def process_in_query(key, values):
-            in_q = [process_value(key, val) for val in values]       
-            return {key: {"$in": in_q}}
-        
+            in_q = [(yield process_value(key, val)) for val in values]            
+            raise tornado.gen.Return({key: {"$in": in_q}})
+                
+        @tornado.gen.coroutine
         def process_or_query(key, values):
             or_q = []
             if key:
-                or_q.append({key: process_value(key, values[0])})
+                or_q.append({key: (yield process_value(key, values[0]))})
                 values = values[1:]
             for val in values:
                 keys_split = val.split("=", 1)
@@ -319,23 +325,24 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                     raise HTTPError(400, message="Not valid OR query.")
                 k = keys_split[0]
                 v = keys_split[1]
-                or_q.append({k: process_value(k, v)})
-            return {"$or": or_q}
-            
+                or_q.append({k: (yield process_value(k, v))})
+            raise tornado.gen.Return({"$or": or_q})
+        
+        @tornado.gen.coroutine
         def process_and_query(key, values):
             and_q = []
             for val in values:
                 split_or = val.split("|")
                 if len(split_or) > 1:
-                    and_q.append(process_or_query(key, split_or))
+                    and_q.append((yield process_or_query(key, split_or)))
                     continue
                 split = val.split(",")
 
                 if len(split) == 1:
-                    and_q.append({key: process_value(key, split[0])})
+                    and_q.append({key: (yield process_value(key, split[0]))})
                 else:
-                    and_q.append(process_in_query(key, split))
-            return {"$and": and_q}
+                    and_q.append((yield process_in_query(key, split)))
+            raise tornado.gen.Return({"$and": and_q})
         
         query = copy.copy(self.request.arguments)
         # First Reterive special parameters
@@ -379,13 +386,13 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query_ret = []
         for arg in query:
             if isinstance(query[arg], list) and len(query[arg]) > 1:
-                and_q = process_and_query(arg, query[arg])
+                and_q = yield process_and_query(arg, query[arg])
                 query_ret.append(and_q)
                 continue
             query[arg] = ",".join(query[arg])
             if query[arg].startswith("reg="):
                 param = decode(query[arg][4:])
-                val = re.compile(process_value(arg,param), re.IGNORECASE)
+                val = re.compile((yield process_value(arg,param), re.IGNORECASE))
                 query_ret.append({arg: val})
                 continue
             if query[arg].startswith("exists="):
@@ -393,14 +400,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 continue
             split_or = query[arg].split("|")
             if len(split_or) > 1:
-                query_ret.append(process_or_query(arg, split_or))
+                query_ret.append((yield process_or_query(arg, split_or)))
                 continue
             split = query[arg].split(",")
             if len(split) > 1:
-                in_q = process_in_query(arg, split)
+                in_q = yield process_in_query(arg, split)
                 query_ret.append(in_q)
             else:
-                query_ret.append({arg: process_value(arg, split[0])})
+                query_ret.append({arg: (yield process_value(arg, split[0]))})
         if query_ret:
             query_ret = {"list": True, "query": {"$and": query_ret}}
         else:
@@ -416,10 +423,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                         ret.append(item)
                 query_ret["query"].update({"$and": ret})        
         ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip , "sort" : sort , "cert" : cert}
-        return ret_val
+        raise tornado.gen.Return(ret_val)
     
     
-
+    
     # Template Method for GET
     @tornado.web.asynchronous
     @tornado.web.removeslash
@@ -429,7 +436,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
         # Parse arguments and set up query
         try:
-            parsed = self._parse_get_arguments()
+            parsed = yield self._parse_get_arguments()
             options = dict(query  = parsed["query"]["query"],
                            fields = parsed["fields"],
                            limit  = parsed["limit"],
