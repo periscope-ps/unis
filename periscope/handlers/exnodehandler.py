@@ -89,9 +89,9 @@ class ExnodeHandler(NetworkResourceHandler):
                 self._include_allocations = False
             else:
                 kwargs["fields"]["mode"] = True
-        
+            
         return super(ExnodeHandler, self)._find(**kwargs)
-
+    
     @tornado.gen.coroutine
     def _post_get(self, resource):
         if not self._include_allocations or resource["mode"] == "directory":

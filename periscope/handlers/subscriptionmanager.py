@@ -110,6 +110,7 @@ class SubscriptionManager(nllog.DoesLogging):
             if is_member:
                 trim = trim_function or self.trim_published_resource
                 trimmed_resource = trim(resource, query["fields"])
+                
                 try:
                     self.trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
                 except Exception as exp:
