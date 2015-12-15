@@ -53,11 +53,11 @@ Insert single Service
     POST /services HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/service#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/service#
     Content-Length: 248
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/service#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/service#",
         "accessPoint": "http://example.com:111/ms1/",
         "name": "service1",
         "status": "ON",
@@ -87,11 +87,11 @@ Insert single Service
 *Note* that the `id`, `ts` and `selfRef` were created by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/service#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/service#
     Location: https://example.com/services/4fb4050bf4735379a7000000
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/service#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/service#",
         "status": "ON",
         "id": "4fb4050bf4735379a7000000",
         "selfRef": "https://example.com/services/4fb4050bf4735379a7000000",

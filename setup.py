@@ -32,8 +32,8 @@ setup(
     install_requires=[
         "tornado",
         "tornado-redis",
-        "pymongo==2.6.3",
-        "asyncmongo",
+        "pymongo",
+        "motor",
         "unittest2",
         "netlogger>=4.3.0",
         "validictory>=validictory-0.8.1",
@@ -43,9 +43,6 @@ setup(
         "httplib2",
         "jsonpath",
         "M2Crypto"
-    ],
-    dependency_links=[
-        "http://github.com/ahassany/asyncmongo/tarball/getmore_ioloop#egg=asyncmongo-1.2.1",
     ],
     entry_points = {
         'console_scripts': [

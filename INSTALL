@@ -52,29 +52,12 @@ export OPENSSL_ALLOW_PROXY_CERTS=1
 or
 setenv OPENSSL_ALLOW_PROXY_CERTS 1
 
-
-===== Installing MongoDB =====
-Please note that Periscope uses mongodb
-
-You can find instructions how to download mongodb here:
-
-For Debian based distros:
-http://docs.mongodb.org/manual/tutorial/install-mongodb-on-debian-or-ubuntu-linux/
-
-For Redhat based distros:
-http://docs.mongodb.org/manual/tutorial/install-mongodb-on-redhat-centos-or-fedora-linux/
-
-If your server is located on host other than localhost, please edit settings.py
-
-
-
 Manual Installation notes:
 
 Required Packages (Note those packages are installed automatically by setup.py):
 - tornado>=2.3
 - tornado-redis
-- pymongo==2.1.1  # Won't work the newer versions
-- asyncmongo  # see notes below
+- motor
 - unittest2
 - netlogger==4.3.0
 - validictory>=0.8.1
@@ -84,22 +67,12 @@ Required Packages (Note those packages are installed automatically by setup.py):
 - httplib2
 - jsonpath
 
-Asyncmongo:
-Tailable cursors support is not merge to the main branch yet.
-You need to download the development branch
-
-    git clone git://github.com/ahassany/asyncmongo.git
-    sudo python setup.py install
-
-
-
 Running Periscope:
 To run periscope
     periscoped     # It runs on port 8888 by default
 or
     periscoped --port=80
     
-
 
 Running Periscope with nginx:
 

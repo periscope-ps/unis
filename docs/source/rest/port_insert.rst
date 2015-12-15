@@ -53,11 +53,11 @@ Insert single Port
     POST /ports HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/port#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/port#
     Content-Length: 248
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
         "name": "port1",
         "urn": "urn:ogf:network:domain=example.com:port=port1",
         "capacity": 10000000000,
@@ -72,14 +72,14 @@ Insert single Port
 *Note* that the `id`, `ts` and `selfRef` were created by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/port#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/port#
     Location: https://example.com/ports/4fb04b3af473530a0f000000
     
     {
         "id": "4fb04b3af473530a0f000000", 
         "ts": 1336864012847944, 
         "selfRef": "https://example.com/ports/4fb04b3af473530a0f000000", 
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
         "name": "port1",
         "urn": "urn:ogf:network:domain=example.com:port=port1",
         "capacity": 10000000000,
@@ -98,7 +98,7 @@ Insert list of Ports
     POST /ports HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/port#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/port#
     Content-Length: 248
     
     [
@@ -106,7 +106,7 @@ Insert list of Ports
             "id": "4fb04b3af473530a0f000000", 
             "ts": 1336864012847944, 
             "selfRef": "https://example.com/ports/4fb04b3af473530a0f000000", 
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
             "name": "port1",
             "urn": "urn:ogf:network:domain=example.com:port=port1",
             "capacity": 10000000000,
@@ -124,14 +124,14 @@ Insert list of Ports
 `Location` HTTP header is not returned for the list of the Ports.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/port#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/port#
     
     [
         {
             "id": "4fb04bfaf473530a0f000002",
             "ts": 1336953850984704,
             "selfRef": "https://example.com/ports/4fb04bfaf473530a0f000002",
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
             "name": "port1",
             "urn": "urn:ogf:network:domain=example.com:port=port1",
             "capacity": 10000000000,
@@ -144,7 +144,7 @@ Insert list of Ports
             "id": "4fb04bfaf473530a0f000003",
             "ts": 1336953850985000,
             "selfRef": "https://example.com/ports/4fb04bfaf473530a0f000003",
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
             "name": "port2",
             "urn": "urn:ogf:network:domain=example.com:port=port2",
             "capacity": 10000000000,
@@ -157,7 +157,7 @@ Insert list of Ports
             "id": "4fb04bfaf473530a0f000004",
             "ts": 1336953850985287,
             "selfRef": "https://example.com/ports/4fb04bfaf473530a0f000004",
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
             "name": "port3",
             "urn": "urn:ogf:network:domain=example.com:port=port3",
             "capacity": 10000000000,

@@ -1,12 +1,12 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140214/measurement#",
+    "id": "http://unis.crest.iu.edu/schema/20140214/measurement#",
     "description": "A measurement object",
     "name": "Measurement",
     "type": "object",
     "additionalProperties": true,
     "extends": {
-        "$ref": "http://unis.incntre.iu.edu/schema/20140214/networkresource#"
+        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
     },
     "properties": {
 	"service": {

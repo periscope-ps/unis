@@ -55,11 +55,11 @@ Updating a Metadata
     PUT /metadata/4fb2b024f473535056000000 HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/metadata#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/metadata#
     Content-Length: 248
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/metadata#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/metadata#",
         "subject": {
             "href": "https://example.com/ports/1",
             "rel": "full"
@@ -67,7 +67,7 @@ Updating a Metadata
         "eventType": "event_x",
         "parameters": {
             "collectionInterval": 30000,
-            "datumSchema": "http://unis.incntre.iu.edu/schema/20120709/datum#",
+            "datumSchema": "http://unis.crest.iu.edu/schema/20120709/datum#",
             "new_parameters": "new value"
         }
     }
@@ -78,11 +78,11 @@ Updating a Metadata
 *Note* that the `ts` was updated by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/metadata#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/metadata#
     Location: https://example.com/metadata/4fb2b024f473535056000000
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/metadata#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/metadata#",
         "ts": 1337110564767952,
         "id": "4fb2b024f473535056000000",
         "selfRef": "https://example/com/metadata/4fb2b024f473535056000000",
@@ -93,7 +93,7 @@ Updating a Metadata
         "eventType": "event_x",
         "parameters": {
             "collectionInterval": 30000,
-            "datumSchema": "http://unis.incntre.iu.edu/schema/20120709/datum#",
+            "datumSchema": "http://unis.crest.iu.edu/schema/20120709/datum#",
             "new_parameters": "new value"
         }
     }

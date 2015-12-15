@@ -55,7 +55,7 @@ Updating a Link
     PUT /links/link1 HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/link#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/link#
     Content-Length: 248
     
     {
@@ -78,11 +78,11 @@ Updating a Link
 *Note* that the `ts` was updated by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/link#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/link#
     Location: /links/link1
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/link#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/link#",
         "id": "link1",
         "selfRef": "https://example.com/links/link1"
         "ts": 1337200240812328, 

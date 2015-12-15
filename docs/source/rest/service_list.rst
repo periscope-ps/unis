@@ -62,11 +62,11 @@ List all Services
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/service#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/service#
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/service#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/service#",
             "status": "ON",
             "id": "4fb4050bf4735379a7000000",
             "selfRef": "https://example.com/services/4fb4050bf4735379a7000000",
@@ -82,7 +82,7 @@ List all Services
             }
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/service#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/service#",
             "status": "ON",
             "id": "4fb4050bf4735379a7000000",
             "selfRef": "https://example.com/services/4fb4050bf4735379a7000000",
@@ -98,7 +98,7 @@ List all Services
             }
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/wservice#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/wservice#",
             "status": "ON",
             "id": "4fb409e5f4735379a7000002",
             "selfRef": "https://example.com/services/4fb409e5f4735379a7000002",

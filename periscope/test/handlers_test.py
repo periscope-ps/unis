@@ -35,13 +35,13 @@ MIME = {
     }
 
 schemas = {
-    'networkresource': 'http://unis.incntre.iu.edu/schema/20140214/networkresource#',
-    'node': 'http://unis.incntre.iu.edu/schema/20140214/node#',
-    'port': 'http://unis.incntre.iu.edu/schema/20140214/port#',
-    'link': 'http://unis.incntre.iu.edu/schema/20140214/link#',
-    'service': 'http://unis.incntre.iu.edu/schema/20140214/service#',
-    'domain': 'http://unis.incntre.iu.edu/schema/20140214/domain#',
-    'topology': 'http://unis.incntre.iu.edu/schema/20140214/topology#',
+    'networkresource': 'http://unis.incntre.iu.edu/schema/20151104/networkresource#',
+    'node': 'http://unis.incntre.iu.edu/schema/20151104/node#',
+    'port': 'http://unis.incntre.iu.edu/schema/20151104/port#',
+    'link': 'http://unis.incntre.iu.edu/schema/20151104/link#',
+    'service': 'http://unis.incntre.iu.edu/schema/20151104/service#',
+    'domain': 'http://unis.incntre.iu.edu/schema/20151104/domain#',
+    'topology': 'http://unis.incntre.iu.edu/schema/20151104/topology#',
 }
 
 class SSEHandlerTest(PeriscopeHTTPTestCase):
@@ -544,7 +544,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         
         psjson_request = Mock()
         psjson_request.headers.get.return_value = MIME['PSJSON'] + \
-                    "; profile=http://unis.incntre.iu.edu/schema/20140214/networkresoruce"
+                    "; profile=http://unis.incntre.iu.edu/schema/20151104/networkresoruce"
         psjson_handler = NetworkResourceHandler(app,
                             psjson_request,
                             dblayer=dblayer_mock,
@@ -838,7 +838,6 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         # Arrange
         app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, _ppi_classes=[])
         
-        bad_dblayer_mock = Mock(spec=DBLayer)
         with_id_dblayer_mock = Mock(spec=DBLayer)
         no_id_dblayer_mock = Mock(spec=DBLayer)
         array_with_id_dblayer_mock = Mock(spec=DBLayer)
@@ -855,19 +854,6 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
             {"ts": 1330921125000000}
         ]
         psjson_header = "%s; profile=%s" % (MIME['PSJSON'], schemas['networkresource'])
-        
-        # Bad request
-        bad_request = Mock(body=json.dumps({"id": 1}))
-        bad_request.headers.get.return_value = psjson_header
-        bad_request.arguments = dict(validate = ["True"])
-        bad_request.full_url.return_value = "http://localhost/resources"
-        bad_handler = NetworkResourceHandler(app,
-                            bad_request,
-                            dblayer=bad_dblayer_mock,
-                            model_class=Node,
-                            base_url="/tests",
-                            schemas_single={MIME['PSJSON']: schemas['networkresource']})
-        bad_handler._transforms = dict()
         
         # Good with ID request
         with_id_request = Mock(name="aa", body=json.dumps(valid_body_with_id))
@@ -922,16 +908,12 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         array_no_id_handler._transforms = dict()
     
         # Act
-        bad_handler.post_psjson()
         with_id_handler.post_psjson()
         no_id_handler.post_psjson()
         array_with_id_handler.post_psjson()
         array_no_id_handler.post_psjson()
         
         # Assert
-        self.assertEqual(bad_handler._status_code, 400)
-        self.assertEqual(bad_dblayer_mock.insert.called, False)
-        
         self.assertNotEqual(with_id_handler._status_code, 400)
         #with_id_dblayer_mock.insert.assert_called_once_with(valid_body_with_id, callback=with_id_handler.on_post)
         
@@ -945,11 +927,12 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     
     def test_post_psjson_bad_schema_body(self):
+        print("Here")
         # Arrange
         app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, _ppi_classes=[])
         
         goodsingle_dblayer_mock = Mock(spec=DBLayer)
-        badsinglee_dblayer_mock = Mock(spec=DBLayer)
+        badsingle_dblayer_mock = Mock(spec=DBLayer)
         good_array_dblayer_mock = Mock(spec=DBLayer)
         bad_array_dblayer_mock = Mock(spec=DBLayer)
         
@@ -960,7 +943,6 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         }
         notvalid_body = {
             "$schema": schemas['node'],
-            "id": "2",
             "ts": 1330921125000000
         }
         valid_array = [
@@ -1009,7 +991,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         badsingle_request.full_url.return_value = "http://localhost/resources"
         badsingle_handler = NetworkResourceHandler(app,
                             badsingle_request,
-                            dblayer=badsinglee_dblayer_mock,
+                            dblayer=badsingle_dblayer_mock,
                             model_class=Node,
                             base_url="/tests",
                             schemas_single={MIME['PSJSON']: schemas['networkresource']})
@@ -1087,7 +1069,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
                         schemas_single={MIME['PSJSON']: schemas['networkresource']}))
         self._app.add_handlers(".*$", [handler])
         request = {"id": "1"}
-        content_type = MIME['PSJSON'] + ' ; profile=http://unis.incntre.iu.edu/schema/20140214/domain#'
+        content_type = MIME['PSJSON'] + ' ; profile=http://unis.incntre.iu.edu/schema/20151104/domain#'
         # Act
         response = self.fetch("/tests",
                             method="POST",
@@ -1290,10 +1272,10 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
     def _get_sample_topology(self):
         """Returns sample topology for testing"""
         topology = {
-            u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/topology#",
+            u"$schema": u"http://unis.incntre.iu.edu/schema/20151104/topology#",
             u"nodes": [
                 {
-                    u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/node#",
+                    u"$schema": u"http://unis.incntre.iu.edu/schema/20151104/node#",
                     u"description": u"LAMP node",
                     u"ports": [
                         {
@@ -1308,7 +1290,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                     }
                 },
                 {
-                    u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/node#",
+                    u"$schema": u"http://unis.incntre.iu.edu/schema/20151104/node#",
                     u"description": u"LAMP node",
                     u"ports": [
                         {
@@ -1325,12 +1307,12 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
             ],
             u"ports": [
                 {
-                    u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/port#",
+                    u"$schema": u"http://unis.incntre.iu.edu/schema/20151104/port#",
                     u"address": {u"address": u"10.10.1.1", u"type": u"ipv4"},
                     u"name": u"eth1",
                 },
                 {
-                    u"$schema": u"http://unis.incntre.iu.edu/schema/20140214/port#",
+                    u"$schema": u"http://unis.incntre.iu.edu/schema/20151104/port#",
                     u"address": {u"address": u"10.10.1.3", u"type": u"ipv4"},
                     u"name": u"eth3",
                 }
@@ -1427,7 +1409,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
     def test_get(self):
         # Arrange
         topology = {
-            "\$schema": "http://unis.incntre.iu.edu/schema/20140214/topology#",
+            "\$schema": "http://unis.incntre.iu.edu/schema/20151104/topology#",
             "id": "4fa32f84f473537ce5000005",
             "selfRef": "http://localhost:10001/4fa32f84f473537ce5000005",
             "ts": 1336094596464475,
@@ -1582,7 +1564,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
     def test_complete_href_links_jsonpoitner(self):
         # Arrange
         topology = {
-            "$schema": "http://unis.incntre.iu.edu/schema/20140214/topology#",
+            "$schema": "http://unis.incntre.iu.edu/schema/20151104/topology#",
             "id": "4fa32f84f473537ce5000005",
             "ts": 1336094596464475,
             "ports": [
@@ -1590,14 +1572,14 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                     "selfRef": "http://example.com/ports/1"
                 }, 
                 {
-                    "$schema": "http://unis.incntre.iu.edu/schema/20140214/port#",
+                    "$schema": "http://unis.incntre.iu.edu/schema/20151104/port#",
                     "urn": "urn:ogf:network:domain=example.com:port=2",
                     "name": "port2",
                 }
             ], 
             "nodes": [
                 {
-                    "$schema": "http://unis.incntre.iu.edu/schema/20140214/node#",
+                    "$schema": "http://unis.incntre.iu.edu/schema/20151104/node#",
                     "id": 1,
                     "name": "node1",
                     "ports": [
@@ -1656,7 +1638,7 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
     def test_complete_href_links_jsonpath(self):
         # Arrange
         topology = {
-            "$schema": "http://unis.incntre.iu.edu/schema/20140214/topology#",
+            "$schema": "http://unis.incntre.iu.edu/schema/20151104/topology#",
             "id": "4fa32f84f473537ce5000005",
             "ts": 1336094596464475,
             "ports": [
@@ -1664,14 +1646,14 @@ class CollectionHandlerIntegrationTest(PeriscopeHTTPTestCase):
                     "selfRef": "http://example.com/ports/1"
                 }, 
                 {
-                    "$schema": "http://unis.incntre.iu.edu/schema/20140214/port#",
+                    "$schema": "http://unis.incntre.iu.edu/schema/20151104/port#",
                     "urn": "urn:ogf:network:domain=example.com:port=2",
                     "name": "port2",
                 }
             ], 
             "nodes": [
                 {
-                    "$schema": "http://unis.incntre.iu.edu/schema/20140214/node#",
+                    "$schema": "http://unis.incntre.iu.edu/schema/20151104/node#",
                     "id": 1,
                     "name": "node1",
                     "ports": [

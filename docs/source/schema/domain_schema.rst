@@ -12,7 +12,7 @@ part of an administrative *Domain*.
 JSON Schema
 -----------
 
-See `<http://unis.incntre.iu.edu/schema/20120709/domain>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/domain>`_.
 
 
 Attributes
@@ -58,7 +58,7 @@ Example
 The following is a simple Domain example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/domain#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/domain#",
         "id": "1",
         "ts": 1337976574414305,
         "selfRef": "https://example.com/domains/1",

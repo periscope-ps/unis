@@ -6,7 +6,6 @@ import jsonpointer
 from periscope.models import schemaLoader
 from jsonpath import jsonpath
 from netlogger import nllog
-import tornado.gen as gen
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
 
@@ -31,163 +30,74 @@ class CollectionHandler(NetworkResourceHandler):
         for key, value in self._collections.items():
             self._models_index[value["model_class"]] = key
             dblayer = self.application.get_db_layer(value["collection_name"],
-                    value["id_field_name"],
-                    value["timestamp_field_name"],
-                    value["is_capped_collection"],
-                    value["capped_collection_size"]
-                )
+                                                    value["id_field_name"],
+                                                    value["timestamp_field_name"],
+                                                    value["is_capped_collection"],
+                                                    value["capped_collection_size"]
+            )
             self._dblayers_index[key] = dblayer
-    
-    @tornado.web.asynchronous
-    @tornado.web.removeslash
-    def post(self):
-        # Check if the schema for conetnt type is known to the server
-        if self.accept_content_type not in self.schemas_single:
-            message = "Schema is not defiend fot content of type '%s'" % \
-                        (self.accept_content_type)
-            self.send_error(500, message=message)
-            return
+
+
+    @tornado.gen.coroutine
+    def _put_resource(self, resource):
+        for key in self._collections:
+            if key in resource:
+                resource.pop(key, None)
         
-        # Load the appropriate content type specific POST handler
-        if self.content_type == MIME['PSJSON']:
-            self.post_psjson()
-        elif self.content_type == MIME['PSBSON']:
-            self.post_psbson()
-        else:
-            self.send_error(500,
-                message="No POST method is implemented fot this content type")
-            return
-        return
-    
-    @gen.engine
-    def post_psjson(self):
-        """
-        Handles HTTP POST request with Content Type of PSJSON.
-        """
-        profile = self._validate_psjson_profile()
-        run_validate = True
-        complete_links = True
-        if self.get_argument("validate", None) == 'false':
-            run_validate = False
-        if self.get_argument("complete_links", None) == 'false':
-            complete_links = False
-        if not profile:
-            return
-        try:
-            body = json.loads(self.request.body)
-        except Exception as exp:
-            self.send_error(400, message="malformatted json request '%s'." % exp)
-            return
+        super(CollectionHandler, self)._put_resource(resource)
         
-        try:
-            collections = []
-            if isinstance(body, list):
-                for item in body:
-                    collections.append(self._model_class(item,
-                        schemas_loader=schemaLoader))
-            else:
-                collections = [self._model_class(body,
-                        schemas_loader=schemaLoader)] 
-        except Exception as exp:
-            self.send_error(400, message="malformatted request " + str(exp))
-            return
+    @tornado.gen.coroutine
+    def _process_resource(self, resource, res_id = None, run_validate = True):
+        tmpResource = self._model_class(resource, schemas_loader = schemaLoader)
+        tmpResource = self._add_post_metadata(tmpResource)
+        complete_links = (self.get_argument("complete_links", None) != 'false')
+        
+        
+        ppi_classes = getattr(self.application, '_ppi_classes', [])
+        for pp in ppi_classes:
+            pp.pre_post(tmpResource, self.application, self.request)
+            
+        if complete_links:
+            if self._complete_href_links(resource, resource) < 0:
+                raise ValueError("Invalid href in resource")
+        
+        links = yield [ self._create_child(key, tmpResource) for key in self._collections.keys() if key in tmpResource ]
+        for values in links:
+            tmpResource[values["collection"]] = []
+            for instance in values["hrefs"]:
+                tmpResource[values["collection"]].append({ "href": instance["selfRef"], "rel": "full" })
                 
-        # Validate schema
-        try:
-            for collection in collections:
-                if collection.get("$schema", None) != \
-                    self.schemas_single[self.accept_content_type]:
-                     self.send_error(400,
-                     message="Not valid body '%s'; expecting $schema: '%s'." % \
-                     (collection.get("$schema", None), self.schemas_single[self.accept_content_type]))
-                     return
-                if run_validate == True:
-                    collection._validate()
-        except Exception as exp:
-            self.send_error(400, message="Not valid $schema '%s'." % exp)
-            return
+        #if run_validate:
+        #    tmpResource._validate()
+            
+        raise tornado.gen.Return(tmpResource)
+    
+
+    @tornado.gen.coroutine
+    def _create_child(self, key, resource):
+        http_client = AsyncHTTPClient()
+        url = "{protocol}://{host}{path}?validate=false&complete_links=false"
+        response = yield tornado.gen.Task(
+            http_client.fetch,
+            url.format(protocol = self.request.protocol, host = self.request.host, path = self.reverse_url(key)),
+            method          = "POST",
+            body            = dumps_mongo(resource[key]),
+            request_timeout = 180,
+            validate_cert   = False,
+            client_cert     = settings.CLIENT_SSL_OPTIONS['certfile'],
+            client_key      = settings.CLIENT_SSL_OPTIONS['keyfile'],
+            headers         = { "Cache-Control": "no-cache",
+                                "Content-Type": MIME["PSJSON"],
+                                "connection": "close" }
+        )
+        if response.code >= 400:
+            raise Exception("Could not add child resource")
         
-        # (EK): make this cleaner and more efficient
-        if getattr(self.application, '_ppi_classes', None):
-            try:
-                for collection in collections:
-                    # check the top-level object
-                    for pp in self.application._ppi_classes:
-                        pp.pre_post(collection, self.application, self.request)
-                        # now check each resource in the collection
-                        for key in self._collections.keys():
-                            if key in collection:
-                                for pp in self.application._ppi_classes:
-                                    pp.pre_post(collection[key], self.application, self.request)
-            except Exception, msg:
-                self.send_error(400, message=msg)
-                return
-        
-        self._cache = {}
-        coll_reps = []
-        for collection in collections:
-            collection["selfRef"] = "%s/%s" % (self.request.full_url().split('?')[0], collection[self.Id])
-                    
-            # Convert JSONPath and JSONPointer Links to Hyper Links
-            if complete_links:
-                ret = self._complete_href_links(collection, collection)
-            else:
-                ret = collections
-            # Check if something went wrong
-            if ret < 0:
-                return
-            
-            res_refs = [
-                {
-                    self.Id: collection[self.Id],
-                    self.timestamp: collection[self.timestamp]
-                }
-            ]
-            has_error = False
-            keys_to_insert = []
-            http_client = AsyncHTTPClient()
-            
-            # Async calls to insert all the resources included in the request
-            args = "?"
-            
-            args += 'validate=false'
-            args += '&complete_links=false'
-            
-            responses = yield [
-                gen.Task(
-                    http_client.fetch,
-                    "%s://%s%s%s"  % (self.request.protocol, self.request.host, self.reverse_url(key), args),
-                    method = "POST",
-                    body = dumps_mongo(collection[key]),
-                    request_timeout=180,
-                    validate_cert=False,
-                    client_cert= settings.CLIENT_SSL_OPTIONS['certfile'],
-                    client_key= settings.CLIENT_SSL_OPTIONS['keyfile'],
-                    headers = {
-                        "Cache-Control": "no-cache",
-                        "Content-Type": MIME['PSJSON'],
-                        "Connection": "close"
-                        }
-                    )
-                    for key in self._collections.keys()
-                    if key in collection
-            ]
-            
-            for response in responses:
-                if response.code >= 400:
-                    self.send_error(response.code, message=response.body)
-                    return
-           
-            for key in self._collections:
-                if key not in collection:
-                    continue
-                for index in range(len(collection[key])):
-                    if 'selfRef' in collection[key][index]:
-                        collection[key][index] = {"href": collection[key][index]["selfRef"], "rel": "full"}
-            coll_reps.append(dict(collection._to_mongoiter()))
-        
-        callback = functools.partial(self.on_post, res_refs=res_refs)
-        self.dblayer.insert(coll_reps, callback=callback)
+        response = json.loads(response.body)
+        if not isinstance(response, list):
+            resposne = [response]
+        raise tornado.gen.Return({ "collection": key, "hrefs": response })
+    
         
     def set_self_ref(self, resource):
         """Assignes a selfRef to a resource"""
@@ -206,7 +116,7 @@ class CollectionHandler(NetworkResourceHandler):
     def _complete_href_links(self, parent_collection, current):
         """Resolves self hyperlinks (JSONPath and JSONPointers."""
         if isinstance(current, HyperLink) or \
-            (isinstance(current, dict) and "href" in current):
+           (isinstance(current, dict) and "href" in current):
             if isinstance(current["href"], (unicode, str)):
                 resource = None
                 if current["href"] in self._cache:
@@ -250,4 +160,3 @@ class CollectionHandler(NetworkResourceHandler):
                 if ret < 0:
                     return ret
         return 0
-

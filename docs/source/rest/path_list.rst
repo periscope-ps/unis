@@ -61,14 +61,14 @@ List all Paths
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/path#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/path#
     
     [
         {
             "id": "4fb1927ff473533226000006",
             "description": "This is a sample path",
             "directed": true,
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
             "name": "path1",
             "selfRef": "https://example.com/paths/4fb1927ff473533226000006",
             "urn": "urn:ogf:network:domain=example.com:path=path1",
@@ -97,7 +97,7 @@ List all Paths
             ]
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/path#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/path#",
             "id": "4fb1927ff473533226000007",
             "selfRef": "https://example.com/paths/4fb1927ff473533226000007",
             "urn": "urn:ogf:network:domain=example.com:path=path2",

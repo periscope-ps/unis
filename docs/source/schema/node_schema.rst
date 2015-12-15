@@ -16,7 +16,7 @@ forwarding rules.
 
 JSON Schema
 -----------
-See `<http://unis.incntre.iu.edu/schema/20120709/node>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/node>`_.
 
 
 Attributes
@@ -44,7 +44,7 @@ Example
 The following is a simple Node representation example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
         "id": "123",
         "selfRef": "http://example.com/nodes/123",
         "ts": 1336775637000,

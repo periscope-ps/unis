@@ -2,8 +2,7 @@
 Main Periscope Application
 """
 import ssl
-import asyncmongo
-import pymongo
+import motor
 import tornado.httpserver
 import tornado.web
 import tornado.ioloop
@@ -12,6 +11,7 @@ import functools
 import socket
 from tornado.options import define
 from tornado.options import options
+from tornado import gen
 
 from tornado.httpclient import AsyncHTTPClient
 
@@ -33,62 +33,56 @@ class PeriscopeApplication(tornado.web.Application):
     """Defines Periscope Application."""
 
     def get_db_layer(self, collection_name, id_field_name,
-            timestamp_field_name, is_capped_collection, capped_collection_size):
+                     timestamp_field_name, is_capped_collection, capped_collection_size):
+
         """
         Creates DBLayer instance.
         """
 
         if collection_name == None:
             return None
+        # Add capped collection if needed
+        if is_capped_collection:
+            self.db.create_collection(collection_name,
+                                      capped      = True,
+                                      size        = capped_collection_size,
+                                      autoIndexId = False)
         
-        # Initialize the capped collection, if necessary!
-        if is_capped_collection and \
-                collection_name not in self.sync_db.collection_names():
-            self.sync_db.create_collection(collection_name,
-                            capped=True,
-                            size=capped_collection_size,
-                            autoIndexId=False)
-        
-        # Make indexes if the collection is not capped
+        # Ensure indexes
         if id_field_name != timestamp_field_name:
-            self.sync_db[collection_name].ensure_index([
-                (id_field_name, 1),
-                (timestamp_field_name, -1)
-            ],
-                                                       unique=True)
-            self.sync_db[collection_name].ensure_index([
-                (timestamp_field_name, -1)
-            ],
-                                                       unique=True)
+            self.db[collection_name].ensure_index([ (id_field_name, 1), (timestamp_field_name, -1)],
+                                                  unique = True)
+            self.db[collection_name].ensure_index([ (timestamp_field_name, -1)],
+                                                  unique = True)
         
-        # Prepare the DBLayer
-        db_layer = DBLayer(self.async_db,
-            collection_name,
-            is_capped_collection,
-            id_field_name,
-            timestamp_field_name
-        )
+        # Create Layer
+        db_layer = DBLayer(self.db,
+                           collection_name,
+                           is_capped_collection,
+                           id_field_name,
+                           timestamp_field_name)
         
         return db_layer
-
+    
+    
     def make_resource_handler(self, name,
-                    pattern,
-                    base_url,
-                    handler_class,
-                    model_class,
-                    collection_name,
-                    schema,
-                    is_capped_collection,
-                    capped_collection_size,
-                    id_field_name,
-                    timestamp_field_name,
-                    allow_get,
-                    allow_post,
-                    allow_put,
-                    allow_delete,
-                    accepted_mime,
-                    content_types_mime,
-                    **kwargs):
+                              pattern,
+                              base_url,
+                              handler_class,
+                              model_class,
+                              collection_name,
+                              schema,
+                              is_capped_collection,
+                              capped_collection_size,
+                              id_field_name,
+                              timestamp_field_name,
+                              allow_get,
+                              allow_post,
+                              allow_put,
+                              allow_delete,
+                              accepted_mime,
+                              content_types_mime,
+                              **kwargs):
         """
         Creates HTTP Request handler.
         
@@ -180,19 +174,29 @@ class PeriscopeApplication(tornado.web.Application):
             )
         )
         return handler
-    
-    def _make_getSchema_handler(self,name,pattern,base_url,handler_class):         
-         scm_handler = (
+    def _make_getparent_handler(self,name,pattern,base_url,handler_class):
+        db_layer = self.get_db_layer("exnodes", "id", "ts", False, 0)
+        scm_handler = (
             tornado.web.URLSpec(base_url + pattern, handler_class,
-                dict(                    
-                    base_url=base_url+pattern,
-                ), 
-                name=name
+                                dict(
+                                    dblayer=db_layer,
+                                    base_url=base_url+pattern,
+                                    ), 
+                                    name=name
+                                )
             )
-         )
-         return scm_handler
+        return scm_handler
+    def _make_getSchema_handler(self,name,pattern,base_url,handler_class):         
+        scm_handler = (
+            tornado.web.URLSpec(base_url + pattern, handler_class,
+                                dict(                    
+                                    base_url=base_url+pattern,
+                                    ), 
+                                    name=name
+                                )
+            )
+        return scm_handler
 
-    
     def _make_main_handler(self, name,  pattern, base_url, handler_class, resources):
         if type(handler_class) in [str, unicode]:
             handler_class = load_class(handler_class)
@@ -229,11 +233,10 @@ class PeriscopeApplication(tornado.web.Application):
         
     def __init__(self):
         self.cookie_secret="S19283u182u3j12j3k12n3u12i3nu12i3n12ui3"
-        self._async_db = None
-        self._sync_db = None
+        self._db = None
         self._ppi_classes = []
         handlers = []
-
+        
         # import and initialize pre/post content processing modules
         for pp in settings.PP_MODULES:
             mod = __import__(pp[0], fromlist=pp[1])
@@ -245,16 +248,15 @@ class PeriscopeApplication(tornado.web.Application):
                     self._ppi_classes.append(c())
             else:
                 print "Not a valid PPI class: %s" % c.__name__
-
+                
         if settings.ENABLE_AUTH:
             from periscope.auth import ABACAuthService
-
+            
             self._auth = ABACAuthService(settings.SSL_OPTIONS['certfile'],
                                          settings.SSL_OPTIONS['keyfile'],
                                          settings.AUTH_STORE_DIR,
-                                         #self.get_db_layer("authNZ", "uuid", "ts", False, None))
-                                         self.sync_db["authNZ"])
-
+                                         self.get_db_layer("authNZ",
+                                                           "id", "ts", False, 0))
             for auth in settings.AuthResources:
                 handlers.append(self.make_auth_handler(**settings.AuthResources[auth]))
         
@@ -265,7 +267,7 @@ class PeriscopeApplication(tornado.web.Application):
             handlers.append(self._make_subscription_handler(**settings.Subscriptions[sub]))
         handlers.append(self._make_getSchema_handler(**settings.getSchema))
         handlers.append(self._make_main_handler(**settings.main_handler_settings))
-        
+        handlers.append(self._make_getparent_handler(**settings.getParent))
         tornado.web.Application.__init__(self, handlers,
                     default_host="localhost", **settings.APP_SETTINGS)
         
@@ -306,12 +308,12 @@ class PeriscopeApplication(tornado.web.Application):
                 service['properties'].update({"geni": {"slice_uuid": settings.AUTH_UUID}})
             
             if 'localhost' in settings.UNIS_URL or "127.0.0.1" in settings.UNIS_URL:
-                self.sync_db["services"].insert(service)
-            else: 
+                self.db["services"].insert(service)
+            else:
                 service_url = settings.UNIS_URL+'/services'
-       
+                
                 http_client = AsyncHTTPClient()
-  
+                
                 content_type = MIME['PSJSON'] + '; profile=' + SCHEMAS['service']
                 http_client.fetch(service_url,
                                   method="POST",
@@ -320,28 +322,20 @@ class PeriscopeApplication(tornado.web.Application):
                                   client_cert=settings.MS_CLIENT_CERT,
                                   client_key=settings.MS_CLIENT_KEY,
                                   headers={
-                                           "Content-Type": content_type,
-                                           "Cache-Control": "no-cache",
-                                           "Accept": MIME['PSJSON'],
-                                           "Connection": "close"},
+                                      "Content-Type": content_type,
+                                      "Cache-Control": "no-cache",
+                                      "Accept": MIME['PSJSON'],
+                                      "Connection": "close"},
                                   callback=callback)
-
+                
     
-    @property
-    def async_db(self):
-        """Returns a reference to asyncmongo DB connection."""
-        if not getattr(self, '_async_db', None):
-            settings.ASYNC_DB["dbname"] = options.dbname
-            self._async_db = asyncmongo.Client(**settings.ASYNC_DB)
-        return self._async_db
 
     @property
-    def sync_db(self):
-        """Returns a reference to pymongo DB connection."""
-        if not getattr(self, '_sync_db', None):
-            conn = pymongo.Connection(**settings.SYNC_DB)
-            self._sync_db = conn[options.dbname]
-        return self._sync_db
+    def db(self):
+        if not getattr(self, '_db', None):
+            self._db = motor.MotorClient(**settings.DB_CONFIG)[settings.DB_NAME]
+
+        return self._db
 
 
 def main():

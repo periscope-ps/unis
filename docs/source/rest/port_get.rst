@@ -70,10 +70,10 @@ Get Port
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/port#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/port#
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
         "id": "123",
         "selfRef": "https://example.com/ports/123",
         "ts": 1336775637000,
@@ -101,10 +101,10 @@ Get the a representation with specific timestamp
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/port#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/port#
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
         "id": "123",
         "selfRef": "https://example.com/ports/123",
         "ts": 1336866031650383,

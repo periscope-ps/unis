@@ -61,11 +61,11 @@ List all nodes
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/node#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/node#
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "id": "1",
             "name": "node1",
             "selfRef": "https://example.com/nodes/1",
@@ -73,7 +73,7 @@ List all nodes
             "ts": 1336706645889028
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "id": "2",
             "name": "node2",
             "selfRef": "https://example.com/nodes/2",
@@ -81,7 +81,7 @@ List all nodes
             "ts": 1336706645889028
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "id": "3",
             "name": "node3",
             "selfRef": "https://example.com/nodes/3",
@@ -105,11 +105,11 @@ List nodes with specific URNs
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/node#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/node#
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "id": "1",
             "name": "node1",
             "selfRef": "https://example.com/nodes/1",
@@ -117,7 +117,7 @@ List nodes with specific URNs
             "ts": 1336706645889028
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "id": "2",
             "name": "node2",
             "selfRef": "https://example.com/nodes/2",

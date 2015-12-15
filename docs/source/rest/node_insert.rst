@@ -53,11 +53,11 @@ Insert single Node
     POST /nodes HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/node#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/node#
     Content-Length: 248
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
         "name": "node1",
         "urn": "urn:ogf:network:domain=example.com:node=node1",
         "description": "This is a sample node",
@@ -71,14 +71,14 @@ Insert single Node
 *Note* that the `id`, `ts` and `selfRef` were created by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/node#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/node#
     Location: https://example.com/nodes/4faed227f473534b88000000
     
     {
         "id": "4faeed0cf4735352b700000f", 
         "ts": 1336864012847944, 
         "selfRef": "https://example.com/nodes/4faeed0cf4735352b700000f", 
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
         "name": "node1",
         "urn": "urn:ogf:network:domain=example.com:node=node1", 
         "description": "This is a sample node", 
@@ -96,12 +96,12 @@ Insert list of Nodes
     POST /nodes HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/node#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/node#
     Content-Length: 248
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "name": "node1",
             "urn": "urn:ogf:network:domain=example.com:node=node1",
             "description": "This is a sample node",
@@ -110,7 +110,7 @@ Insert list of Nodes
             }
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "name": "node2",
             "urn": "urn:ogf:network:domain=example.com:node=node2",
             "description": "This is a sample node",
@@ -119,7 +119,7 @@ Insert list of Nodes
             }
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "name": "node3",
             "urn": "urn:ogf:network:domain=example.com:node=node3",
             "description": "This is a sample node",
@@ -128,7 +128,7 @@ Insert list of Nodes
             }
         },
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "name": "node4",
             "urn": "urn:ogf:network:domain=example.com:node=node4",
             "description": "This is a sample node",
@@ -146,7 +146,7 @@ Insert list of Nodes
 
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/node#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/node#
     
     [
         {
@@ -154,7 +154,7 @@ Insert list of Nodes
             "id": "4faef1f9f4735353e3000000",
             "ts": 1336865273329438,
             "selfRef": "https://example.com/nodes/4faef1f9f4735353e3000000",
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "name": "node1",
             "urn": "urn:ogf:network:domain=example.com:node=node1",
             "description": "This is a sample node",
@@ -167,7 +167,7 @@ Insert list of Nodes
             "id": "4faef1f9f4735353e3000001",
             "ts": 1336865273329438,
             "selfRef": "https://example.com/nodes/4faef1f9f4735353e3000001",
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "name": "node2",
             "urn": "urn:ogf:network:domain=example.com:node=node2",
             "description": "This is a sample node",
@@ -180,7 +180,7 @@ Insert list of Nodes
             "id": "4faef1f9f4735353e3000002",
             "ts": 1336865273329438,
             "selfRef": "https://example.com/nodes/4faef1f9f4735353e3000002",
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "name": "node3",
             "urn": "urn:ogf:network:domain=example.com:node=node3",
             "description": "This is a sample node",
@@ -193,7 +193,7 @@ Insert list of Nodes
             "id": "4faef1f9f4735353e3000003",
             "ts": 1336865273329438,
             "selfRef": "https://example.com/nodes/4faef1f9f4735353e3000003",
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
             "name": "node4",
             "urn": "urn:ogf:network:domain=example.com:node=node4",
             "description": "This is a sample node",

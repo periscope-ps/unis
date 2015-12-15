@@ -62,11 +62,11 @@ Query Metadata by subject and event type
 **Response**::
     
     HTTP/1.1 200 OK
-    Content-Type: application/perfsonar+json; profile=http://unis.incntre.iu.edu/schema/20120709/metadata#
+    Content-Type: application/perfsonar+json; profile=http://unis.crest.iu.edu/schema/20120709/metadata#
     
     [
         {
-            "$schema": "http://unis.incntre.iu.edu/schema/20120709/metadata#",
+            "$schema": "http://unis.crest.iu.edu/schema/20120709/metadata#",
             "ts": 1337110564767952,
             "id": "4fb2b024f473535056000000",
             "selfRef": "https://example/com/metadata/4fb2b024f473535056000000",
@@ -77,7 +77,7 @@ Query Metadata by subject and event type
             "eventType": "event_x",
             "parameters": {
                 "collectionInterval": 30000,
-                "datumSchema": "http://unis.incntre.iu.edu/schema/20120709/datum#"
+                "datumSchema": "http://unis.crest.iu.edu/schema/20120709/datum#"
             }
         }
     ]

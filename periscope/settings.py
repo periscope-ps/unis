@@ -88,19 +88,8 @@ DB_AUTH = {
     'attrib_list' : ("landsat","unauth"),
 }
 
-# Asyncmongo specific connection configurations
-ASYNC_DB = {
-    'pool_id': DB_HOST + "_pool",
-    'host': DB_HOST,
-    'port': DB_PORT,
-    'mincached': 1,
-    'maxcached': 5,
-    'maxconnections': 200,
-    'dbname': DB_NAME,
-}
-
 # Pymonog specific connection configurations
-SYNC_DB = {
+DB_CONFIG = {
     'host': DB_HOST,
     'port': DB_PORT,
 }
@@ -275,6 +264,14 @@ getSchema = dict( \
             "pattern": "/getSchema$",
             "base_url":"",
             "handler_class": "periscope.handlers.schemahandler.SchemaHandler",                            
+        }.items()
+)
+getParent = dict( \
+        {
+            "name": "getFolder",
+            "pattern": "/getFolder$",
+            "base_url":"",
+            "handler_class": "periscope.handlers.exnodehandler.FolderHandler",
         }.items()
 )
 service = dict(default_resource_settings.items() + \
@@ -453,6 +450,27 @@ measurement = dict(default_resource_settings.items() + \
         }.items()
 )
 
+extents = dict(default_resource_settings.items() + \
+         {
+             "name"                   : "extents",
+             "pattern"                : "/extents$",
+             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
+             "model_class"            : "periscope.models.Extent",
+             "collection_name"        : "extents",
+             "schema": {MIME['PSJSON']: SCHEMAS["extent"]}
+         }.items()
+)
+extent = dict(default_resource_settings.items() + \
+         {
+             "name"                   : "extent",
+             "pattern"                : "/extents/(?P<res_id>[^\/]*)$",
+             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
+             "model_class"            : "periscope.models.Extent",
+             "collection_name"        : "extents",
+             "schema": {MIME['PSJSON']: SCHEMAS["extent"]}
+         }.items()
+)
+
 exnodes = dict(default_resource_settings.items() + \
          {
              "name"                   : "exnodes",
@@ -461,13 +479,6 @@ exnodes = dict(default_resource_settings.items() + \
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
-             "collections": [
-                 { "name": "extents", "collection_name": "extents" }
-             ],
-             "models": [
-                 { "name": "extents", "model_class": "periscope.models.Extent" }
-             ],
-             "allow_put": False
          }.items()
 )
 exnode = dict(default_resource_settings.items() + \
@@ -478,45 +489,6 @@ exnode = dict(default_resource_settings.items() + \
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
-             "collections": [
-                 { "name": "extents", "collection_name": "extents" }
-             ],
-             "models": [
-                 { "name": "extents", "model_class": "periscope.models.Extent" }
-             ]
-         }.items()
-)
-
-extents = dict(default_resource_settings.items() + \
-         {
-             "name"                   : "extents",
-             "pattern"                : "/extents$",
-             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
-             "model_class"            : "periscope.models.Extent",
-             "collection_name"        : "extents",
-             "schema": {MIME['PSJSON']: SCHEMAS["extent"]},
-             "collections": [
-                 { "name": "exnodes", "collection_name": "exnodes" }
-             ],
-             "models": [
-                 { "name": "exnodes", "model_class": "periscope.models.Extent" }
-             ]
-         }.items()
-)
-extent = dict(default_resource_settings.items() + \
-         {
-             "name"                   : "extent",
-             "pattern"                : "/extents/(?P<res_id>[^\/]*)$",
-             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
-             "model_class"            : "periscope.models.Extent",
-             "collection_name"        : "extents",
-             "schema": {MIME['PSJSON']: SCHEMAS["extent"]},
-             "collections": [
-                 { "name": "exnodes", "collection_name": "exnodes" }
-             ],
-             "models": [
-                 { "name": "exnodes", "model_class": "periscope.models.Extent" }
-             ]
          }.items()
 )
 
@@ -532,12 +504,6 @@ catSubscription = {
     "name"          : "categorySubscription",
     "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)$",
     "handler_class" : "periscope.handlers.subscriptionhandler.SubscriptionHandler"
-}
-catAggSubscription = {
-    "base_url"      : "",
-    "name"          : "categoryAggregateSubscription",
-    "pattern"       : "/subscribeAgg/(?P<resource_type>[^\/]*)$",
-    "handler_class" : "periscope.handlers.subscriptionhandler.AggSubscriptionHandler"
 }
 
 querySubscription = {
@@ -600,7 +566,6 @@ Resources = {
 Subscriptions = {
     "itemSubscription"  : itemSubscription,
     "catSubscription"   : catSubscription,
-    "catAggSubscription"   : catAggSubscription,
     "querySubscription" : querySubscription,
 }
 

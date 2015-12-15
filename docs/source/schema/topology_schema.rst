@@ -10,7 +10,7 @@ part of a Topology.
 JSON Schema
 -----------
 
-See `<http://unis.incntre.iu.edu/schema/20120709/topology>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/topology>`_.
 
 
 Attributes

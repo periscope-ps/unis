@@ -55,15 +55,15 @@ Insert single Network
     POST /networks HTTP/1.1    
     Host: example.com
     Accept: application/perfsonar+json
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/network#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/network#
     Content-Length: 248
     
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/network#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/network#",
         "id": "1",
         "nodes": [
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
                 "name": "node1",
                 "urn": "urn:ogf:network:domain=example.com:node=node1",
                 "description": "This node uses JSONPath to its ports",
@@ -79,7 +79,7 @@ Insert single Network
                 ]
             },
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/node#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/node#",
                 "name": "node2",
                 "urn": "urn:ogf:network:domain=example.com:node=node2",
                 "description": "This node uses JSONPointer to its ports",
@@ -93,19 +93,19 @@ Insert single Network
         ],
         "ports": [
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
                 "name": "port1",
                 "urn": "urn:ogf:network:domain=example.com:port=port1",
                 "capacity": 1000
             },
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
                 "name": "port2",
                 "urn": "urn:ogf:network:domain=example.com:port=port2",
                 "capacity": 10000000
             },
             {
-                "$schema": "http://unis.incntre.iu.edu/schema/20120709/port#",
+                "$schema": "http://unis.crest.iu.edu/schema/20120709/port#",
                 "name": "port3",
                 "urn": "urn:ogf:network:domain=example.com:port=port3",
                 "capacity": 10000000000
@@ -118,13 +118,13 @@ Insert single Network
 *Note* that the `id`, `ts` and `selfRef` were created by the server.::
 
     HTTP/1.1 201 Created    
-    Content-Type: application/perfsonar+json ;profile=http://unis.incntre.iu.edu/schema/20120709/network#
+    Content-Type: application/perfsonar+json ;profile=http://unis.crest.iu.edu/schema/20120709/network#
     Location: https://example.com/networks/1
     
     {
         "id": "1",
         "ts": 1338494769852401,
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/network#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/network#",
         "selfRef": "https://example.com/networks/1",
         "ports": [
             {

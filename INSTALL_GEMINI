@@ -26,11 +26,6 @@ when manipulating UNIS objects via the REST API.
    Install an appropriate OS distribution package, e.g.,
    'yum install pyOpenSSL'
 
- * MongoDB
-
-   Install an appropriate OS distribution package, e.g.,
-   'yum install mongodb'
-
 === UNIS Configuration ===
 
 Starting with a fresh clone of the UNIS repository:

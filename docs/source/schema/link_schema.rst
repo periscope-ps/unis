@@ -16,7 +16,7 @@ attributes *source* and *sink* if the *Link* is unidirectional.
 
 JSON Schema
 -----------
-See `<http://unis.incntre.iu.edu/schema/20120709/link>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/link>`_.
 
 
 Attributes
@@ -47,7 +47,7 @@ Example
 The following is an unidirectional Link representation example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/link#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/link#",
         "id": "link1",
         "selfRef": "https://example.com/links/link1"
         "ts": 1337711394175048, 
@@ -69,7 +69,7 @@ The following is an unidirectional Link representation example::
 The following is an bidirectional Link representation example::
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/link#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/link#",
         "id": "link2",
         "selfRef": "https://example.com/links/link2",
         "ts": 1337711394175048, 

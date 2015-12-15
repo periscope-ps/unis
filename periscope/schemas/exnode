@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140909/exnode#",
+    "id": "http://unis.crest.iu.edu/schema/20140909/exnode#",
     "description": "Schema for describing an base eXnode",
     "name": "eXnode",
     "type": "object",
@@ -8,7 +8,7 @@
     "required": ["id", "created", "modified", "name", "size"], 
     "properties": {
         "$schema": {
-            "default": "http://unis.incntre.iu.edu/schema/20140909/exnode#",
+            "default": "http://unis.crest.iu.edu/schema/20140909/exnode#",
             "description": "The schema of this file",
             "format": "uri",
             "type": "string"

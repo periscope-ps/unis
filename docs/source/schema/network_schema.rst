@@ -15,7 +15,7 @@ connects it to other networks.
 JSON Schema
 -----------
 
-See `<http://unis.incntre.iu.edu/schema/20120709/network>`_.
+See `<http://unis.crest.iu.edu/schema/20120709/network>`_.
 
 
 Attributes
@@ -62,7 +62,7 @@ The following is a simple Network example::
 
 
     {
-        "$schema": "http://unis.incntre.iu.edu/schema/20120709/network#",
+        "$schema": "http://unis.crest.iu.edu/schema/20120709/network#",
         "id": "1",
         "selfRef": "https://example.com/networks/1",
         "ts": 1338494769852401,

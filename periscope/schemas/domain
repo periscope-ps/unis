@@ -1,12 +1,12 @@
 {
     "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/20140214/domain#",
+    "id": "http://unis.crest.iu.edu/schema/20140214/domain#",
     "description": "Domain",
     "name": "Domain",
     "type": "object",
     "additionalProperties": true,
     "extends": {
-        "$ref": "http://unis.incntre.iu.edu/schema/20140214/networkresource#"
+        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
     },
     "properties": {
         "ports": {
@@ -15,7 +15,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/port#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/port#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -29,7 +29,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/node#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/node#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -43,7 +43,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/link#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/link#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -57,7 +57,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/path#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/path#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -71,7 +71,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/network#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/network#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"
@@ -85,7 +85,7 @@
             "items": {
                 "type": [
                     {
-                        "$ref": "http://unis.incntre.iu.edu/schema/20140214/domain#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20140214/domain#"
                     },
                     {
                         "$ref": "http://json-schema.org/draft-03/links#"

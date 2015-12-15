@@ -10,12 +10,6 @@ First, you'll need a few basic things
 $ sudo apt-get install python-setuptools python-dev redis-server python-dateutil
 #+END_SRC
 
-UNIS and the MS use MongoDB as their backend data store. Install it
-and start it in whatever way you like.
-#+BEGIN_SRC
-$ sudo apt-get install mongodb
-#+END_SRC
-
 You might also need swig
 #+BEGIN_SRC
 $ sudo apt-get install swig
@@ -53,7 +47,7 @@ You may encounter problems related to AUTH or GEMINI specific files, I'll try to
 *** For Redhat, create RPM...
 #+BEGIN_SRC
 python setup.py bdist_rpm --requires python,python-setuptools,python-httplib2,python-mock,python-tornado,python-unittest2,\
-validictory,asyncmongo,jsonpath,jsonpointer,mongodb-server,m2crypto,python-argparse,pymongo --release 4
+validictory,jsonpath,jsonpointer,mongodb-server,m2crypto,python-argparse --release 4
 #+END_SRC
 
 *** m2crypto issue
