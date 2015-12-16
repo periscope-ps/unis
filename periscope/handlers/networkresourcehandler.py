@@ -822,6 +822,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if not profile:
             raise ValueError("Bad Content Type {content_type}".format(content_type = content_type))
         if profile != self.schemas_single[self.accept_content_type]:
-            self.log.warn("Old or unexpected schema definition {schema}".format(schema = profile))
+            self.log.debug("Old or unexpected schema definition {schema}".format(schema = profile))
         
         return profile
