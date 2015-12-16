@@ -1,14 +1,14 @@
 {
     "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140909/exnode#",
+    "id": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#",
     "description": "Schema for describing an base eXnode",
     "name": "eXnode",
     "type": "object",
     "additionalProperties": true,
-    "required": ["id", "created", "modified", "name", "size"], 
+    "required": ["id", "created", "modified", "name", "size", "parent", "mode"], 
     "properties": {
         "$schema": {
-            "default": "http://unis.crest.iu.edu/schema/20140909/exnode#",
+            "default": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#",
             "description": "The schema of this file",
             "format": "uri",
             "type": "string"
@@ -22,6 +22,10 @@
             "description": "Self hyperlink reference for the exnode",
             "format": "uri",
             "type": "string"
+        },
+	"mode": {
+	    "enum": ["file", "directory"],
+	    "description": "An exnode can represent either a file or a directory"
         },
         "created": {
             "type": "integer",
@@ -52,27 +56,43 @@
             "type": "string",
             "default": "UNKNOWN"
 	},
-	"lifetimes": {		
-	    "description": "Periods of time over which an exnode will exist",	
-            "type": "array",
-            "additionalProperties": true,
+    	"parent": {
+    	    "description": "A pointer to a parent exnode, null if adrift",
+    	    "anyOf": [
+		{
+		    "$ref": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#"
+		},
+		{
+                    "$ref": "http://json-schema.org/draft-04/links#"
+                },
+		{
+		    "type": "null"
+		}
+	    ]
+    	},
+    	"extents": {
+    	    "description": "A list of extents that define the contents of a file",
+    	    "type": "array",
+            "additionalProperties": false,
 	    "minItems": 0,
-            "uniqueItems": true,
-            "items": {
-                "type": "object",
-		"required": ["start", "end"],
-                "properties": {
-                    "start": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "end": {
-                        "type": "string",
-                        "format": "date-time"
+	    "uniqueItems": false,
+    	    "items": {
+		"anyOf": [
+		    {
+			"$ref": "http://unis.incntre.iu.edu/schema/exnode/4/extent#"
+		    },
+		    {
+			"$ref": "http://unis.incntre.iu.edu/schema/exnode/ext/ibp#"
+		    },
+		    {
+			"$ref": "http://unis.incntre.iu.edu/schema/exnode/ext/rdma#"
+		    },
+		    {
+			"$ref": "http://json-schema.org/draft-04/links#"
                     }
-                }
-            }
-        },
+		]
+	    }
+    	},
         "properties": {
             "description": "Additional properties.",
             "type": "object",

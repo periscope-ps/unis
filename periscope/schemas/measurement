@@ -1,13 +1,14 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/measurement#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/measurement#",
     "description": "A measurement object",
     "name": "Measurement",
     "type": "object",
     "additionalProperties": true,
-    "extends": {
-        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
-    },
+    "allOf": [{
+        "$ref": "http://unis.crest.iu.edu/schema/20151104/networkresource#"
+    }],
+    "required": ["configuration", "eventTypes"],
     "properties": {
 	"service": {
 	    "type": "string",
@@ -15,67 +16,47 @@
 	    "description": "Service which will be taking this measurement"
 	},
 	"configuration": {
-	    "required": true,
 	    "type": "object",
 	    "properties": {
 		"$schema": {
 		    "type": "string",
-		    "format": "uri",
-		    "required": false
+		    "format": "uri"
 		}
 	    },
 	    "additionalProperties": true
 	},
-	"scheduled_times": {
-	    "required": false,
-	    "type": "array",
-	    "items": {
-		"type": "object",
-                "properties": {
-                    "start": {
-                        "required": true,
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "end": {
-                        "required": true,
-                        "type": "string",
-                        "format": "date-time"
-                    }
-                }
-	    }
-	},
+	"scheduled_times": { "$ref": "#/networkresource/lifetimes" },
 	"eventTypes": {
 	    "description": "A list of eventTypes which this measurement produces",
-	    "required": true,
 	    "type": "array",
-	    "items": {
-		"type": "string"
-	    }
+	    "items": { "type": "string" }
 	},
 	"resources": {
 	    "description": "A list of resources that this measurement uses or affects",
-	    "required": false,
 	    "type": "array",
 	    "items": {
-		"type": "object",
-		"properties": {
-		    "ref": {
-			"description": "Hyperlink reference to the resource",
-			"format": "uri",
-			"required": true,
-			"type": "string"
-		    },
-		    "usage": {
+		"allOf": [
+		    {
+			"required": ["ref"],
 			"type": "object",
-			"description": "A resource has different ways it can be used, this tells in what ways this measurement uses this resource",
-			"additionalProperties": {
-			    "type": "number",
-			    "minimum": 0,
-			    "maximum": 100
+			"properties": {
+			    "ref": {
+				"description": "Hyperlink reference to the resource",
+				"format": "uri",
+				"type": "string"
+			    },
+			    "usage": {
+				"type": "object",
+				"description": "How is this resource used",
+				"additionalProperties": {
+				    "type": "number",
+				    "minimum": 0,
+				    "maximum": 100
+				}
+			    }
 			}
 		    }
-		}
+		]
 	    }
 	}
     }

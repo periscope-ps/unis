@@ -30,11 +30,11 @@ setup(
     install_requires=[
         "tornado",
         "tornado-redis",
-        "pymongo",
+        "pymongo==2.8.0",
         "motor",
         "unittest2",
         "netlogger>=4.3.0",
-        "validictory>=validictory-0.8.1",
+        "jsonschema",
         "mock==0.8.0",
         "jsonpointer>=0.2",
         "argparse",

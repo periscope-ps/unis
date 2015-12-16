@@ -6,9 +6,9 @@ import copy
 import time
 from json import JSONEncoder
 import json
+import jsonschema
 import time
 import re
-import validictory
 import functools
 import httplib2
 from periscope.utils import json_schema_merge_extends
@@ -34,6 +34,7 @@ class ObjectDict(dict):
         "_set_defaults",
         "_validate",
         "_value_converter",
+        "_resolver",
         "__doc__",
     ]
     
@@ -208,6 +209,10 @@ def schemaMetaFactory(name, schema, extends=None):
                         setattr(newtype, prop, make_property(prop, doc))
             
             setattr(newtype, '_schema_data', schema)
+            if UNIS_SCHEMAS_USE_LOCAL:
+                setattr(newtype, '_resolver', jsonschema.RefResolver(schema['id'], schema, store=CACHE))
+            else:
+                setattr(newtype, '_resolver', jsonschema.RefResolver.from_schema(schema))
             return newtype
     return SchemaMetaClass
 
@@ -236,7 +241,7 @@ class JSONSchemaModel(ObjectDict):
         data = data or {}
         dict.__init__(self, data)
         
-        self._set_defaults =  set_defaults
+        self._set_defaults = set_defaults
         setattr(self, "_$schemas_loader", schemas_loader)
         
         for key, value in data.iteritems():
@@ -322,9 +327,8 @@ class JSONSchemaModel(ObjectDict):
         return value
     
     def _validate(self):
-        """Validate the value of this instance to match the schema."""
-        validictory.validate(self, self._schema_data, required_by_default=False)
-    
+        jsonschema.validate(self, self._schema_data, resolver=self._resolver)
+        
     @staticmethod
     def json_model_factory(name, schema, extends=None, **kwargs):
         """Return a class type of JSONSchemaModel based on schema."""
@@ -434,14 +438,12 @@ def json_object_hook(json_object, schemas, default_class=None):
 # Define the default JSON Schemas that are defiend in the JSON schema RFC
 JSON_SCHEMA = json.loads(open(JSON_SCHEMAS_ROOT + "/schema").read())
 HYPER_SCHEMA = json.loads(open(JSON_SCHEMAS_ROOT + "/hyper-schema").read())
-JSON_REF_SCHEMA = json.loads(open(JSON_SCHEMAS_ROOT + "/json-ref").read())
 HYPER_LINKS_SCHEMA = json.loads(open(JSON_SCHEMAS_ROOT + "/links").read())
 
 CACHE = {
-    "http://json-schema.org/draft-03/schema#": JSON_SCHEMA,
-    "http://json-schema.org/draft-03/hyper-schema#": HYPER_SCHEMA,
-    "http://json-schema.org/draft-03/links#": HYPER_LINKS_SCHEMA,
-    "http://json-schema.org/draft-03/json-ref#": JSON_REF_SCHEMA,
+    "http://json-schema.org/draft-04/schema#": JSON_SCHEMA,
+    "http://json-schema.org/draft-04/hyper-schema#": HYPER_SCHEMA,
+    "http://json-schema.org/draft-04/links#": HYPER_LINKS_SCHEMA,
 }
 
 # Load a locally stored copy of the schemas if requested
@@ -449,8 +451,8 @@ if UNIS_SCHEMAS_USE_LOCAL:
     for s in SCHEMAS.iterkeys():
         try:
             CACHE[SCHEMAS[s]] = json.loads(open(JSON_SCHEMAS_ROOT + "/" + s).read())
-        except:
-            pass
+        except Exception as e:
+            print "Error loading cached schema for %s: %s" % (s, e)
 
 http_client = httplib2.Http(SCHEMA_CACHE_DIR)
 schemaLoader = SchemasHTTPLib2(http_client, cache=CACHE)

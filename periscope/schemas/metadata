@@ -1,65 +1,50 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/metadata#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/metadata#",
     "description": "Metadata",
     "name": "Metadata",
     "type": "object",
     "additionalProperties": false,
+    "required": ["id", "subject", "eventType"],
     "properties": {
         "$schema": {
-            "default": "http://unis.crest.iu.edu/schema/20140214/metadata#",
+            "default": "http://unis.crest.iu.edu/schema/20151104/metadata#",
             "format": "uri",
-            "required": false,
             "type": "string"
         },
         "id": {
             "description": "Metadata ID",
             "minLength": 1,
-            "required": true,
             "type": "string"
         },
         "selfRef": {
             "description": "Self hyperlink reference for the metadata",
-            "format": "uri",
-            "required": false,
-            "type": "string"
+            "type": "string",
+            "format": "uri"
         },
         "ts": {
             "type": "integer",
-            "description": "64-bit Integer timestamp of the last update on this metadata",
-            "required": false
+            "description": "64-bit Integer timestamp of the last update on this metadata"
         },
-        "subject": {
-            "required": true,
-            "description": "the subject of this metadata",
-            "type": [
-                {
-                    "$ref": "http://json-schema.org/draft-03/links#"
-                }
-            ]
-        },
+        "subject": { "$ref": "http://json-schema.org/draft-04/links#" },
         "parameters": {
-            "required": false,
             "type": "object",
             "additionalProperties": true,
             "properties": {
                 "datumSchema": {
-                    "default": "http://unis.crest.iu.edu/schema/20140214/datum#",
-                    "format": "uri",
-                    "required": false,
-                    "type": "string"
+                    "default": "http://unis.crest.iu.edu/schema/20151104/datum#",
+                    "type": "string",
+                    "format": "uri"
                 }
             }
         },
         "eventType": {
-            "required": true,
             "type": "string"
         },
 	"measurement": {
 	    "description": "Hyperlink to the measurement or other data source that produced the data described by this metadata",
 	    "type": "string",
-	    "format": "uri",
-	    "required": false
+	    "format": "uri"
 	}
     },
     "links": [

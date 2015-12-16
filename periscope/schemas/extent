@@ -1,32 +1,15 @@
 {
     "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140909/extent#",
+    "id": "http://unis.incntre.iu.edu/schema/exnode/4/extent#",
     "description": "An extent is some chunk of data, somewhere",
     "name": "extent",
     "type": "object",
-    "required": ["location", "size", "offset"],
+    "required": ["location", "size", "offset", "parent"],
     "properties": {
     	"location": {
     	    "description": "Where the extent resides as a URI",
-    	    "type": "object",
-	    "required": ["read"]
-	    "properties": {
-	        "read": {
-		    "description": "Specific location of the read path of the extent",
-		    "type": "string",
-		    "format": "uri"
-		}
-		"write": {
-		    "description": "Specific location of the write path of the extent",
-		    "type": "string",
-		    "format": "uri"
-		}
-		"manage": {
-		    "description": "Specific location of the manage path of the extent",
-		    "type": "string",
-		    "format": "uri"
-		}
-	    }
+    	    "type": "string",
+	    "format": "uri"
     	},
 	"size": {
 	    "description": "The size of an extent",
@@ -39,6 +22,20 @@
 	"index": {
 	    "description": "Relative index of an extent",
 	    "type": "integer"
-	}
+	},
+    	"parent": {
+    	    "description": "A pointer to a parent exnode, null if adrift",
+    	    "anyOf": [
+		{
+		    "$ref": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#"
+		},
+		{
+                    "$ref": "http://json-schema.org/draft-04/links#"
+                },
+		{
+		    "type": "null"
+		}
+	    ]
+    	}
     }
 }

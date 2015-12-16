@@ -1,7 +1,7 @@
 import copy
 import json
 import urllib2
-import validictory
+import jsonschema
 import sys
 
 def load_json_url(url, cache=None):
@@ -83,9 +83,7 @@ def validate_json(doc, schema, cache=None):
     load_json_refs(docc, cache)
     load_json_refs(schemac, cache)
     json_schema_merge_extends(schemac, cache)
-    return validictory.validate(docc, schemac)
-
-
+    return jsonschema.validate(docc, schemac)
 
 def load_class(module_and_name):
     """Loads the module and returns the class."""    
