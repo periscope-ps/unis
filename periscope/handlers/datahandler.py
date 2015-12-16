@@ -38,22 +38,17 @@ class DataHandler(NetworkResourceHandler):
             if resource["mid"] not in mids:
                 mids[resource["mid"]] = []
             mids[resource["mid"]].extend(resource["data"])
-            
-        collections = yield self.application.db.collection_names()
-        db_commands = []
+
         for mid, data in mids.iteritems():
-            if mid in collections:
-                push_data = { 'id': mid, 'data': data }
-                self._subscriptions.publish(push_data, self._collection_name, self.trim_published_resource)
-                db_commands.append(self.application.db[mid].insert(data))
-            results = yield db_commands
+            push_data = { 'id': mid, 'data': data }
+            self._subscriptions.publish(push_data, self._collection_name, self.trim_published_resource)
+            self.application.db[mid].insert(data)
             
     @tornado.gen.coroutine
     def _post_return(self, resources):
         # don't return data posts to measurement collectors
         return
 
-        #self.write('[]')
         response = []
         mids = {}
         for resource in resources:
