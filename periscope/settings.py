@@ -64,7 +64,7 @@ GEMINI_NODE_INFO = None
 ENABLE_AUTH = False
 
 # Enable application wide debugging options
-DEBUG = True
+DEBUG = False
 
 APP_SETTINGS = {
     'cookie_secret': "43oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
@@ -158,7 +158,6 @@ SCHEMAS = {
     'network':         _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "network#"),
     'topology':        _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "topology#"),
     'service':         _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "service#"),
-    'blipp':           _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "blipp#"),
     'metadata':        _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "metadata#"),
     'data':            _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "data#"),
     'datum':           _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "datum#"),

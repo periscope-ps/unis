@@ -1,87 +1,59 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/link#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/link#",
     "description": "Link between two Network resources",
     "name": "Link",
-    "extends": {
-        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
-    },
-    "type": [
-        {
-            "type": "object",
-            "properties": {
+    "type": "object",
+    "allOf": [{
+        "$ref": "http://unis.crest.iu.edu/schema/20151104/networkresource#"
+    }],
+    "oneOf": [
+	{
+	    "required": ["directed", "endpoints"],
+	    "type": "object",
+	    "properties": {
                 "directed": {
-                    "required": true,
-                    "type": "boolean",
-                    "enum": [
+		    "type": "boolean",
+		    "enum": [
                         false
-                    ]
+		    ]
                 },
                 "capacity": {
-                    "description": "Link's capacity in bytes",
-                    "required": false,
-                    "type": "number"
+		    "description": "Link's capacity in bytes",
+		    "type": "number"
                 },
                 "endpoints": {
-                    "required": true,
-                    "type": [
-                        {
-                            "type": "array",
-                            "minItems": 2,
-                            "maxItems": 2,
-                            "items": {
-                                "type": [
-                                    {
-                                        "$ref": "http://json-schema.org/draft-03/links#"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
+		    "type": "array",
+		    "minItems": 2,
+		    "maxItems": 2,
+		    "items" : { "$ref": "http://json-schema.org/draft-04/links#" }
                 }
-            }
-        },
-        {
-            "type": "object",
-            "properties": {
-                "directed": {
-                    "required": true,
-                    "type": "boolean",
-                    "enum": [
-                        true
-                    ]
-                },
-                "capacity": {
-                    "description": "Link's capacity in bytes",
-                    "required": false,
-                    "type": "number"
-                },
-                "endpoints": {
-                    "required": true,
-                    "type": [
-                        {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "properties": {
-                                "source": {
-                                    "type": [
-                                        {
-                                            "$ref": "http://json-schema.org/draft-03/links#"
-                                        }
-                                    ]
-                                },
-                                "sink": {
-                                    "type": [
-                                        {
-                                            "$ref": "http://json-schema.org/draft-03/links#"
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-        }
+	    }
+	},
+	{
+	    "required": ["directed", "endpoints"],
+	    "type": "object",
+	    "properties": {
+		"directed": {
+		    "type": "boolean",
+		    "enum": [
+			true
+		    ]
+		},
+		"capacity": {
+		    "description": "Link's capacity in bytes",
+		    "type": "number"
+		},
+		"endpoints": {
+		    "type": "object",
+		    "additionalProperties": false,
+		    "required": ["source", "sink"],
+		    "properties": {
+			"source": { "$ref": "http://json-schema.org/draft-04/links#" },
+			"sink": { "$ref": "http://json-schema.org/draft-04/links#" }
+		    }
+		}
+	    }
+	}
     ]
 }

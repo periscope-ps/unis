@@ -1,34 +1,24 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/service#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/service#",
     "description": "Service",
     "name": "Service",
     "type": "object",
-    "extends": {
-        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
-    },
+    "allOf": [{
+        "$ref": "http://unis.crest.iu.edu/schema/20151104/networkresource#"
+    }],
+    "required": ["serviceType"],
     "properties": {
         "accessPoint": {
             "description": "Service Access point",
-            "required": false,
             "type": "string"
         },
         "serviceType": {
-            "required": true,
             "type": "string"
         },
         "ttl": {
-            "required": false,
             "type": "integer"
         },
-        "runningOn": {
-            "description": "The network resource(s) that the service is running on",
-            "required": false,
-            "type": [
-                {       	
-	            "$ref": "http://json-schema.org/draft-03/links#"
-                }
-            ]
-        }
+        "runningOn": { "$ref": "http://json-schema.org/draft-04/links#" }
     }
 }

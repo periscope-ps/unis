@@ -1,17 +1,17 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/tsdatum#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/tsdatum#",
     "description": "Single piece of time-series measurement data",
     "name": "Datum",
     "type": "object",
     "additionalProperties": true,
-    "extends": {
-        "$ref": "http://unis.crest.iu.edu/schema/20140214/datum#"
-    },
+    "allOf": [{
+        "$ref": "http://unis.crest.iu.edu/schema/20151104/datum#"
+    }],
+    "required": ["v"],
     "properties": {
         "v": {
             "type": "number",
-            "required": true,
             "description": "Value"
         }
     }
