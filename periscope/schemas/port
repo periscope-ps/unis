@@ -1,12 +1,12 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/port#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/port#",
     "description": "An abstract port",
     "name": "Port",
     "type": "object",
-    "extends": {
-        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
-    },
+    "allOf": [{
+        "$ref": "http://unis.crest.iu.edu/schema/20151104/networkresource#"
+    }],
     "properties": {
         "address": {
             "description": "A port can have only one address, if there is more then those to be considered virtual ports",
@@ -25,22 +25,18 @@
         },
         "capacity": {
             "description": "Ports capacity in bytes",
-            "required": false,
             "type": "number"
         },
         "index": {
             "description": "port's index",
-            "required": false,
             "type": "string"
         },
         "type": {
             "description": "port type",
-            "required": false,
             "type": "string"
         },
         "rules": {
             "description": "Forwarding rules. (AH) need to define a schema.",
-            "required": false,
             "type": "array"
         }
     }

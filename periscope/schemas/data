@@ -1,29 +1,20 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/data#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/data#",
     "description": "Measurement data",
     "name": "Data",
     "type": "object",
+    "required": ["data"],
     "properties": {
         "meta": {
-            "required": false,
-            "type": [
-                "string",
-                {
-                    "$ref": "http://json-schema.org/draft-03/links#"
-                }
-            ]
+	    "oneOf": [
+		{ "type": "string" },
+		{ "$ref": "http://json-schema.org/draft-04/links#" }
+	    ]
         },
         "data": {
-            "required": true,
             "type": "array",
-            "items": {
-                "type": [
-                    {
-                        "$ref": "http://unis.crest.iu.edu/schema/20140214/datum#"
-                    }
-                ]
-            }
-        }
+            "items": { "$ref": "http://unis.crest.iu.edu/schema/20151104/datum#" }
+	}
     }
 }

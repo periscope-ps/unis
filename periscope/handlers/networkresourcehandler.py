@@ -2,6 +2,7 @@
 
 import copy
 import json
+import jsonschema
 import re
 import urllib2
 from netlogger import nllog
@@ -439,8 +440,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 options.pop("limit", None)
             if res_id:
                 options["query"][self.Id] = res_id
-
-            is_list = "query" in options and options["query"]
+                is_list = False
+            else:
+                is_list = "query" in options and options["query"]
             options["query"]["status"] = { "$ne": "DELETED"  }
         except Exception as exp:
             self.send_error(403, message = exp)
@@ -561,7 +563,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             resources = self._get_json()
         except ValueError as exp:
             self.send_error(400, message = exp)
-            self.log.error(exp)
+            self.log.error("%s" % exp)
             return
         
         if not isinstance(resources, list):
@@ -744,7 +746,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 raise ValueError("malformatted json request - {exp}.".format(exp = exp))
         else:
             raise ValueError("No Post method is implemented for this content type")
-        
+
         return body
 
     def _validate_request(self, res_id, allow_id = False, require_id = False):
@@ -801,13 +803,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 self.write(dumps_mongo(response, indent=2))
         except Exception as exp:
             raise ValueError(exp)
-        
+
     def _validate_psjson_profile(self):
         """
         Validates if the profile provided with the content-type is valid.
         """
         regex = re.compile(".*(?P<p>profile\=(?P<profile>[^\;\ ]*))")
         content_type = self.request.headers.get("Content-Type", "")
+
         # use the default schema
         if "profile" not in content_type:
             content_type += ";profile=" + \
@@ -819,5 +822,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         if not profile:
             raise ValueError("Bad Content Type {content_type}".format(content_type = content_type))
         if profile != self.schemas_single[self.accept_content_type]:
-            raise ValueError("Bad Schema {schema}".format(schema = profile))
+            self.log.debug("Old or unexpected schema definition {schema}".format(schema = profile))
+        
         return profile

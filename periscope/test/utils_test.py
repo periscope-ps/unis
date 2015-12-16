@@ -4,7 +4,6 @@ import json
 from mock import patch
 from StringIO import StringIO
 import urllib2
-import validictory
 
 from periscope.test.base import PeriscopeTestCase
 import periscope.utils as utils

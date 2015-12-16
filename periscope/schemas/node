@@ -1,31 +1,29 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/node#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/node#",
     "description": "Node",
     "name": "Node",
     "type": "object",
-    "extends": {
-        "$ref": "http://unis.crest.iu.edu/schema/20140214/networkresource#"
-    },
+    "allOf": [{
+        "$ref": "http://unis.crest.iu.edu/schema/20151104/networkresource#"
+    }],
     "properties": {
         "ports": {
-            "description": "Ports attached to he node.",
-            "required": false,
+            "description": "Ports attached to the node.",
             "type": "array",
             "items": {
-                "type": [
+                "anyOf": [
                     {
-                        "$ref": "http://unis.crest.iu.edu/schema/20140214/port#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20151104/port#"
                     },
                     {
-                        "$ref": "http://json-schema.org/draft-03/links#"
+                        "$ref": "http://json-schema.org/draft-04/links#"
                     }
                 ]
             }
         },
         "rules": {
             "description": "Forwarding rules. (AH) need to define a schema.",
-            "required": false,
             "type": "array"
         }
     }

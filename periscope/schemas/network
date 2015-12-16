@@ -1,37 +1,35 @@
 {
-    "$schema": "http://json-schema.org/draft-03/hyper-schema#",
-    "id": "http://unis.crest.iu.edu/schema/20140214/network#",
+    "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+    "id": "http://unis.crest.iu.edu/schema/20151104/network#",
     "description": "Network",
     "name": "Network",
     "type": "object",
-    "extends": {
-        "$ref": "http://unis.crest.iu.edu/schema/20140214/node#"
-    },
+    "allOf": [{
+        "$ref": "http://unis.crest.iu.edu/schema/20151104/node#"
+    }],
     "properties": {
         "nodes": {
             "type": "array",
-            "required": false,
             "items": {
-                "type": [
+                "anyOf": [
                     {
-                        "$ref": "http://unis.crest.iu.edu/schema/20140214/node#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20151104/node#"
                     },
                     {
-                        "$ref": "http://json-schema.org/draft-03/links#"
+                        "$ref": "http://json-schema.org/draft-04/links#"
                     }
                 ]
             }
         },
         "links": {
             "type": "array",
-            "required": false,
             "items": {
-                "type": [
+                "anyOf": [
                     {
-                        "$ref": "http://unis.crest.iu.edu/schema/20140214/link#"
+                        "$ref": "http://unis.crest.iu.edu/schema/20151104/link#"
                     },
                     {
-                        "$ref": "http://json-schema.org/draft-03/links#"
+                        "$ref": "http://json-schema.org/draft-04/links#"
                     }
                 ]
             }
