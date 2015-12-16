@@ -440,8 +440,9 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 options.pop("limit", None)
             if res_id:
                 options["query"][self.Id] = res_id
-
-            is_list = "query" in options and options["query"]
+                is_list = False
+            else:
+                is_list = "query" in options and options["query"]
             options["query"]["status"] = { "$ne": "DELETED"  }
         except Exception as exp:
             self.send_error(403, message = exp)
