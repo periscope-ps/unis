@@ -19,7 +19,7 @@ version = "0.2.dev"
 setup(
     name="periscope",
     version=version,
-    packages=["periscope", "periscope.test","periscope.filters", "periscope.handlers","periscope.ssl"],
+    packages=["periscope", "periscope.test","periscope.filters", "periscope.handlers"],
     package_dir= {'periscope.abac': 'periscope/abac','periscope.ssl':'periscope/ssl'},
     package_data={'periscope.abac' : ['*'],'periscope.ssl' : ['*']},
     author="Ahmed El-Hassany",
@@ -28,7 +28,6 @@ setup(
     url="https://github.com/periscope-ps/periscope",
     description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
     include_package_data = True,
-    
     install_requires=[
         "tornado",
         "tornado-redis",
