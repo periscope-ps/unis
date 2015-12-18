@@ -27,7 +27,6 @@ setup(
     license="http://www.apache.org/licenses/LICENSE-2.0",
     url="https://github.com/periscope-ps/periscope",
     description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
-    include_package_data = True,
     install_requires=[
         "tornado",
         "tornado-redis",
