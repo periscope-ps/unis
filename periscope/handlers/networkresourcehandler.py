@@ -349,7 +349,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         query.pop("limit", None)
         if limit:
             limit = convert_value_type("limit", limit, "integer")
-
+            
         # Get certificate
         cert = self.get_argument("cert", default=None)
         query.pop("cert", None)
@@ -374,7 +374,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         else:
             sortDict = { self.timestamp: -1 }
             sort = sortDict.items()
-
+            
             
         query_ret = []
         for arg in query:
@@ -481,7 +481,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         self.set_header("Content-Type", accept + "; profile=" + self.schemas_single[accept])
         
         self.set_header('X-Count', count)
-
+        
         raise tornado.gen.Return(count)
     
     @tornado.gen.coroutine
