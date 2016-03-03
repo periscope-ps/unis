@@ -369,13 +369,15 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             sortStr = sortStr.split(",")
             for opt in sortStr:
                 pair = opt.split(":")
-                sortDict[pair[0]] = int(pair[1])
+                if (len(pair) > 1):
+                    sortDict[pair[0]] = int(pair[1])
+                else:
+                    raise ValueError("sort parameter is not a tuple!")
             sortDict[self.timestamp] = -1
             sort = sortDict.items()
         else:
             sortDict = { self.timestamp: -1 }
             sort = sortDict.items()
-            
             
         query_ret = []
         for arg in query:
@@ -440,13 +442,16 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 options.pop("limit", None)
             if res_id:
                 options["query"][self.Id] = res_id
-                is_list = False
+                is_list = True
+                if "limit" not in options and not len(options["fields"]) and not options["skip"]:
+                    options["limit"] = 1
+                    is_list = False
             else:
                 is_list = "query" in options and options["query"]
             options["query"]["status"] = { "$ne": "DELETED"  }
         except Exception as exp:
             self.send_error(403, message = exp)
-            self.log.error(exp)
+            self.log.error(str(exp))
             return
         
         keep_alive = self.supports_streaming or self.supports_sse()
@@ -488,7 +493,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     
     @tornado.gen.coroutine
     def _write_get(self, cursor, is_list = False):
-        count = yield cursor.count()
+        count = yield cursor.count(with_limit_and_skip=True)
         is_list = count > 1 or is_list
         if not count:
             self.write('[]')
