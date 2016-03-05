@@ -196,7 +196,7 @@ class PeriscopeApplication(tornado.web.Application):
         return main_handler
 
     @gen.coroutine
-    def _register_to_root(self):
+    def _report_to_root(self):
         manifests = []
         cursor = self.db["manifests"].find({ "\\$shard": False}, {"_id": False })
         
@@ -209,7 +209,7 @@ class PeriscopeApplication(tornado.web.Application):
         else:
             http_str = "http"
             
-        callback = functools.partial(self.registered, fatal = False, callback = self._register_to_root)
+        callback = functools.partial(self.registered, fatal = False)
         service = {
             u"id": u"unis_" + socket.gethostname(),
             u"ts": int(time.time() * 1e6),
@@ -243,14 +243,12 @@ class PeriscopeApplication(tornado.web.Application):
                           callback=callback)
         
     
-    def registered(self, response, fatal = True, callback = None):
+    def registered(self, response, fatal = True):
         if response.error:
             print "Couldn't connect to Client: ERROR", response.error, response.body
             if fatal:
                 import sys
                 sys.exit()
-            else:
-                tornado.ioloop.IOLoop.instance().call_later(settings.REGISTER_RETRY_PERIOD, callback)
         else:
             body=json.loads(response.body)
             
@@ -308,11 +306,9 @@ class PeriscopeApplication(tornado.web.Application):
             else:
                 tmpManifest["id"] = manifest["id"]
                 yield self.db["manifests"].update({ "\\$collection": collection }, tmpManifest)
-                
-            if modified or not manifest:
-                self._subscriptions.publish(ObjectDict._from_mongo(tmpManifest), "manifests", _trim_fields)
-                
+        
         yield self.db["manifests"].remove({ "\\$shard": True })
+        self._report_to_root()
         
     def __init__(self):
         self._subscriptions = subscriptionmanager.GetManager()
@@ -364,7 +360,7 @@ class PeriscopeApplication(tornado.web.Application):
         if options.lookup:
             handlers.append(self.make_resource_handler(**settings.reg_settings))
         if settings.LOOKUP_URL:
-            self._register_to_root()
+            self._report_to_root()
             
         tornado.web.Application.__init__(self, handlers,
             default_host="localhost", **settings.APP_SETTINGS)

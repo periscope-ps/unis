@@ -21,13 +21,10 @@ class RegisterHandler(NetworkResourceHandler):
         else:
             yield self.dblayer.insert(resources)
         
-            
         for manifest in resources[0]["properties"]["summary"]:
             manifest = ObjectDict._from_mongo(manifest)
             manifest["href"] = accessPoint
             yield self._update_manifest(manifest, accessPoint)
-            
-        self._subscribe(accessPoint)
         
     @tornado.gen.coroutine
     def _subscribe(self, accessPoint):
