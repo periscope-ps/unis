@@ -29,6 +29,7 @@ exnode = """
 {
     "parent": "55b186f5e779890e937b5d0d", 
     "$schema": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#", 
+    "test": "1",
     "extents": [
       {
         "lifetimes": [

@@ -47,8 +47,8 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging)
             self.log.warn('Could not decode subscription query: {exp} - {query}'.format(exp = exp, query = query_string))
             self.client.disconnect()
             self.client = None
-
-
+            
+            
     @tornado.gen.engine
     def listen(self, channel):
         yield tornado.gen.Task(self.client.subscribe, str(channel))
