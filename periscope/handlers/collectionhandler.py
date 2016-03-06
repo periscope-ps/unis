@@ -95,7 +95,7 @@ class CollectionHandler(NetworkResourceHandler):
         
         response = json.loads(response.body)
         if not isinstance(response, list):
-            resposne = [response]
+            response = [response]
         raise tornado.gen.Return({ "collection": key, "hrefs": response })
     
         

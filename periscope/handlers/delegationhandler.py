@@ -13,11 +13,14 @@ from periscope.db import dumps_mongo
 
 class DelegationHandler(NetworkResourceHandler):
     def _find(self, **kwargs):
-        if self.Id in self.request.arguments.keys()  or self.timestamp in self.request.arguments.keys():
-            self._resId = True
+        print(kwargs)
+        if self.Id in kwargs["query"].keys() or self.timestamp in kwargs["query"].keys():
+            self._filter = False
         else:
-            self._resId = None
-            
+            self._filter = True
+
+        print(self._filter)
+
         return self.dblayer.find()
     
     @tornado.gen.coroutine
@@ -25,7 +28,6 @@ class DelegationHandler(NetworkResourceHandler):
         exclude = [ "sort", "limit", "fields", "skip", "cert" ]
         interest_fields = [ key for key, val in self.request.arguments.items() if key not in exclude]
         interest_fields = map(lambda val: val.replace(".", "$DOT$"), interest_fields)
-        do_filter = self._resId == None
         
         manifest = {
             "redirect": True,
@@ -43,12 +45,13 @@ class DelegationHandler(NetworkResourceHandler):
             add_member = True
             member = cursor.next_object()
             properties = member["properties"]
-            if do_filter:
+            if self._filter:
                 for field in interest_fields:
                     if field not in properties or (properties[field] != "*" and unicode(self.get_argument(field)) not in properties[field]):
                         add_member = False
-                        
-            if add_member and properties:
+
+            print("Filter: {a1} | Add_member: {a2} | Properties: {a3}".format(a1 = self._filter, a2 = add_member, a3 = properties))
+            if not self._filter or (add_member and properties):
                 manifest["instances"].append(member["href"])
                 count += 1
                 
