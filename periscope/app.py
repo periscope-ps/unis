@@ -214,7 +214,7 @@ class PeriscopeApplication(tornado.web.Application):
             u"id": u"unis_" + socket.gethostname(),
             u"ts": int(time.time() * 1e6),
             u"\$schema": unicode(SCHEMAS["service"]),
-            u"accessPoint": u"%s://%s:%d/" % (http_str, socket.getfqdn(), options.port),
+            u"accessPoint": settings.UNIS_URL,
             u"name": u"unis_" + socket.gethostname(),
             u"status": u"ON",
             u"serviceType": u"ps:tools:unis",
