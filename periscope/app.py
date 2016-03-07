@@ -308,7 +308,8 @@ class PeriscopeApplication(tornado.web.Application):
                 yield self.db["manifests"].update({ "\\$collection": collection }, tmpManifest)
         
         yield self.db["manifests"].remove({ "\\$shard": True })
-        self._report_to_root()
+        if settings.LOOKUP_URL:
+            self._report_to_root()
         
     def __init__(self):
         self._subscriptions = subscriptionmanager.GetManager()
