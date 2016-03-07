@@ -18,6 +18,7 @@ class EventsHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _insert(self, resources):
         resource = resources[0]
+        print(resource)
         http_client = AsyncHTTPClient()
         response = yield http_client.fetch(resource["metadata_URL"],
                                            validate_cert=False,
@@ -27,7 +28,7 @@ class EventsHandler(NetworkResourceHandler):
         if response.error:
             self.send_error(400, message="metadata is not found '%s'." % response.error)
         else:
-            body = json.loads(response.body)[0]
+            body = json.loads(response.body)
             collections = yield self.application.db.collection_names()
             if body[self.Id] not in collections:
                 self.application.get_db_layer(body[self.Id], "ts", "ts", True, resource["collection_size"])
