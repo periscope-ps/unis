@@ -271,7 +271,7 @@ class PeriscopeApplication(tornado.web.Application):
                     oldPrev = prev
                     if value == "*" or len(value) + len(prev) > settings.MAX_SUMMARY_SIZE:
                         prev = "*"
-                    elif type(value[0]) == dict:
+                    elif len(value) > 0 and type(value[0]) == dict:
                         prev += value
                     else:
                         prev = list(set(prev) | set(value))

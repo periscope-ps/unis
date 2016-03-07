@@ -12,14 +12,16 @@ from periscope.db import dumps_mongo
 
 
 class DelegationHandler(NetworkResourceHandler):
+    def initialize(self, **kwargs):
+        kwargs.pop("collections", None)
+        super(DelegationHandler, self).initialize(**kwargs)
+    
     def _find(self, **kwargs):
-        print(kwargs)
         if self.Id in kwargs["query"].keys() or self.timestamp in kwargs["query"].keys():
             self._filter = False
         else:
             self._filter = True
 
-        print(self._filter)
 
         return self.dblayer.find()
     
@@ -50,7 +52,6 @@ class DelegationHandler(NetworkResourceHandler):
                     if field not in properties or (properties[field] != "*" and unicode(self.get_argument(field)) not in properties[field]):
                         add_member = False
 
-            print("Filter: {a1} | Add_member: {a2} | Properties: {a3}".format(a1 = self._filter, a2 = add_member, a3 = properties))
             if not self._filter or (add_member and properties):
                 manifest["instances"].append(member["href"])
                 count += 1
