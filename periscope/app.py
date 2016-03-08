@@ -1,7 +1,16 @@
-"""
-Main Periscope Application
-"""
-import ssl
+'''
+Usage:
+  periscoped [options]
+
+Options:
+  -l FILE --log                File to store log information
+  -d LEVEL --log-level=LEVEL   Select log verbosity [TRACE, DEBUG, CONSOLE]
+  -c FILE --config-file=FILE   File with extra configurations [default: /etc/periscope/unis.cfg]
+  -p PORT --port=PORT          Run on PORT [default: 8888]
+  -D --daemonize               Run UNIS as a daemon
+  -r --lookup                  Run UNIS as a lookup service
+'''
+
 import motor
 import tornado.httpserver
 import tornado.web
@@ -9,13 +18,14 @@ import tornado.ioloop
 import json
 import functools
 import socket
-from tornado.options import define
-from tornado.options import options
+import daemon
+import docopt
+import ConfigParser
+
 from tornado import gen
 
 from tornado.httpclient import AsyncHTTPClient
 
-# before this import 'periscope' path name is NOT as defined!
 import settings
 from settings import MIME
 from settings import SCHEMAS
@@ -24,24 +34,34 @@ from periscope.utils import load_class
 from periscope.models import Manifest, ObjectDict
 from periscope.pp_interface import PP_INTERFACE as PPI
 from periscope.handlers.delegationhandler import DelegationHandler
-from periscope.handlers import subscriptionmanager
-
-# default port
-define("port", default=8888, help="run on the given port", type=int)
-define("address", default="0.0.0.0", help="default binding IP address", type=str)
-define("dbname", default=settings.DB_NAME, help="store data to a specific database", type=str)
-define("lookup", default=False, type=bool, help="run as a lookup instance")
 
 
 class PeriscopeApplication(tornado.web.Application):
-    """Defines Periscope Application."""
+    @property
+    def options(self):
+        if not hasattr(self, "_options"):
+            self._options = {}
+            tmpOptions = docopt.docopt(__doc__)
+            for key, option in tmpOptions.items():
+                self._options[key.lstrip("--")] = option
+            
+            tmpConfig = ConfigParser.RawConfigParser()
+            tmpConfig.read(self._options["config-file"])
+            
+            for section in tmpConfig.sections():
+                if section in self._options:
+                    raise ValueError("Duplicate value in configuration, sections must be unique - {section}".format(section = section))
+                else:
+                    self._options[section] = {}
+                    for key, option in tmpConfig.items(section):
+                        self._options[section][key] = option
+        
+        return self._options
+    
     
     def get_db_layer(self, collection_name, id_field_name,
                      timestamp_field_name, is_capped_collection, capped_collection_size):
         
-        """
-        Creates DBLayer instance.
-        """
         
         if collection_name == None:
             return None
@@ -87,49 +107,6 @@ class PeriscopeApplication(tornado.web.Application):
                               accepted_mime,
                               content_types_mime,
                               **kwargs):
-        """
-        Creates HTTP Request handler.
-        
-        Parameters:
-        
-        name: the name of the URL handler to be used with reverse_url.
-        
-        pattern: For example "/ports$" or "/ports/(?P<res_id>[^\/]*)$".
-            The final URL of the resource is `base_url` + `pattern`.
-        
-        base_url: see pattern
-        
-        handler_class: The class handling this request.
-            Must inherit `tornado.web.RequestHanlder`
-        
-        model_class: Database model class for this resource (if any).
-        
-        collection_name: The name of the database collection storing this resource.
-        
-        schema: Schemas fot this resource in the form: "{MIME_TYPE: SCHEMA}"
-        
-        is_capped_collection: If true the database collection is capped.
-        
-        capped_collection_size: The size of the capped collection (if applicable)
-        
-        id_field_name: name of the identifier field
-        
-        timestamp_field_name: name of the timestampe field
-        
-        allow_get: allow HTTP GET (True or False)
-        
-        allow_post: allow HTTP POST (True or False)
-        
-        allow_put: allow HTTP PUT (True or False)
-        
-        allow_delete: allow HTTP DELETE (True or False)
-        
-        accepted_mime: list of accepted MIME types
-        
-        content_types_mime: List of Content types that can be returned to the user
-        
-        kwargs: additional handler specific arguments
-        """
         
         # Prepare the DBlayer
         db_layer = self.get_db_layer(collection_name, id_field_name, timestamp_field_name, is_capped_collection, capped_collection_size)            
@@ -313,7 +290,6 @@ class PeriscopeApplication(tornado.web.Application):
             self._report_to_root()
         
     def __init__(self):
-        self._subscriptions = subscriptionmanager.GetManager()
         self.cookie_secret="S19283u182u3j12j3k12n3u12i3nu12i3n12ui3"
         self._db = None
         self._ppi_classes = []
@@ -343,7 +319,7 @@ class PeriscopeApplication(tornado.web.Application):
                 handlers.append(self.make_simple_handler(**settings.AuthResources[auth]))
         
         for res in settings.Resources:
-            if options.lookup:
+            if bool(self.options["lookup"]):
                 settings.Resources[res]["handler_class"] = "periscope.handlers.delegationhandler.DelegationHandler"
                 settings.Resources[res]["allow_delete"] = False
                 settings.Resources[res]["allow_put"] = False
@@ -359,7 +335,7 @@ class PeriscopeApplication(tornado.web.Application):
         
         # Setup hierarchy
         tornado.ioloop.PeriodicCallback(self._aggregate_manifests, settings.SUMMARY_COLLECTION_PERIOD * 1000).start()
-        if options.lookup:
+        if bool(self.options["lookup"]):
             handlers.append(self.make_resource_handler(**settings.reg_settings))
         if settings.LOOKUP_URLS:
             self._report_to_root()
@@ -367,7 +343,7 @@ class PeriscopeApplication(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers,
             default_host="localhost", **settings.APP_SETTINGS)
         
-        if settings.MS_ENABLE and not options.lookup:
+        if settings.MS_ENABLE and not bool(self.options["lookup"]):
             import time
             if settings.ENABLE_SSL:
                 http_str = "https"
@@ -378,7 +354,7 @@ class PeriscopeApplication(tornado.web.Application):
                 u"id": u"ms_" + socket.gethostname(),
                 u"ts": int(time.time() * 1e6),
                 u"\$schema": unicode(SCHEMAS["service"]),
-                u"accessPoint": u"%s://%s:%d/" % (http_str, socket.getfqdn(), options.port),
+                u"accessPoint": u"%s://%s:%d/" % (http_str, socket.getfqdn(), int(self.options["port"])),
                 u"name": u"ms_" + socket.gethostname(),
                 u"status": u"ON",
                 u"serviceType": u"ps:tools:ms",
@@ -426,19 +402,16 @@ class PeriscopeApplication(tornado.web.Application):
     @property
     def db(self):
         if not getattr(self, '_db', None):
-            self._db = motor.MotorClient(**settings.DB_CONFIG)[options.dbname]
+            self._db = motor.MotorClient(**settings.DB_CONFIG)[self.options.get("dbname", settings.DB_NAME)]
             
         return self._db
     
-    
 def main():
-    """Run periscope"""
     ssl_opts = None
     logger = settings.get_logger()
     logger.info('periscope.start')
     loop = tornado.ioloop.IOLoop.instance()
-    # parse command line options
-    tornado.options.parse_command_line()
+    
     app = PeriscopeApplication()
     settings.app = app
     
@@ -446,11 +419,14 @@ def main():
         ssl_opts = settings.SSL_OPTIONS
         
     http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_opts)
-    #http_server.listen(options.port, address=options.address)
-    http_server.listen(options.port)
     
-    loop.start()
-    logger.info('periscope.end')
+    http_server.listen(int(app.options["port"]))
+
+    if app.options["daemonize"]:
+        with daemon.DaemonContext():
+            loop.start()
+    else:
+        loop.start()
     
     
 if __name__ == "__main__":
