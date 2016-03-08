@@ -35,7 +35,7 @@ class EventsHandler(NetworkResourceHandler):
                 self.set_header("Location","%s/data/%s" % (self.request.full_url().split('?')[0], body[self.Id]))
                 resource[self.timestamp] = int(time.time() * 1000000)
                 resource[self.Id] = body[self.Id]
-                yield self.dblayer.insert(resource)
+                yield self.dblayer.insert(resource, summarize = False)
             else:
                 raise ValueError("event collection exists already")
             

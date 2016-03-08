@@ -85,16 +85,18 @@ class DBLayer(object, nllog.DoesLogging):
             data["_id"] = "%s:%s" % (res_id, timestamp)
     
     @tornado.gen.coroutine
-    def insert(self, data, callback=None, **kwargs):
+    def insert(self, data, callback=None, summarize=True, **kwargs):
         """Inserts data to the collection."""
         shards = []
         self.log.debug("insert for Collection: [" + self._collection_name + "]")
         if isinstance(data, list) and not self.capped:
             for item in data:
-                shards.append(self._create_manifest_shard(item))
+                if summarize:
+                    shards.append(self._create_manifest_shard(item))
                 self._insert_id(item)
         elif not self.capped:
-            shards.append(self._create_manifest_shard(data))
+            if summarize:
+                shards.append(self._create_manifest_shard(data))
             self._insert_id(data)
 
         yield self.manifest.insert(shards)
@@ -104,11 +106,12 @@ class DBLayer(object, nllog.DoesLogging):
     
     
     @tornado.gen.coroutine
-    def update(self, query, data,cert=None, replace = False, **kwargs):
+    def update(self, query, data,cert=None, replace = False, summarize = True, **kwargs):
         """Updates data found by query in the collection."""
         self.log.debug("Update for Collection: [" + self._collection_name + "]")
-        shard = self._create_manifest_shard(data)
-        yield self.manifest.insert(shard)
+        if summarize:
+            shard = self._create_manifest_shard(data)
+            yield self.manifest.insert(shard)
         if not replace:
             data = { "$set": data }
         results = yield self.collection.update(query, data, **kwargs)
