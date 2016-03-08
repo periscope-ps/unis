@@ -228,21 +228,22 @@ class PeriscopeApplication(tornado.web.Application):
             }
         }
         
-        service_url = settings.LOOKUP_URL + '/register'
-        http_client = AsyncHTTPClient()
-
-        content_type = MIME['PSJSON'] + '; profile=' + SCHEMAS['service']
-        http_client.fetch(service_url,
-                          method="POST",
-                          body=json.dumps(service),
-                          headers = {
-                              "Content-Type": content_type,
-                              "Cache-Control": "no-cache",
-                              "Accept": MIME['PSJSON'],
-                              "Connection": "close"},
-                          callback=callback)
-        
-    
+        for lookup in settings.LOOKUP_URLS:
+            service_url = lookup + '/register'
+            http_client = AsyncHTTPClient()
+            
+            content_type = MIME['PSJSON'] + '; profile=' + SCHEMAS['service']
+            http_client.fetch(service_url,
+                              method="POST",
+                              body=json.dumps(service),
+                              headers = {
+                                  "Content-Type": content_type,
+                                  "Cache-Control": "no-cache",
+                                  "Accept": MIME['PSJSON'],
+                                  "Connection": "close"},
+                              callback=callback)
+            
+            
     def registered(self, response, fatal = True):
         if response.error:
             print "Couldn't connect to Client: ERROR", response.error, response.body
@@ -308,7 +309,7 @@ class PeriscopeApplication(tornado.web.Application):
                 yield self.db["manifests"].update({ "\\$collection": collection }, tmpManifest)
         
         yield self.db["manifests"].remove({ "\\$shard": True })
-        if settings.LOOKUP_URL:
+        if settings.LOOKUP_URLS:
             self._report_to_root()
         
     def __init__(self):
@@ -360,7 +361,7 @@ class PeriscopeApplication(tornado.web.Application):
         tornado.ioloop.PeriodicCallback(self._aggregate_manifests, settings.SUMMARY_COLLECTION_PERIOD * 1000).start()
         if options.lookup:
             handlers.append(self.make_resource_handler(**settings.reg_settings))
-        if settings.LOOKUP_URL:
+        if settings.LOOKUP_URLS:
             self._report_to_root()
             
         tornado.web.Application.__init__(self, handlers,

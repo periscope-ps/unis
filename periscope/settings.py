@@ -66,8 +66,8 @@ ENABLE_AUTH = False
 # Enable application wide debugging options
 DEBUG = True
 
-# URL for the parent of this instance
-LOOKUP_URL = "http://localhost:9000"
+# URLs for the roots of this instance
+LOOKUP_URLS = ["http://localhost:9000"]
 
 # Time between collection summarization in seconds
 SUMMARY_COLLECTION_PERIOD = 10 #1 * 60 * 60
