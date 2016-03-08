@@ -66,6 +66,18 @@ ENABLE_AUTH = False
 # Enable application wide debugging options
 DEBUG = False
 
+# URLs for the roots of this instance
+LOOKUP_URLS = ["http://localhost:9000"]
+
+# Time between collection summarization in seconds
+SUMMARY_COLLECTION_PERIOD = 10 #1 * 60 * 60
+
+# Time to wait before reconnecting in seconds
+REGISTER_RETRY_PERIOD = 10
+
+# Maximum size of summary entries before truncating
+MAX_SUMMARY_SIZE = 10
+
 APP_SETTINGS = {
     'cookie_secret': "43oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
     'template_path': os.path.join(os.path.dirname(__file__), "templates/"),
@@ -149,6 +161,7 @@ SCHEMA_HOST = 'unis.crest.iu.edu'
 
 _schema = "http://{host}/schema/{directory}/{name}"
 SCHEMAS = {
+    'manifest':        _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "manifest#"),
     'networkresource': _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "networkresource#"),
     'node':            _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "node#"),
     'domain':          _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "domain#"),
@@ -257,6 +270,15 @@ services = dict(default_resource_settings.items() + \
             "schema": {MIME['PSJSON']: SCHEMAS["service"]},
         }.items()
 )
+service = dict(default_resource_settings.items() + \
+        {
+            "name": "service",
+            "pattern": "/services/(?P<res_id>[^\/]*)$",
+            "model_class": "periscope.models.Service",
+            "collection_name": "services",
+            "schema": {MIME['PSJSON']: SCHEMAS["service"]},
+        }.items()
+)
 getSchema = dict( \
         {
             "name": "getSchema",
@@ -271,15 +293,6 @@ getParent = dict( \
             "pattern": "/getFolder$",
             "base_url":"",
             "handler_class": "periscope.handlers.exnodehandler.FolderHandler",
-        }.items()
-)
-service = dict(default_resource_settings.items() + \
-        {
-            "name": "service",
-            "pattern": "/services/(?P<res_id>[^\/]*)$",
-            "model_class": "periscope.models.Service",
-            "collection_name": "services",
-            "schema": {MIME['PSJSON']: SCHEMAS["service"]},
         }.items()
 )
 paths = dict(default_resource_settings.items() + \
@@ -491,6 +504,19 @@ exnode = dict(default_resource_settings.items() + \
          }.items()
 )
 
+reg_settings = dict(default_resource_settings.items() + \
+        {
+            "name": "register",
+            "pattern": "/register$",
+            "model_class": "periscope.models.Service",
+            "handler_class": "periscope.handlers.registerhandler.RegisterHandler",
+            "collection_name": "register",
+            "allow_get": False, "allow_delete": False, "allow_put": False,
+            "schema": {MIME['PSJSON']: SCHEMAS["service"]},
+        }.items()
+)
+
+
 itemSubscription = {
     "base_url"      : "",
     "name"          : "itemSubscription",
@@ -567,6 +593,7 @@ Subscriptions = {
     "catSubscription"   : catSubscription,
     "querySubscription" : querySubscription,
 }
+
 
 main_handler_settings = {
     "resources": ["links", "ports", "nodes", "services", "paths",

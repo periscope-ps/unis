@@ -498,6 +498,7 @@ class Metadata(JSONSchemaModel):
         if auto_ts:
             self.ts = self.ts or int(time.time() * 1000000)
 
+Manifest = schemaLoader.get_class(SCHEMAS["manifest"], extends=NetworkResource)
 Node = schemaLoader.get_class(SCHEMAS["node"], extends=NetworkResource)
 Link = schemaLoader.get_class(SCHEMAS["link"], extends=NetworkResource)
 Port = schemaLoader.get_class(SCHEMAS["port"], extends=NetworkResource)

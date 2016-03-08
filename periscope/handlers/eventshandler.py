@@ -18,6 +18,7 @@ class EventsHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _insert(self, resources):
         resource = resources[0]
+        print(resource)
         http_client = AsyncHTTPClient()
         response = yield http_client.fetch(resource["metadata_URL"],
                                            validate_cert=False,
@@ -34,7 +35,7 @@ class EventsHandler(NetworkResourceHandler):
                 self.set_header("Location","%s/data/%s" % (self.request.full_url().split('?')[0], body[self.Id]))
                 resource[self.timestamp] = int(time.time() * 1000000)
                 resource[self.Id] = body[self.Id]
-                yield self.dblayer.insert(resource)
+                yield self.dblayer.insert(resource, summarize = False)
             else:
                 raise ValueError("event collection exists already")
             

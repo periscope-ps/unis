@@ -597,19 +597,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         
         """
         Return new records
-        """        
-        #try:
+        """
         yield self._post_return(resources)
-        #except ValueError as exp:
-        #    message = "Could not process reponse - {exp}".format(exp = exp)
-        #    self.send_error(409, message = message)
-        #    self.log.error(message)
-        #    return
-        #except Exception as exp:
-        #    message = "Post did not return any data - {exp}".format(exp = exp)
-        #    self.send_error(404, message = message)
-        #    self.log.error(message)
-        #    return
         
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + \
@@ -625,7 +614,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     def _process_resource(self, resource, res_id = None, run_validate = True):
         tmpResource = self._model_class(resource)
         tmpResource = self._add_post_metadata(tmpResource)
-
+        
         if run_validate == True:
             tmpResource._validate()
             
@@ -779,7 +768,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                                     rid  = resource[self.Id])
         resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         
-        return resource        
+        return resource
 
     def _add_put_metadata(self, resource):
         resource["selfRef"] = self.request.full_url().split('?')[0]
@@ -793,8 +782,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             cursor = self._find(query = query)
             response = []
             while (yield cursor.fetch_next):
-                resource = cursor.next_object()
-                response.append(ObjectDict._from_mongo(resource))
+                resource = ObjectDict._from_mongo(cursor.next_object())
+                response.append(resource)
                 self._subscriptions.publish(resource, self._collection_name)
         
             if len(response) == 1:
