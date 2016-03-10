@@ -24,7 +24,7 @@ sys.path.append(os.path.dirname(GCF_PATH))
 AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
 #AUTH_STORE_DIR = "/home/el/apps/unis-stuff/abac" #os.path.join(os.path.abspath(os.path.curdir),"abac") #
 
-JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
+JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "schemas"
 UNIS_SCHEMAS_USE_LOCAL = False
 
 ######################################################################
@@ -113,33 +113,40 @@ DB_CONFIG = {
 ######################################################################
 NETLOGGER_NAMESPACE = "periscope"
 
+LOG_FILE = "/var/log/periscope.log"
 
-def config_logger():
-    """Configures netlogger"""
+_log = None
+def config_logger(level = None, filename = None):
+    tmpLog = nllog.get_logger(NETLOGGER_NAMESPACE)
     nllog.PROJECT_NAMESPACE = NETLOGGER_NAMESPACE
-    #logging.setLoggerClass(nllog.PrettyBPLogger)
-    logging.setLoggerClass(nllog.BPLogger)
-    log = logging.getLogger(nllog.PROJECT_NAMESPACE)
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    log.addHandler(handler)
-    # set level
-    if DEBUG:
-        log_level = (logging.WARN, logging.INFO, logging.DEBUG,
-                 nllog.TRACE)[3]
+    
+    if tmpLog.handlers:
+        return tmpLog
+        
+    if level == "WARN":
+        tmpLog.setLevel(logging.WARN)
+    elif level == "TRACE":
+        tmpLog.setLevel(nllog.TRACE)
+    elif level == "DEBUG":
+        tmpLog.setLevel(logging.DEBUG)
+    elif level == "CONSOLE":
+        tmpLog.setLevel(25)
     else:
-        log_level = (logging.WARN, logging.INFO, logging.DEBUG,
-                 nllog.TRACE)[0]
-    log.setLevel(log_level)
+        tmpLog.setLevel(logging.INFO)
 
+    handler = logging.handlers.RotatingFileHandler(filename or LOG_FILE, maxBytes = 500000, backupCount = 5)
+    tmpLog.addHandler(handler)
+    
+    return tmpLog
 
-def get_logger(namespace=NETLOGGER_NAMESPACE):
+def get_logger(namespace=NETLOGGER_NAMESPACE, level = None, filename = None):
     """Return logger object"""
     # Test if netlloger is initialized
-    if nllog.PROJECT_NAMESPACE != NETLOGGER_NAMESPACE:
-        config_logger()
-    return nllog.get_logger(namespace)
+    global _log
+    if nllog.PROJECT_NAMESPACE != NETLOGGER_NAMESPACE or not _log:
+        _log = config_logger(level, filename)
 
+    return _log
 
 
 

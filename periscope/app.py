@@ -3,7 +3,7 @@ Usage:
   periscoped [options]
 
 Options:
-  -l FILE --log                File to store log information
+  -l FILE --log=FILE           File to store log information
   -d LEVEL --log-level=LEVEL   Select log verbosity [TRACE, DEBUG, CONSOLE]
   -c FILE --config-file=FILE   File with extra configurations [default: /etc/periscope/unis.cfg]
   -p PORT --port=PORT          Run on PORT [default: 8888]
@@ -21,6 +21,8 @@ import socket
 import daemon
 import docopt
 import ConfigParser
+import logging
+from netlogger import nllog
 
 from tornado import gen
 
@@ -36,11 +38,23 @@ from periscope.pp_interface import PP_INTERFACE as PPI
 from periscope.handlers.delegationhandler import DelegationHandler
 
 
+
 class PeriscopeApplication(tornado.web.Application):
+    @property
+    def log(self):
+        if not hasattr(self, "_log"):
+            self._log = settings.get_logger()
+        return self._log
+    
     @property
     def options(self):
         if not hasattr(self, "_options"):
-            self._options = {}
+            class DefaultDict(dict):
+                def get(self, k, default=None):
+                    val = super(DefaultDict, self).get(k, default)
+                    return val or default
+            
+            self._options = DefaultDict()
             tmpOptions = docopt.docopt(__doc__)
             for key, option in tmpOptions.items():
                 self._options[key.lstrip("--")] = option
@@ -55,7 +69,6 @@ class PeriscopeApplication(tornado.web.Application):
                     self._options[section] = {}
                     for key, option in tmpConfig.items(section):
                         self._options[section][key] = option
-        
         return self._options
     
     
@@ -223,7 +236,7 @@ class PeriscopeApplication(tornado.web.Application):
             
     def registered(self, response, fatal = True):
         if response.error:
-            print "Couldn't connect to Client: ERROR", response.error, response.body
+            self.log.error("Couldn't connect to Client: ERROR {e}  {b}".format(e = response.error, b = response.body))
             if fatal:
                 import sys
                 sys.exit()
@@ -255,7 +268,7 @@ class PeriscopeApplication(tornado.web.Application):
                         prev = list(set(prev) | set(value))
                     manifest["properties"][key] = prev
                 except Exception as exp:
-                    print("Bad value in shard - {exp}".format(exp = exp))
+                    self.log.error("Bad value in shard - {exp}".format(exp = exp))
                     
         collections = set()
         for key, collection in settings.Resources.items():
@@ -305,7 +318,7 @@ class PeriscopeApplication(tornado.web.Application):
                 else:
                     self._ppi_classes.append(c())
             else:
-                print "Not a valid PPI class: %s" % c.__name__
+                self.log.error("Not a valid PPI class: {name}".format(name = c.__name__))
                 
         if settings.ENABLE_AUTH:
             from periscope.auth import ABACAuthService
@@ -405,14 +418,19 @@ class PeriscopeApplication(tornado.web.Application):
             self._db = motor.MotorClient(**settings.DB_CONFIG)[self.options.get("dbname", settings.DB_NAME)]
             
         return self._db
+
+def get_log_handles(log):
+    handles = []
+    for handle in log.handlers:
+        handles.append(handle.stream)
+    if log.parent:
+        handles += get_log_handles(log.parent)
+    return handles
     
-def main():
+def run():
     ssl_opts = None
-    logger = settings.get_logger()
-    logger.info('periscope.start')
-    loop = tornado.ioloop.IOLoop.instance()
-    
     app = PeriscopeApplication()
+    app.log.info('periscope.start')
     settings.app = app
     
     if settings.ENABLE_SSL:
@@ -421,13 +439,23 @@ def main():
     http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_opts)
     
     http_server.listen(int(app.options["port"]))
-
-    if app.options["daemonize"]:
-        with daemon.DaemonContext():
-            loop.start()
-    else:
-        loop.start()
     
+    loop = tornado.ioloop.IOLoop.instance()
+    loop.start()
+    app.log.info("periscope.end")
+    
+    
+def main():
+    tmpOptions = docopt.docopt(__doc__)
+    log = settings.get_logger(level = tmpOptions["--log-level"], filename = tmpOptions["--log"])
+    
+    if tmpOptions["--daemonize"]:
+        with daemon.DaemonContext(files_preserve = get_log_handles(log)):
+            run()
+    else:
+        tornado.log.enable_pretty_logging()
+        run()
+        
     
 if __name__ == "__main__":
     main()
