@@ -59,7 +59,7 @@ class PeriscopeApplication(tornado.web.Application):
             for key, option in tmpOptions.items():
                 self._options[key.lstrip("--")] = option
             
-            tmpConfig = ConfigParser.RawConfigParser()
+            tmpConfig = ConfigParser.RawConfigParser(allow_no_value = True)
             tmpConfig.read(self._options["config-file"])
             
             for section in tmpConfig.sections():
@@ -68,7 +68,17 @@ class PeriscopeApplication(tornado.web.Application):
                 else:
                     self._options[section] = {}
                     for key, option in tmpConfig.items(section):
-                        self._options[section][key] = option
+                        if "{s}.{k}".format(s = section, k = key) in settings.LIST_OPTIONS:
+                            if not option:
+                                self._options[section][key] = []
+                            else:
+                                self._options[section][key] = option.split(",")
+                        elif option == "true":
+                            self._options[section][key] = True
+                        elif option == "false":
+                            self._options[section][key] = False
+                        else:
+                            self._options[section][key] = option
         return self._options
     
     
@@ -194,7 +204,7 @@ class PeriscopeApplication(tornado.web.Application):
             manifests.append(ObjectDict._from_mongo(cursor.next_object()))
             
         import time
-        if settings.ENABLE_SSL:
+        if self.options["unis_ssl"]["enable"]:
             http_str = "https"
         else:
             http_str = "http"
@@ -204,13 +214,13 @@ class PeriscopeApplication(tornado.web.Application):
             u"id": u"unis_" + socket.gethostname(),
             u"ts": int(time.time() * 1e6),
             u"\$schema": unicode(SCHEMAS["service"]),
-            u"accessPoint": settings.UNIS_URL,
+            u"accessPoint": self.options["unis"]["url"],
             u"name": u"unis_" + socket.gethostname(),
             u"status": u"ON",
             u"serviceType": u"ps:tools:unis",
-            u"ttl": settings.SUMMARY_COLLECTION_PERIOD,
+            u"ttl": int(self.options["unis"]["summary_collection_period"]),
             u"runningOn": {
-                u"href": u"%s/nodes/%s" % (settings.UNIS_URL, socket.gethostname()),
+                u"href": u"%s/nodes/%s" % (self.options["unis"]["url"], socket.gethostname()),
                 u"rel": u"full"
             },
             u"properties": {
@@ -218,7 +228,7 @@ class PeriscopeApplication(tornado.web.Application):
             }
         }
         
-        for lookup in settings.LOOKUP_URLS:
+        for lookup in self.options["unis"]["lookup_urls"]:
             service_url = lookup + '/register'
             http_client = AsyncHTTPClient()
             
@@ -260,7 +270,7 @@ class PeriscopeApplication(tornado.web.Application):
                 try:
                     prev = manifest["properties"][key] if key in manifest["properties"] else []
                     oldPrev = prev
-                    if value == "*" or len(value) + len(prev) > settings.MAX_SUMMARY_SIZE:
+                    if value == "*" or len(value) + len(prev) > self.options["unis"]["summary_size"]:
                         prev = "*"
                     elif len(value) > 0 and type(value[0]) == dict:
                         prev += value
@@ -299,7 +309,7 @@ class PeriscopeApplication(tornado.web.Application):
                 yield self.db["manifests"].update({ "\\$collection": collection }, tmpManifest)
         
         yield self.db["manifests"].remove({ "\\$shard": True })
-        if settings.LOOKUP_URLS:
+        if self.options["unis"]["lookup_urls"]:
             self._report_to_root()
         
     def __init__(self):
@@ -313,14 +323,14 @@ class PeriscopeApplication(tornado.web.Application):
             mod = __import__(pp[0], fromlist=pp[1])
             c = getattr(mod, pp[1])
             if issubclass(c, PPI):
-                if not settings.ENABLE_AUTH and c.pp_type is PPI.PP_TYPES[PPI.PP_AUTH]:
+                if not self.options["auth"]["enabled"] and c.pp_type is PPI.PP_TYPES[PPI.PP_AUTH]:
                     pass
                 else:
                     self._ppi_classes.append(c())
             else:
                 self.log.error("Not a valid PPI class: {name}".format(name = c.__name__))
                 
-        if settings.ENABLE_AUTH:
+        if self.options["auth"]["enabled"]:
             from periscope.auth import ABACAuthService
             
             self._auth = ABACAuthService(settings.SSL_OPTIONS['certfile'],
@@ -347,18 +357,18 @@ class PeriscopeApplication(tornado.web.Application):
         handlers.append(self._make_getparent_handler(**settings.getParent))
         
         # Setup hierarchy
-        tornado.ioloop.PeriodicCallback(self._aggregate_manifests, settings.SUMMARY_COLLECTION_PERIOD * 1000).start()
+        tornado.ioloop.PeriodicCallback(self._aggregate_manifests, int(self.options["unis"]["summary_collection_period"]) * 1000).start()
         if bool(self.options["lookup"]):
             handlers.append(self.make_resource_handler(**settings.reg_settings))
-        if settings.LOOKUP_URLS:
+        if self.options["unis"]["lookup_urls"]:
             self._report_to_root()
             
         tornado.web.Application.__init__(self, handlers,
             default_host="localhost", **settings.APP_SETTINGS)
         
-        if settings.MS_ENABLE and not bool(self.options["lookup"]):
+        if self.options["unis"]["use_ms"] and not bool(self.options["lookup"]):
             import time
-            if settings.ENABLE_SSL:
+            if self.options["unis_ssl"]["enable"]:
                 http_str = "https"
             else:
                 http_str = "http"
@@ -374,7 +384,7 @@ class PeriscopeApplication(tornado.web.Application):
                 u"ttl": 600,
                 #u"description": u"sample MS service",
                 u"runningOn": {
-                    u"href": u"%s/nodes/%s" % (settings.UNIS_URL, socket.gethostname()),
+                    u"href": u"%s/nodes/%s" % (self.options["unis"]["url"], socket.gethostname()),
                     u"rel": u"full"
                 },
                 u"properties": {
@@ -391,10 +401,10 @@ class PeriscopeApplication(tornado.web.Application):
             if settings.AUTH_UUID:
                 service['properties'].update({"geni": {"slice_uuid": settings.AUTH_UUID}})
             
-            if 'localhost' in settings.UNIS_URL or "127.0.0.1" in settings.UNIS_URL:
+            if 'localhost' in self.options["unis"]["url"] or "127.0.0.1" in self.options["unis"]["url"]:
                 self.db["services"].insert(service)
             else:
-                service_url = settings.UNIS_URL+'/services'
+                service_url = self.options["unis"]["url"]+'/services'
                 
                 http_client = AsyncHTTPClient()
                 
@@ -415,7 +425,8 @@ class PeriscopeApplication(tornado.web.Application):
     @property
     def db(self):
         if not getattr(self, '_db', None):
-            self._db = motor.MotorClient(**settings.DB_CONFIG)[self.options.get("dbname", settings.DB_NAME)]
+            db_config = { "host": self.options["unis"]["db_host"], "port": int(self.options["unis"]["db_port"]) }
+            self._db = motor.MotorClient(**db_config)[self.options.get("dbname", self.options["unis"]["db_name"])]
             
         return self._db
 
@@ -433,7 +444,7 @@ def run():
     app.log.info('periscope.start')
     settings.app = app
     
-    if settings.ENABLE_SSL:
+    if app.options["unis_ssl"]["enable"]:
         ssl_opts = settings.SSL_OPTIONS
         
     http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_opts)

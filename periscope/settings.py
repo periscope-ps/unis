@@ -9,20 +9,19 @@ from netlogger import nllog
 from tornado.options import define
 
 
+LIST_OPTIONS = ["unis.lookup_urls"]
+
 ######################################################################
 # Setting up path names.
 ######################################################################
 PERISCOPE_ROOT = os.path.dirname(os.path.abspath(__file__)) + os.sep
-#PERISCOPE_ROOT   = "/home/el/apps/unis-stuff/"
 sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
-#SCHEMA_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache")
 SCHEMA_CACHE_DIR = "/var/unis/.cache"
 
 GCF_PATH = "/opt/gcf/src/"
 sys.path.append(os.path.dirname(GCF_PATH))
 
 AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
-#AUTH_STORE_DIR = "/home/el/apps/unis-stuff/abac" #os.path.join(os.path.abspath(os.path.curdir),"abac") #
 
 JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "schemas"
 UNIS_SCHEMAS_USE_LOCAL = False
@@ -31,7 +30,7 @@ UNIS_SCHEMAS_USE_LOCAL = False
 # Tornado settings.
 ######################################################################
 
-ENABLE_SSL = False
+#ENABLE_SSL = False
 SSL_OPTIONS = {
     'certfile': os.path.join(PERISCOPE_ROOT, "ssl/server.pem"),
     'keyfile': os.path.join(PERISCOPE_ROOT, "ssl/server.key"),
@@ -47,10 +46,6 @@ CLIENT_SSL_OPTIONS = {
 ######################################################################
 # Measurement Store settings.
 ######################################################################
-#UNIS_URL = "https://unis.crest.iu.edu:8443"
-UNIS_URL = "http://localhost:8888"
-MS_ENABLE = True
-
 MS_CLIENT_CERT = "/usr/local/etc/certs/ms_cert.pem"
 MS_CLIENT_KEY = "/usr/local/etc/certs/ms_key.pem"
 GEMINI_NODE_INFO = None
@@ -59,24 +54,11 @@ GEMINI_NODE_INFO = None
 ######################################################################
 # Periscope Application settings.
 ######################################################################
-
-# Enable GENI/ABAC auth support
-ENABLE_AUTH = False
-
 # Enable application wide debugging options
 DEBUG = False
 
-# URLs for the roots of this instance
-LOOKUP_URLS = ["http://localhost:9000"]
-
-# Time between collection summarization in seconds
-SUMMARY_COLLECTION_PERIOD = 10 #1 * 60 * 60
-
 # Time to wait before reconnecting in seconds
 REGISTER_RETRY_PERIOD = 10
-
-# Maximum size of summary entries before truncating
-MAX_SUMMARY_SIZE = 10
 
 APP_SETTINGS = {
     'cookie_secret': "43oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
@@ -90,22 +72,11 @@ APP_SETTINGS = {
 ######################################################################
 # Mongo Database settings
 ######################################################################
-DB_NAME = "unis_db"
-DB_HOST = "127.0.0.1"
-DB_PORT = 27017
-# Auth Stuff needed for adding ABAC
 DB_AUTH = {
     'auth_field' : "secToken",
     'auth_default' : None,
     'attrib_list' : ("landsat","unauth"),
 }
-
-# Pymonog specific connection configurations
-DB_CONFIG = {
-    'host': DB_HOST,
-    'port': DB_PORT,
-}
-
 
 ######################################################################
 # Netlogger settings
@@ -116,9 +87,9 @@ NETLOGGER_NAMESPACE = "periscope"
 LOG_FILE = "/var/log/periscope.log"
 
 _log = None
-def config_logger(level = None, filename = None):
-    tmpLog = nllog.get_logger(NETLOGGER_NAMESPACE)
-    nllog.PROJECT_NAMESPACE = NETLOGGER_NAMESPACE
+def config_logger(namespace=NETLOGGER_NAMESPACE, level = None, filename = None):
+    tmpLog = nllog.get_logger(namespace)
+    nllog.PROJECT_NAMESPACE = namespace
     
     if tmpLog.handlers:
         return tmpLog
@@ -133,7 +104,7 @@ def config_logger(level = None, filename = None):
         tmpLog.setLevel(25)
     else:
         tmpLog.setLevel(logging.INFO)
-
+        
     handler = logging.handlers.RotatingFileHandler(filename or LOG_FILE, maxBytes = 500000, backupCount = 5)
     tmpLog.addHandler(handler)
     
@@ -143,9 +114,10 @@ def get_logger(namespace=NETLOGGER_NAMESPACE, level = None, filename = None):
     """Return logger object"""
     # Test if netlloger is initialized
     global _log
-    if nllog.PROJECT_NAMESPACE != NETLOGGER_NAMESPACE or not _log:
-        _log = config_logger(level, filename)
-
+    
+    if nllog.PROJECT_NAMESPACE != namespace or not _log:
+        _log = config_logger(namespace, level, filename)
+        
     return _log
 
 
@@ -615,8 +587,8 @@ main_handler_settings = {
 # PRE/POST content processing module definitions.
 ######################################################################
 PP_MODULES=[]
-if (ENABLE_AUTH): 
-    PP_MODULES.append(('periscope.filters.dataAuth','DataAuth')) #[('periscope.gemini', 'Gemini')]
+#if (ENABLE_AUTH): 
+#    PP_MODULES.append(('periscope.filters.dataAuth','DataAuth')) #[('periscope.#gemini', 'Gemini')]
 
 # Settings for the GEMINI-specific authentication handlers
 auth_user_settings= {
