@@ -9,6 +9,7 @@ virtualenv:
 # command to install dependencies
 install: 
  - "sudo apt-get install swig python-dev python-m2crypto redis-server"
+ - "sudo python setup.py install"
  - "sudo start redis-server"
  - "sudo mkdir /var/unis"
  - "sudo chown ${USER} /var/unis"
