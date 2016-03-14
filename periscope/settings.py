@@ -1,15 +1,14 @@
 """
-General Perisocpe Settings.
+General Periscope Settings.
 """
 import ssl
 import logging
 import os
 import sys
 from netlogger import nllog
-from tornado.options import define
+from tornado.log import LogFormatter, enable_pretty_logging
 
-
-LIST_OPTIONS = ["unis.lookup_urls"]
+LIST_OPTIONS = ["unis.root_urls"]
 
 ######################################################################
 # Setting up path names.
@@ -80,47 +79,53 @@ DB_AUTH = {
 
 ######################################################################
 # Netlogger settings
-# (AH): This need to be refactored to more flexible settings
 ######################################################################
 NETLOGGER_NAMESPACE = "periscope"
-
-LOG_FILE = "/var/log/periscope.log"
 
 _log = None
 def config_logger(namespace=NETLOGGER_NAMESPACE, level = None, filename = None):
     tmpLog = nllog.get_logger(namespace)
     nllog.PROJECT_NAMESPACE = namespace
-    
-    if tmpLog.handlers:
-        return tmpLog
-        
+
+    if filename:
+        add_filehandler(tmpLog, filename)
+    else:
+        handler = logging.StreamHandler()
+        handler.setFormatter(LogFormatter("%(message)s"))
+        tmpLog.addHandler(handler)
+
     if level == "WARN":
         tmpLog.setLevel(logging.WARN)
     elif level == "TRACE":
         tmpLog.setLevel(nllog.TRACE)
     elif level == "DEBUG":
         tmpLog.setLevel(logging.DEBUG)
+        if not filename:
+            enable_pretty_logging()
     elif level == "CONSOLE":
         tmpLog.setLevel(25)
     else:
         tmpLog.setLevel(logging.INFO)
         
-    handler = logging.handlers.RotatingFileHandler(filename or LOG_FILE, maxBytes = 500000, backupCount = 5)
-    tmpLog.addHandler(handler)
-    
     return tmpLog
+
+def add_filehandler(log, logfile):
+    log.handlers = []
+    
+    try:
+        fileHandler = logging.handlers.RotatingFileHandler(logfile, maxBytes = 500000, backupCount = 5)
+        fileHandler.setFormatter(logging.Formatter("%(message)s"))
+        log.addHandler(fileHandler)
+    except AttributeError as exp:
+        log.error("Could not attach File Logger: {exp}".format(exp = exp))
 
 def get_logger(namespace=NETLOGGER_NAMESPACE, level = None, filename = None):
     """Return logger object"""
     # Test if netlloger is initialized
     global _log
-    
     if nllog.PROJECT_NAMESPACE != namespace or not _log:
         _log = config_logger(namespace, level, filename)
-        
     return _log
-
-
 
 ######################################################################
 # NetworkResource Handlers settings

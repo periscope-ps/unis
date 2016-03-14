@@ -10,7 +10,6 @@ virtualenv:
 install: 
  - "sudo apt-get install swig python-dev python-m2crypto redis-server"
  - "sudo start redis-server"
- - "pip install --allow-all-external jsonpath --allow-unverified jsonpath -r requirements.txt"
  - "sudo mkdir /var/unis"
  - "sudo chown ${USER} /var/unis"
 

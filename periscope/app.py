@@ -25,7 +25,6 @@ import logging
 from netlogger import nllog
 
 from tornado import gen
-
 from tornado.httpclient import AsyncHTTPClient
 
 import settings
@@ -36,8 +35,6 @@ from periscope.utils import load_class
 from periscope.models import Manifest, ObjectDict
 from periscope.pp_interface import PP_INTERFACE as PPI
 from periscope.handlers.delegationhandler import DelegationHandler
-
-
 
 class PeriscopeApplication(tornado.web.Application):
     @property
@@ -228,7 +225,7 @@ class PeriscopeApplication(tornado.web.Application):
             }
         }
         
-        for lookup in self.options["unis"]["lookup_urls"]:
+        for lookup in self.options["unis"]["root_urls"]:
             service_url = lookup + '/register'
             http_client = AsyncHTTPClient()
             
@@ -309,7 +306,7 @@ class PeriscopeApplication(tornado.web.Application):
                 yield self.db["manifests"].update({ "\\$collection": collection }, tmpManifest)
         
         yield self.db["manifests"].remove({ "\\$shard": True })
-        if self.options["unis"]["lookup_urls"]:
+        if self.options["unis"]["root_urls"]:
             self._report_to_root()
         
     def __init__(self):
@@ -329,7 +326,7 @@ class PeriscopeApplication(tornado.web.Application):
                     self._ppi_classes.append(c())
             else:
                 self.log.error("Not a valid PPI class: {name}".format(name = c.__name__))
-                
+        
         if self.options["auth"]["enabled"]:
             from periscope.auth import ABACAuthService
             
@@ -360,7 +357,7 @@ class PeriscopeApplication(tornado.web.Application):
         tornado.ioloop.PeriodicCallback(self._aggregate_manifests, int(self.options["unis"]["summary_collection_period"]) * 1000).start()
         if bool(self.options["lookup"]):
             handlers.append(self.make_resource_handler(**settings.reg_settings))
-        if self.options["unis"]["lookup_urls"]:
+        if self.options["unis"]["root_urls"]:
             self._report_to_root()
             
         tornado.web.Application.__init__(self, handlers,
@@ -382,7 +379,6 @@ class PeriscopeApplication(tornado.web.Application):
                 u"status": u"ON",
                 u"serviceType": u"ps:tools:ms",
                 u"ttl": 600,
-                #u"description": u"sample MS service",
                 u"runningOn": {
                     u"href": u"%s/nodes/%s" % (self.options["unis"]["url"], socket.gethostname()),
                     u"rel": u"full"
@@ -427,7 +423,7 @@ class PeriscopeApplication(tornado.web.Application):
         if not getattr(self, '_db', None):
             db_config = { "host": self.options["unis"]["db_host"], "port": int(self.options["unis"]["db_port"]) }
             self._db = motor.MotorClient(**db_config)[self.options.get("dbname", self.options["unis"]["db_name"])]
-            
+
         return self._db
 
 def get_log_handles(log):
@@ -455,17 +451,16 @@ def run():
     loop.start()
     app.log.info("periscope.end")
     
-    
 def main():
     tmpOptions = docopt.docopt(__doc__)
-    log = settings.get_logger(level = tmpOptions["--log-level"], filename = tmpOptions["--log"])
-    
+    log = settings.get_logger(level = tmpOptions["--log-level"],
+                              filename = tmpOptions["--log"])
+
     if tmpOptions["--daemonize"]:
-        with daemon.DaemonContext(files_preserve = get_log_handles(log)):
-            run()
-    else:
-        tornado.log.enable_pretty_logging()
-        run()
+        ctx = daemon.DaemonContext(files_preserve = get_log_handles(log))
+        ctx.open()
+
+    run()
         
     
 if __name__ == "__main__":
