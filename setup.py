@@ -42,7 +42,6 @@ setup(
         "jsonpointer>=0.2",
         "argparse",
         "httplib2",
-        "jsonpath",
         "M2Crypto"
     ],
     entry_points = {
