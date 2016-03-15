@@ -27,6 +27,9 @@ setup(
     license="http://www.apache.org/licenses/LICENSE-2.0",
     url="https://github.com/periscope-ps/periscope",
     description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
+    dependency_links=[
+        "https://pypi.python.org/pypi/jsonpath/"
+        ],
     install_requires=[
         "tornado",
         "tornado-redis",
@@ -36,7 +39,7 @@ setup(
         "python-daemon>=1.5",
         "netlogger>=4.3.0",
         "jsonschema",
-        "jsonpath_rw",
+        "jsonpath",
         "mock==0.8.0",
         "docopt",
         "jsonpointer>=0.2",

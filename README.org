@@ -47,7 +47,7 @@ You may encounter problems related to AUTH or GEMINI specific files, I'll try to
 *** For Redhat, create RPM...
 #+BEGIN_SRC
 python setup.py bdist_rpm --requires python,python-setuptools,python-httplib2,python-mock,python-tornado,python-unittest2,\
-validictory,jsonpath_rw,jsonpointer,mongodb-server,m2crypto,python-argparse --release 4
+validictory,jsonpath,jsonpointer,mongodb-server,m2crypto,python-argparse --release 4
 #+END_SRC
 
 *** m2crypto issue

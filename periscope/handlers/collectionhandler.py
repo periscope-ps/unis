@@ -3,8 +3,8 @@
 import json
 import functools
 import jsonpointer
+from jsonpath import jsonpath
 from periscope.models import schemaLoader
-from jsonpath_rw import jsonpath
 from netlogger import nllog
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
