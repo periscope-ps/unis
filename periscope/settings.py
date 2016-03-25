@@ -26,6 +26,32 @@ JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
 UNIS_SCHEMAS_USE_LOCAL = False
 
 ######################################################################
+# Configuration options
+######################################################################
+DEFAULT_CONFIG = {
+    "unis_ssl": {
+        "enable": False,
+        
+    },
+    "unis": {
+        "url": "http://localhost:8888",
+        "summary_collection_period": 60 * 60,
+        "root_urls": [],
+        "summary_size": 10,
+        "use_ms": True,
+        "db_host": "127.0.0.1",
+        "db_port": 27017,
+        "db_name": "unis_db"
+    },
+    "auth": {
+        "enabled": False
+    }
+}
+
+
+
+
+######################################################################
 # Tornado settings.
 ######################################################################
 

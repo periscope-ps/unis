@@ -7,7 +7,6 @@ Options:
   -d LEVEL --log-level=LEVEL   Select log verbosity [TRACE, DEBUG, CONSOLE]
   -c FILE --config-file=FILE   File with extra configurations [default: /etc/periscope/unis.cfg]
   -p PORT --port=PORT          Run on PORT [default: 8888]
-  -D --daemonize               Run UNIS as a daemon
   -r --lookup                  Run UNIS as a lookup service
 '''
 
@@ -18,7 +17,6 @@ import tornado.ioloop
 import json
 import functools
 import socket
-import daemon
 import docopt
 import ConfigParser
 import logging
@@ -51,31 +49,31 @@ class PeriscopeApplication(tornado.web.Application):
                     val = super(DefaultDict, self).get(k, default)
                     return val or default
             
-            self._options = DefaultDict()
             tmpOptions = docopt.docopt(__doc__)
+            self._options = DefaultDict(settings.DEFAULT_CONFIG)
+            tmpConfig = ConfigParser.RawConfigParser(allow_no_value = True)
+            tmpConfig.read(tmpOptions["--config-file"])
+            
+            for section in tmpConfig.sections():
+                if not section in self._options:
+                    self._options[section] = {}
+                
+                for key, option in tmpConfig.items(section):
+                    if "{s}.{k}".format(s = section, k = key) in settings.LIST_OPTIONS:
+                        if not option:
+                            self._options[section][key] = []
+                        else:
+                            self._options[section][key] = option.split(",")
+                    elif option == "true":
+                        self._options[section][key] = True
+                    elif option == "false":
+                        self._options[section][key] = False
+                    else:
+                        self._options[section][key] = option
+            
             for key, option in tmpOptions.items():
                 self._options[key.lstrip("--")] = option
             
-            tmpConfig = ConfigParser.RawConfigParser(allow_no_value = True)
-            tmpConfig.read(self._options["config-file"])
-            
-            for section in tmpConfig.sections():
-                if section in self._options:
-                    raise ValueError("Duplicate value in configuration, sections must be unique - {section}".format(section = section))
-                else:
-                    self._options[section] = {}
-                    for key, option in tmpConfig.items(section):
-                        if "{s}.{k}".format(s = section, k = key) in settings.LIST_OPTIONS:
-                            if not option:
-                                self._options[section][key] = []
-                            else:
-                                self._options[section][key] = option.split(",")
-                        elif option == "true":
-                            self._options[section][key] = True
-                        elif option == "false":
-                            self._options[section][key] = False
-                        else:
-                            self._options[section][key] = option
         return self._options
     
     
@@ -423,7 +421,7 @@ class PeriscopeApplication(tornado.web.Application):
         if not getattr(self, '_db', None):
             db_config = { "host": self.options["unis"]["db_host"], "port": int(self.options["unis"]["db_port"]) }
             self._db = motor.MotorClient(**db_config)[self.options.get("dbname", self.options["unis"]["db_name"])]
-
+            
         return self._db
 
 def get_log_handles(log):
@@ -442,7 +440,7 @@ def run():
     
     if app.options["unis_ssl"]["enable"]:
         ssl_opts = settings.SSL_OPTIONS
-        
+    
     http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_opts)
     
     http_server.listen(int(app.options["port"]))
@@ -455,11 +453,7 @@ def main():
     tmpOptions = docopt.docopt(__doc__)
     log = settings.get_logger(level = tmpOptions["--log-level"],
                               filename = tmpOptions["--log"])
-
-    if tmpOptions["--daemonize"]:
-        ctx = daemon.DaemonContext(files_preserve = get_log_handles(log))
-        ctx.open()
-
+    
     run()
         
     
