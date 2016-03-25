@@ -6,7 +6,6 @@ import json
 import functools
 import time
 from tornado.httpclient import AsyncHTTPClient
-from asyncmongo.errors import IntegrityError
 import tornado.gen
 
 import periscope.settings as settings
