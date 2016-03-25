@@ -6,6 +6,14 @@ SVDIR=/etc/supervisor
 SHARE=/usr/share/periscope
 LOG=/var/log/periscope.log
 
+wget http://www.ultimate.com/phil/python/download/jsonpath-0.54.tar.gz -O /tmp
+tar -xf /tmp/jsonpath-0.54.tar.gz -C /tm
+cd /tmp/jsonpath-0.54
+python setup.py build
+python setup.py install
+rm -rf jsonpath-0.54*
+cd -
+
 easy_install supervisor
 easy_install argparse
 
