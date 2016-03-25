@@ -27,6 +27,10 @@ setup(
     license="http://www.apache.org/licenses/LICENSE-2.0",
     url="https://github.com/periscope-ps/periscope",
     description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
+    data_files = [("/usr/share/periscope", ["config/unis.conf",
+                                            "config/supervisord.conf",
+                                            "config/RPM/periscoped",
+                                            "config/RPM/periscoped.service"])],
     dependency_links=[
         "https://pypi.python.org/pypi/jsonpath/"
         ],
@@ -44,11 +48,16 @@ setup(
         "jsonpointer>=0.2",
         "argparse",
         "httplib2",
-        "M2Crypto"
+        "M2Crypto",
+        "supervisor"
     ],
     entry_points = {
         'console_scripts': [
             'periscoped = periscope.app:main',
         ]
+    },
+    options = {
+        'bdist_rpm': {'post_install': 'config/RPM/centos_postinstall.sh',
+                      'post_uninstall': 'config/RPM/centos_postuninstall.sh'}
     },
 )

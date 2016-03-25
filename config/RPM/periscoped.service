@@ -1,0 +1,13 @@
+[Unit]
+Description=Persicope Service
+After=network.target
+Requires=mongod redis.service
+
+[Service]
+Type=simple
+User=periscope
+EnvironmentFile=/etc/sysconfig/periscoped
+ExecStart=supervisord -c /etc/supervisor/supervisord
+
+[Install]
+WantedBy=multi-user.target

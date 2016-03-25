@@ -1,4 +1,6 @@
-include config/RPM/blippd
-include config/RPM/blippd.opts
-include config/RPM/blippd.service
+include config/supervisord.conf
+include config/unis.conf
+include config/RPM/periscoped
+include config/RPM/periscoped.opts
+include config/RPM/periscoped.service
 recursive-include periscope/schemas *
