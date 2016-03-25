@@ -3,17 +3,17 @@
 USER=periscope
 HOME=/var/lib/periscope
 SVDIR=/etc/supervisor
-SHARE=/usr/share/pariscope
+SHARE=/usr/share/periscope
 LOG=/var/log/periscope.log
 
 /usr/bin/getent group ${USER} || /usr/sbin/groupadd -r ${USER}
 /usr/bin/getent passwd ${USER} || /usr/sbin/useradd -r -d ${HOME} -s /sbin/nologin -g ${USER} ${USER}
 
-if [ ~ -d ${HOME} ]; then
+if [ ! -d ${HOME} ]; then
     mkdir ${HOME}
 fi
 
-if [ ~ -d ${SVDIR}/conf.d ]; then
+if [ ! -d ${SVDIR}/conf.d ]; then
     mkdir ${SVDIR}/conf.d
 fi
 
