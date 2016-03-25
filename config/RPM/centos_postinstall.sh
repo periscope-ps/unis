@@ -10,11 +10,11 @@ LOG=/var/log/periscope.log
 /usr/bin/getent passwd ${USER} || /usr/sbin/useradd -r -d ${HOME} -s /sbin/nologin -g ${USER} ${USER}
 
 if [ ! -d ${HOME} ]; then
-    mkdir ${HOME}
+    mkdir -p ${HOME}
 fi
 
 if [ ! -d ${SVDIR}/conf.d ]; then
-    mkdir ${SVDIR}/conf.d
+    mkdir -p ${SVDIR}/conf.d
 fi
 
 chown ${USER}:${USER} ${SVDIR}
