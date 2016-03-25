@@ -1,1 +1,4 @@
+include config/RPM/blippd
+include config/RPM/blippd.opts
+include config/RPM/blippd.service
 recursive-include periscope/schemas *
