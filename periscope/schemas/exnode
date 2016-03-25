@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#",
+    "id": "http://unis.crest.iu.edu/schema/exnode/4/exnode#",
     "description": "Schema for describing an base eXnode",
     "name": "eXnode",
     "type": "object",
@@ -8,7 +8,7 @@
     "required": ["id", "created", "modified", "name", "size", "parent", "mode"], 
     "properties": {
         "$schema": {
-            "default": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#",
+            "default": "http://unis.crest.iu.edu/schema/exnode/4/exnode#",
             "description": "The schema of this file",
             "format": "uri",
             "type": "string"
@@ -60,7 +60,7 @@
     	    "description": "A pointer to a parent exnode, null if adrift",
     	    "anyOf": [
 		{
-		    "$ref": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#"
+		    "$ref": "http://unis.crest.iu.edu/schema/exnode/4/exnode#"
 		},
 		{
                     "$ref": "http://json-schema.org/draft-04/links#"
@@ -79,13 +79,13 @@
     	    "items": {
 		"anyOf": [
 		    {
-			"$ref": "http://unis.incntre.iu.edu/schema/exnode/4/extent#"
+			"$ref": "http://unis.crest.iu.edu/schema/exnode/4/extent#"
 		    },
 		    {
-			"$ref": "http://unis.incntre.iu.edu/schema/exnode/ext/ibp#"
+			"$ref": "http://unis.crest.iu.edu/schema/exnode/ext/ibp#"
 		    },
 		    {
-			"$ref": "http://unis.incntre.iu.edu/schema/exnode/ext/rdma#"
+			"$ref": "http://unis.crest.iu.edu/schema/exnode/ext/rdma#"
 		    },
 		    {
 			"$ref": "http://json-schema.org/draft-04/links#"
