@@ -43,7 +43,6 @@ setup(
         "netlogger>=4.3.0",
         "jsonschema",
         "jsonpath",
-        "mock==0.8.0",
         "docopt",
         "jsonpointer>=0.2",
         "argparse",

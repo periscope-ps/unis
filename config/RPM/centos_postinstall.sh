@@ -6,6 +6,9 @@ SVDIR=/etc/supervisor
 SHARE=/usr/share/periscope
 LOG=/var/log/periscope.log
 
+easy_install supervisor
+easy_install argparse
+
 /usr/bin/getent group ${USER} || /usr/sbin/groupadd -r ${USER}
 /usr/bin/getent passwd ${USER} || /usr/sbin/useradd -r -d ${HOME} -s /sbin/nologin -g ${USER} ${USER}
 
