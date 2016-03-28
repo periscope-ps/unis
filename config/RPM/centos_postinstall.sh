@@ -16,6 +16,10 @@ rm -rf /tmp/jsonpath-0.54*
 
 easy_install supervisor
 easy_install argparse
+easy_install netlogger
+easy_install motor
+easy_install tornado==4.2
+easy_install tornado-redis
 
 /usr/bin/getent group ${USER} || /usr/sbin/groupadd -r ${USER}
 /usr/bin/getent passwd ${USER} || /usr/sbin/useradd -r -d ${HOME} -s /sbin/nologin -g ${USER} ${USER}

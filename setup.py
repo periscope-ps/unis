@@ -20,8 +20,9 @@ setup(
     name="periscope",
     version=version,
     packages=["periscope", "periscope.test", "periscope.filters", "periscope.handlers"],
-    package_dir= {'periscope.abac': 'periscope/abac', 'periscope.ssl': 'periscope/ssl', 'periscope.schemas': 'periscope/schemas'},
-    package_data={'periscope.abac': ['*'], 'periscope.ssl' : ['*'], 'periscope.schemas': ['*']},
+    package_data = {
+        'periscope': ['ssl/*', 'schemas/*', 'abac/*']
+    },
     author="Ahmed El-Hassany",
     author_email="ahassany@indiana.edu",
     license="http://www.apache.org/licenses/LICENSE-2.0",
