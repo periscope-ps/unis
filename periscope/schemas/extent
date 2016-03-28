@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-    "id": "http://unis.incntre.iu.edu/schema/exnode/4/extent#",
+    "id": "http://unis.crest.iu.edu/schema/exnode/4/extent#",
     "description": "An extent is some chunk of data, somewhere",
     "name": "extent",
     "type": "object",
@@ -27,7 +27,7 @@
     	    "description": "A pointer to a parent exnode, null if adrift",
     	    "anyOf": [
 		{
-		    "$ref": "http://unis.incntre.iu.edu/schema/exnode/4/exnode#"
+		    "$ref": "http://unis.crest.iu.edu/schema/exnode/4/exnode#"
 		},
 		{
                     "$ref": "http://json-schema.org/draft-04/links#"
