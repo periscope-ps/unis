@@ -21,12 +21,12 @@ lockfile=/var/lock/subsys/periscoped
 RETVAL=0
 
 start() {
-    echo -n $"Starting monogodb: "
+    echo $"Starting monogodb: "
     service mongod start
-    echo -n $"Starting redis: "
+    echo $"Starting redis: "
     service redis start
     echo -n $"Starting periscope: "
-    supervisord -C /etc/supervisor/supervisord.conf
+    supervisord -c /etc/supervisor/supervisor.conf
     RETVAL=$?
     echo
     [ $RETVAL -eq 0 ] && touch $lockfile
@@ -34,9 +34,9 @@ start() {
 }
 
 stop() {
-    echo -n $"Stopping periscoped: "
+    echo $"Stopping periscoped: "
     pkill supervisord
-    echo -n $"Stopping redis: "
+    echo $"Stopping redis: "
     service redis stop
     echo -n $"Stopping periscope: "
     service mongod stop
