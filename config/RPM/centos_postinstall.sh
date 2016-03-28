@@ -51,7 +51,7 @@ chown ${USER}:${USER} ${SVLOG}/supervisord.log
 if grep -q -i "release 6" /etc/redhat-release
 then
     cp ${SHARE}/periscoped /etc/init.d/periscoped
-    chmod +x /etc/initd.d/periscoped
+    chmod +x /etc/init.d/periscoped
     chown root:root /etc/init.d/periscoped
     chkconfig --add periscoped
 elif grep -q -i "release 7" /etc/redhat-release
