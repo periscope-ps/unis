@@ -5,6 +5,7 @@ HOME=/var/lib/periscope
 SVDIR=/etc/supervisor
 SHARE=/usr/share/periscope
 LOG=/var/log/periscope.log
+SVLOG=/var/log/supervisor
 
 wget http://www.ultimate.com/phil/python/download/jsonpath-0.54.tar.gz -O /tmp/jsonpath-0.54.tar.gz
 tar -xf /tmp/jsonpath-0.54.tar.gz -C /tmp
@@ -37,8 +38,14 @@ chown ${USER}:${USER} ${HOME}
 cp ${SHARE}/supervisord.conf ${SVDIR}/supervisor.conf
 cp ${SHARE}/unis.conf ${SVDIR}/conf.d/unis.conf
 
+if [ ! -d ${SVLOG} ]; then
+    mkdir -p ${SVLOG}
+fi
+
 touch ${LOG}
+touch ${SVLOG}/supervisord.log
 chown ${USER}:${USER} ${LOG}
+chown ${USER}:${USER} ${SVLOG}
 
 if grep -q -i "release 6" /etc/redhat-release
 then
@@ -51,4 +58,8 @@ then
     cp ${SHARE}/periscoped.service /etc/systemd/system/periscoped.service
     systemctl daemon-reload
     systemctl enable periscoped
+fi
+
+if [ ! -f /etc/sysconfig/periscoped ]; then
+    cp ${SHARE}/periscoped.opts /etc/sysconfig/periscoped
 fi

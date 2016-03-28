@@ -31,7 +31,8 @@ setup(
     data_files = [("/usr/share/periscope", ["config/unis.conf",
                                             "config/supervisord.conf",
                                             "config/RPM/periscoped",
-                                            "config/RPM/periscoped.service"])],
+                                            "config/RPM/periscoped.service",
+                                            "config/RPM/periscoped.opts"])],
     dependency_links=[
         "https://pypi.python.org/pypi/jsonpath/"
         ],
