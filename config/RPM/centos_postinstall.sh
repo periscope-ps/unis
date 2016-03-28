@@ -46,6 +46,7 @@ touch ${LOG}
 touch ${SVLOG}/supervisord.log
 chown ${USER}:${USER} ${LOG}
 chown ${USER}:${USER} ${SVLOG}
+chown ${USER}:${USER} ${SVLOG}/supervisord.log
 
 if grep -q -i "release 6" /etc/redhat-release
 then
