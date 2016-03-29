@@ -5,7 +5,6 @@ ETC=/etc/periscope
 HOME=/var/lib/periscope
 SVDIR=/etc/supervisor
 SHARE=/usr/share/periscope
-LOG=/var/log/periscope.log
 
 wget http://www.ultimate.com/phil/python/download/jsonpath-0.54.tar.gz -O /tmp/jsonpath-0.54.tar.gz
 tar -xf /tmp/jsonpath-0.54.tar.gz -C /tmp
@@ -28,9 +27,7 @@ if [ ! -d ${HOME} ]; then
     mkdir -p ${HOME}
 fi
 
-touch ${LOG}
-chown ${USER}:${USER} ${LOG}
-chown ${USER}:${USER} ${HOME}
+chown -R ${USER}:${USER} ${HOME}
 
 if [ ! -f ${ETC}/unis.conf ]; then
     cp ${SHARE}/unis.conf ${ETC}/unis.conf
@@ -45,7 +42,7 @@ then
     chkconfig --add periscoped
 elif grep -q -i "release 7" /etc/redhat-release
 then
-    cp ${SHARE}/periscoped.supervisor.conf /etc/supervisor.d/periscope.ini
+    cp ${SHARE}/periscoped.supervisor.conf /etc/supervisord.d/periscope.ini
     cp ${SHARE}/periscoped.service /etc/systemd/system/periscoped.service
     systemctl daemon-reload
     systemctl enable periscoped

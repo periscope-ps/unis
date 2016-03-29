@@ -1,6 +1,5 @@
-include config/supervisord.conf
 include config/unis.conf
 include config/RPM/periscoped
-include config/RPM/periscoped.opts
 include config/RPM/periscoped.service
+include config/RPM/periscoped.supervisor.conf
 recursive-include periscope/schemas *

@@ -4,11 +4,11 @@ After=network.target
 Requires=supervisord.service mongod.service redis.service
 
 [Service]
-Type=forking
-User=periscope
-ExecStart=/usr/bin/supervisorctl start periscope:UNIS periscope:MS
-ExecReload=/usr/bin/supervisorctl reload periscope:UNIS periscope:MS
-ExecStop=/usr/bin/supervisorctl shutdown periscope:UNIS periscope:MS
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/supervisorctl start periscope-unis periscope-ms
+ExecReload=/usr/bin/supervisorctl reload periscope-unis periscope-ms
+ExecStop=/usr/bin/supervisorctl stop periscope-unis periscope-ms
 
 [Install]
 WantedBy=multi-user.target

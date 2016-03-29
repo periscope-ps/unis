@@ -19,4 +19,3 @@ then
 fi
 
 service ${SERVICE} stop
-userdel ${USER}
