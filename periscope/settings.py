@@ -15,7 +15,7 @@ LIST_OPTIONS = ["unis.root_urls"]
 ######################################################################
 PERISCOPE_ROOT = os.path.dirname(os.path.abspath(__file__)) + os.sep
 sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
-SCHEMA_CACHE_DIR = "/var/unis/.cache"
+SCHEMA_CACHE_DIR = "/var/lib/periscope/.cache"
 
 GCF_PATH = "/opt/gcf/src/"
 sys.path.append(os.path.dirname(GCF_PATH))

@@ -11,7 +11,7 @@
 # source function library
 . /etc/rc.d/init.d/functions
 
-# source periscope configuration
+# source periscoped configuration
 if [ -f /etc/sysconfig/periscoped ]; then
    . /etc/sysconfig/periscoped
 fi
@@ -26,7 +26,8 @@ start() {
     echo $"Starting redis: "
     service redis start
     echo -n $"Starting periscope: "
-    supervisord -c /etc/supervisor/supervisor.conf
+    service supervisord start
+    supervisorctl start periscope-unis periscope-ms
     RETVAL=$?
     echo
     [ $RETVAL -eq 0 ] && touch $lockfile
@@ -35,7 +36,7 @@ start() {
 
 stop() {
     echo $"Stopping periscoped: "
-    pkill supervisord
+    supervisorctl stop periscope-unis periscope-ms
     echo $"Stopping redis: "
     service redis stop
     echo -n $"Stopping periscope: "
@@ -64,7 +65,7 @@ case "$1" in
 	[ -f $lockfile ] && restart
 	;;
     status)
-	status periscoped
+	status periscope
 	RETVAL=$?
 	;;
     *)
