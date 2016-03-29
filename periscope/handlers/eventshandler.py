@@ -17,7 +17,6 @@ class EventsHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _insert(self, resources):
         resource = resources[0]
-        print(resource)
         http_client = AsyncHTTPClient()
         response = yield http_client.fetch(resource["metadata_URL"],
                                            validate_cert=False,
