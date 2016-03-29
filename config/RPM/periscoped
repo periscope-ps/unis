@@ -11,7 +11,7 @@
 # source function library
 . /etc/rc.d/init.d/functions
 
-# source periscope configuration
+# source periscoped configuration
 if [ -f /etc/sysconfig/periscoped ]; then
    . /etc/sysconfig/periscoped
 fi
@@ -21,26 +21,26 @@ lockfile=/var/lock/subsys/periscoped
 RETVAL=0
 
 start() {
-    echo $"Starting monogodb: "
     service mongod start
-    echo $"Starting redis: "
     service redis start
+    service supervisord start
     echo -n $"Starting periscope: "
-    supervisord -c /etc/supervisor/supervisor.conf
+    timeout 2s supervisorctl start periscope-unis
+    timeout 2s supervisorctl start periscope-ms
     RETVAL=$?
-    echo
+    echo "done"
     [ $RETVAL -eq 0 ] && touch $lockfile
     return $RETVAL
 }
 
 stop() {
-    echo $"Stopping periscoped: "
-    pkill supervisord
-    echo $"Stopping redis: "
-    service redis stop
     echo -n $"Stopping periscope: "
+    timeout 2s supervisorctl stop periscope-unis
+    timeout 2s supervisorctl stop periscope-ms
+    echo "done"
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    service redis stop
     service mongod stop
-    [$RETVAL -eq 0 ] && rm -f $lockfile
     return $RETVAL
 }
 
@@ -64,7 +64,7 @@ case "$1" in
 	[ -f $lockfile ] && restart
 	;;
     status)
-	status periscoped
+	status periscope
 	RETVAL=$?
 	;;
     *)

@@ -14,7 +14,7 @@
 
 from setuptools import setup
 
-version = "0.3.dev"
+version = "0.4.dev"
 
 setup(
     name="periscope",
@@ -29,9 +29,9 @@ setup(
     url="https://github.com/periscope-ps/periscope",
     description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
     data_files = [("/usr/share/periscope", ["config/unis.conf",
-                                            "config/supervisord.conf",
                                             "config/RPM/periscoped",
-                                            "config/RPM/periscoped.service"])],
+                                            "config/RPM/periscoped.service",
+                                            "config/RPM/periscoped.supervisor.conf"])],
     dependency_links=[
         "https://pypi.python.org/pypi/jsonpath/"
         ],
@@ -49,7 +49,6 @@ setup(
         "argparse",
         "httplib2",
         "M2Crypto",
-        "supervisor"
     ],
     entry_points = {
         'console_scripts': [

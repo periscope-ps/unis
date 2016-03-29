@@ -11,15 +11,15 @@ install:
  - "sudo apt-get install swig python-dev python-m2crypto redis-server"
  - "sudo python setup.py install"
  - "sudo start redis-server"
- - "sudo mkdir /var/unis"
- - "sudo chown ${USER} /var/unis"
+ - "sudo mkdir /var/lib/periscope"
+ - "sudo chown ${USER} /var/lib/periscope"
 
 script: python periscope/test/runtests.py
 
 notifications:
   slack: crest-networks:nctOxrMsZdnYU8jGrkpSjpvf
-  email:
-    on_success: never
-    on_failure: change
-    recipients:
-      - dlt@crest.iu.edu
+#  email:
+#    on_success: never
+#    on_failure: change
+#    recipients:
+#      - dlt@crest.iu.edu
