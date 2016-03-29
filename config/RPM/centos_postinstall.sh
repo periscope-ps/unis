@@ -33,6 +33,10 @@ if [ ! -f ${ETC}/unis.conf ]; then
     cp ${SHARE}/unis.conf ${ETC}/unis.conf
 fi
 
+if [ ! -f ${ETC}/ms.conf ]; then
+    cp ${SHARE}/ms.conf ${ETC}/ms.conf
+fi
+
 if grep -q -i "release 6" /etc/redhat-release
 then
     cat ${SHARE}/periscoped.supervisor.conf >> /etc/supervisord.conf
@@ -46,4 +50,5 @@ then
     cp ${SHARE}/periscoped.service /etc/systemd/system/periscoped.service
     systemctl daemon-reload
     systemctl enable periscoped
+    service supervisord reload
 fi

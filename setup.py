@@ -29,6 +29,7 @@ setup(
     url="https://github.com/periscope-ps/periscope",
     description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
     data_files = [("/usr/share/periscope", ["config/unis.conf",
+                                            "config/ms.conf",
                                             "config/RPM/periscoped",
                                             "config/RPM/periscoped.service",
                                             "config/RPM/periscoped.supervisor.conf"])],
