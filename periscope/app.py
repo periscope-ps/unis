@@ -152,7 +152,7 @@ class PeriscopeApplication(tornado.web.Application):
             )
         )
         return handler
-    
+
     def _make_getparent_handler(self,name,pattern,base_url,handler_class):
         db_layer = self.get_db_layer("exnodes", "id", "ts", False, 0)
         scm_handler = (
@@ -165,6 +165,7 @@ class PeriscopeApplication(tornado.web.Application):
                                 )
             )
         return scm_handler
+
     def _make_getSchema_handler(self,name,pattern,base_url,handler_class):
         scm_handler = (
             tornado.web.URLSpec(base_url + pattern, handler_class,
@@ -325,7 +326,7 @@ class PeriscopeApplication(tornado.web.Application):
             else:
                 self.log.error("Not a valid PPI class: {name}".format(name = c.__name__))
         
-        if self.options["auth"]["enabled"]:
+        if 'auth' in self.options and self.options["auth"]["enabled"]:
             from periscope.auth import ABACAuthService
             
             self._auth = ABACAuthService(settings.SSL_OPTIONS['certfile'],
@@ -350,7 +351,7 @@ class PeriscopeApplication(tornado.web.Application):
         handlers.append(self._make_getSchema_handler(**settings.getSchema))
         handlers.append(self._make_main_handler(**settings.main_handler_settings))
         handlers.append(self._make_getparent_handler(**settings.getParent))
-        
+
         # Setup hierarchy
         tornado.ioloop.PeriodicCallback(self._aggregate_manifests, int(self.options["unis"]["summary_collection_period"]) * 1000).start()
         if bool(self.options["lookup"]):
