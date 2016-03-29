@@ -684,7 +684,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + \
                         " ;profile="+ self.schemas_single[accept])
-        self.set_status(201)
+        self.set_status(204)
         
         try:
             query = { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp]  }
