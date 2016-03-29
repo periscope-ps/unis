@@ -4,6 +4,8 @@ HOME=/var/lib/periscope
 SHARE=/usr/share/periscope
 LOG=/var/log/periscoped.log
 
+service ${SERVICE} stop
+
 if grep -q -i "release 6" /etc/redhat-release
 then
     chkconfig --del ${SERVICE}
@@ -17,5 +19,3 @@ then
     fi
     systemctl daemon-reload
 fi
-
-service ${SERVICE} stop
