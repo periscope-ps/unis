@@ -1,0 +1,7 @@
+#!/bin/bash
+
+while [ ! -e /var/run/supervisor/supervisor.sock ]; do
+	echo "Waiting for supervisord..."
+	sleep 1;
+done
+

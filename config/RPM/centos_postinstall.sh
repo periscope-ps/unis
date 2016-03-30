@@ -23,6 +23,10 @@ easy_install tornado-redis
 /usr/bin/getent group ${USER} || /usr/sbin/groupadd -r ${USER}
 /usr/bin/getent passwd ${USER} || /usr/sbin/useradd -r -d ${HOME} -s /sbin/nologin -g ${USER} ${USER}
 
+if [ ! -d ${ETC} ]; then
+    mkdir -p ${ETC}
+fi
+
 if [ ! -d ${HOME} ]; then
     mkdir -p ${HOME}
 fi
@@ -50,5 +54,5 @@ then
     cp ${SHARE}/periscoped.service /etc/systemd/system/periscoped.service
     systemctl daemon-reload
     systemctl enable periscoped
-    service supervisord reload
+    service supervisord restart
 fi
