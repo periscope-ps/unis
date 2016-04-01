@@ -23,6 +23,10 @@ easy_install tornado-redis
 /usr/bin/getent group ${USER} || /usr/sbin/groupadd -r ${USER}
 /usr/bin/getent passwd ${USER} || /usr/sbin/useradd -r -d ${HOME} -s /sbin/nologin -g ${USER} ${USER}
 
+if [ ! -d ${ETC} ]; then
+    mkdir -p ${ETC}
+fi
+
 if [ ! -d ${HOME} ]; then
     mkdir -p ${HOME}
 fi
@@ -31,6 +35,10 @@ chown -R ${USER}:${USER} ${HOME}
 
 if [ ! -f ${ETC}/unis.conf ]; then
     cp ${SHARE}/unis.conf ${ETC}/unis.conf
+fi
+
+if [ ! -f ${ETC}/ms.conf ]; then
+    cp ${SHARE}/ms.conf ${ETC}/ms.conf
 fi
 
 if grep -q -i "release 6" /etc/redhat-release
@@ -46,4 +54,5 @@ then
     cp ${SHARE}/periscoped.service /etc/systemd/system/periscoped.service
     systemctl daemon-reload
     systemctl enable periscoped
+    service supervisord restart
 fi

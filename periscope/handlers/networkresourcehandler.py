@@ -483,7 +483,8 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                 return
             
             yield self._add_response_headers(count)
-            self.set_status(201)
+            
+            self.set_status(200)
             self.finish()
             
     def _find(self, **kwargs):
@@ -690,7 +691,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + \
                         " ;profile="+ self.schemas_single[accept])
-        self.set_status(201)
+        self.set_status(204)
         
         try:
             query = { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp]  }
@@ -727,6 +728,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         update = { "status": "DELETED", self.timestamp: int(time.time() * 1000000) }
         query = { self.Id: res_id }
         yield self.dblayer.update(query, update)
+        self.set_status(204)
         self.finish()
 
         
