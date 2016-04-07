@@ -14,7 +14,7 @@
 
 from setuptools import setup
 
-version = "0.4.dev"
+version = "2.0.dev"
 
 setup(
     name="periscope",
@@ -29,6 +29,8 @@ setup(
     url="https://github.com/periscope-ps/periscope",
     description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
     data_files = [("/usr/share/periscope", ["config/unis.conf",
+                                            "config/ms.conf",
+                                            "config/RPM/wait_sv_sock",
                                             "config/RPM/periscoped",
                                             "config/RPM/periscoped.service",
                                             "config/RPM/periscoped.supervisor.conf"])],

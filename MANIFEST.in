@@ -1,4 +1,6 @@
 include config/unis.conf
+include config/ms.conf
+include config/RPM/wait_sv_sock
 include config/RPM/periscoped
 include config/RPM/periscoped.service
 include config/RPM/periscoped.supervisor.conf

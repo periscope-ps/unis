@@ -3,6 +3,8 @@ UNIS and the MS (also included in this codebase) are a part of the
 Periscope measurement framework which also includes BLiPP. You can
 find more information about all these components [[https://github.com/GENI-GEMINI/GEMINI/wiki][here]].
 
+[[https://travis-ci.org/periscope-ps/unis][file:https://travis-ci.org/periscope-ps/unis.svg?branch=master]]
+
 ** Installation
 *** For Debian, but should adapt to any linux flavor
 First, you'll need a few basic things
