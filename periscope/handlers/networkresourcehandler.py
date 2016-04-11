@@ -395,7 +395,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query[arg] = ",".join(query[arg])
             if query[arg].startswith("reg="):
                 param = decode(query[arg][4:])
-                val = re.compile((yield process_value(arg,param), re.IGNORECASE))
+                val = re.compile((yield process_value(arg,param)), re.IGNORECASE)
                 query_ret.append({arg: val})
                 continue
             if query[arg].startswith("exists="):
