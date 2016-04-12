@@ -50,7 +50,7 @@ class ExnodeHandler(NetworkResourceHandler):
                 oldResource = cursor.next_object()
                 resource["$schema"]  = oldResource.get("$schema", self.schemas_single[MIME['PSJSON']])
                 resource["selfRef"]  = oldResource["selfRef"]
-                resource["modified"] = resource[self.timestamp]
+                resource["modified"] = oldResource[self.timestamp]
                 resource[self.timestamp] = oldResource[self.timestamp]
                 resource[self.Id]        = oldResource[self.Id]
                 self.modified = True
@@ -58,7 +58,7 @@ class ExnodeHandler(NetworkResourceHandler):
             yield [ self._insert_extents(extent, resource["selfRef"]) for extent in resource["extents"] ]
             resource.pop("extents", None)
 
-        resource["modified"] = resource.pop("modified", resource.pop(self.timestamp, 0))
+        resource["modified"] = resource.get("modified", resource.get(self.timestamp, 0))
         raise tornado.gen.Return(resource)
     
     def _insert_extents(self, extent, parent):
