@@ -97,7 +97,7 @@ class ExnodeHandler(NetworkResourceHandler):
     
     @tornado.gen.coroutine
     def _post_get(self, resource):
-        if not self._include_allocations or resource["mode"] == "directory":
+        if not self._include_allocations or resource.get("mode", None) == "directory":
             raise tornado.gen.Return(resource)
         
         try:
