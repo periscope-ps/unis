@@ -31,7 +31,6 @@ UNIS_SCHEMAS_USE_LOCAL = False
 DEFAULT_CONFIG = {
     "unis_ssl": {
         "enable": False,
-        
     },
     "unis": {
         "url": "http://localhost:8888",
@@ -39,6 +38,7 @@ DEFAULT_CONFIG = {
         "root_urls": [],
         "summary_size": 10,
         "use_ms": True,
+        "ms_url": "http://localhost:8888",
         "db_host": "127.0.0.1",
         "db_port": 27017,
         "db_name": "unis_db"

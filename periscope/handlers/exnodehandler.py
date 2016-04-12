@@ -35,6 +35,8 @@ class ExnodeHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _process_resource(self, resource, res_id = None, run_validate = True):
         resource = yield super(ExnodeHandler, self)._process_resource(resource, res_id, run_validate)
+        self.modified = False
+        
         if resource["mode"] == "directory":
             parent = None
             if resource["parent"]:
@@ -51,13 +53,12 @@ class ExnodeHandler(NetworkResourceHandler):
                 resource["modified"] = resource[self.timestamp]
                 resource[self.timestamp] = oldResource[self.timestamp]
                 resource[self.Id]        = oldResource[self.Id]
-            else:
-                resource.pop("modified", None)
+                self.modified = True
         else:
             yield [ self._insert_extents(extent, resource["selfRef"]) for extent in resource["extents"] ]
             resource.pop("extents", None)
-            resource.pop("modified", None)
-            
+
+        resource["modified"] = resource.pop("modified", resource.pop(self.timestamp, 0))
         raise tornado.gen.Return(resource)
     
     def _insert_extents(self, extent, parent):
@@ -82,7 +83,7 @@ class ExnodeHandler(NetworkResourceHandler):
     
     @tornado.gen.coroutine
     def _insert(self, resources):
-        yield [ self.dblayer.update( { self.Id: resource[self.Id] }, resource) if "modified" in resource else self.dblayer.insert(resource) for resource in resources ]
+        yield [ self.dblayer.update( { self.Id: resource[self.Id] }, resource) if self.modified else self.dblayer.insert(resource) for resource in resources ]
         
     def _find(self, **kwargs):
         self._include_allocations = True

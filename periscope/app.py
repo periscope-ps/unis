@@ -379,7 +379,7 @@ class PeriscopeApplication(tornado.web.Application):
                 u"serviceType": u"ps:tools:ms",
                 u"ttl": 600,
                 u"runningOn": {
-                    u"href": u"%s/nodes/%s" % (self.options["unis"]["url"], socket.gethostname()),
+                    u"href": u"%s/nodes/%s" % (self.options["unis"]["ms_url"], socket.gethostname()),
                     u"rel": u"full"
                 },
                 u"properties": {
@@ -396,10 +396,10 @@ class PeriscopeApplication(tornado.web.Application):
             if settings.AUTH_UUID:
                 service['properties'].update({"geni": {"slice_uuid": settings.AUTH_UUID}})
             
-            if 'localhost' in self.options["unis"]["url"] or "127.0.0.1" in self.options["unis"]["url"]:
+            if 'localhost' in self.options["unis"]["ms_url"] or "127.0.0.1" in self.options["unis"]["ms_url"]:
                 self.db["services"].insert(service)
             else:
-                service_url = self.options["unis"]["url"]+'/services'
+                service_url = self.options["unis"]["ms_url"]+'/services'
                 
                 http_client = AsyncHTTPClient()
                 
