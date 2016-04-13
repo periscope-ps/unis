@@ -210,6 +210,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         Overrides Tornado error writter to produce different message
         format based on the HTTP Accept header from the client.
         """
+        self.set_status(status_code)
         if self.settings.get("debug") and "exc_info" in kwargs:
             # in debug mode, try to send a traceback
             self.set_header('Content-Type', 'text/plain')
