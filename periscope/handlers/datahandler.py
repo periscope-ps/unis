@@ -94,7 +94,7 @@ class DataHandler(NetworkResourceHandler):
         
         # Parse arguments and set up query
         try:
-            parsed = self._parse_get_arguments()
+            parsed = yield self._parse_get_arguments()
             options = dict(query  = parsed["query"]["query"],
                            limit  = parsed["limit"],
                            sort   = parsed["sort"],
