@@ -18,8 +18,7 @@ install:
  - "sudo chown ${USER} /var/lib/periscope"
 
 script:
- - timeout 5 periscoped
- - [ $? -eq 124 ] || exit 1
+ - periscope/test/test.sh
 
 notifications:
   slack: crest-networks:nctOxrMsZdnYU8jGrkpSjpvf
