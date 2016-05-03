@@ -8,7 +8,7 @@ virtualenv:
 
 # command to install dependencies
 install: 
- - "sudo apt-get install swig python-dev python-m2crypto redis-server mongodb-server"
+ - "sudo apt-get install swig python-dev python-m2crypto redis-server"
  - "sudo python setup.py install"
  - "sudo start redis-server"
  - "sudo start mongod"
