@@ -6,20 +6,6 @@ HOME=/var/lib/periscope
 SVDIR=/etc/supervisor
 SHARE=/usr/share/periscope
 
-wget http://www.ultimate.com/phil/python/download/jsonpath-0.54.tar.gz -O /tmp/jsonpath-0.54.tar.gz
-tar -xf /tmp/jsonpath-0.54.tar.gz -C /tmp
-cd /tmp/jsonpath-0.54
-python setup.py build
-python setup.py install
-cd -
-rm -rf /tmp/jsonpath-0.54*
-
-easy_install argparse
-easy_install netlogger
-easy_install motor
-easy_install tornado==4.2
-easy_install tornado-redis
-
 /usr/bin/getent group ${USER} || /usr/sbin/groupadd -r ${USER}
 /usr/bin/getent passwd ${USER} || /usr/sbin/useradd -r -d ${HOME} -s /sbin/nologin -g ${USER} ${USER}
 
