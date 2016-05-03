@@ -8,13 +8,14 @@ virtualenv:
 
 # command to install dependencies
 install: 
- - "sudo apt-get install swig python-dev python-m2crypto redis-server"
+ - "sudo apt-get install swig python-dev python-m2crypto redis-server mongodb-server"
  - "sudo python setup.py install"
  - "sudo start redis-server"
+ - "sudo start mongod"
  - "sudo mkdir /var/lib/periscope"
  - "sudo chown ${USER} /var/lib/periscope"
 
-script: python periscope/test/runtests.py
+script: timeout 5 periscoped
 
 notifications:
   slack: crest-networks:nctOxrMsZdnYU8jGrkpSjpvf
