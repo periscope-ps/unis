@@ -26,7 +26,7 @@ setup(
     author="Ahmed El-Hassany",
     author_email="ahassany@indiana.edu",
     license="http://www.apache.org/licenses/LICENSE-2.0",
-    url="https://github.com/periscope-ps/periscope",
+    url="https://github.com/periscope-ps/unis",
     description="Periscope is the implementation of both Unified Network Information Service (UNIS) and Measurement Store (MS).",
     data_files = [("/usr/share/periscope", ["config/unis.conf",
                                             "config/ms.conf",
