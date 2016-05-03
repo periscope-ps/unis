@@ -11,7 +11,6 @@ install:
  - "sudo apt-get install swig python-dev python-m2crypto redis-server"
  - "sudo python setup.py install"
  - "sudo start redis-server"
- - "sudo start mongod"
  - "sudo mkdir /var/lib/periscope"
  - "sudo chown ${USER} /var/lib/periscope"
 
