@@ -597,7 +597,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         Insert resources
         """
         try:
-            yield self._insert(resources)
+            yield self.dblayer.insert(resources)
         except Exception as exp:
             message = "Could not process the POST request - {exp}".format(exp = exp)
             self.send_error(409, message = message)
@@ -607,17 +607,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         """
         Return new records
         """
-        yield self._post_return(resources)
+        query = {"$or": [ { self.Id: res[self.Id], self.timestamp: res[self.timestamp] } for res in resources ] }
+        yield self._return_resources(query)
         
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + \
                         " ;profile="+ self.schemas_single[accept])
         self.set_status(201)
         self.finish()
-
-    @tornado.gen.coroutine
-    def _insert(self, resources):
-        yield self.dblayer.insert(resources)
 
     @tornado.gen.coroutine
     def _process_resource(self, resource, res_id = None, run_validate = True):
@@ -633,12 +630,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             
         raise tornado.gen.Return(tmpResource)
 
-    @tornado.gen.coroutine
-    def _post_return(self, resources):
-        query = {"$or": [ { self.Id: res[self.Id], self.timestamp: res[self.timestamp] } for res in resources ] }
-        yield self._return_resources(query)
-        
-        
     # Template Method for PUT
     @tornado.web.asynchronous
     @tornado.web.removeslash
@@ -682,13 +673,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         Update resources
         """
         try:
-            self._put_resource(resource)
+            query = { self.Id: resource[self.Id] }
+            yield self.dblayer.update(query, dict(resource._to_mongoiter()))
         except Exception as exp:
             message = "Could not process the PUT request - {exp}".format(exp = exp)
-            self.send_error(409, message = message)
+            self.send_error(404, message = message)
             self.log.error(message)
             return
-        
+
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + \
                         " ;profile="+ self.schemas_single[accept])
@@ -698,22 +690,12 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             query = { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp]  }
             yield self._return_resources(query)
         except ValueError as exp:
-            message = message = "Could not process reponse - {exp}".format(exp = exp)
+            message = message = "Could not process response - {exp}".format(exp = exp)
             self.send_error(409, message = message)
             self.log.error(message)
             return
         self.finish()
-    
-    @tornado.gen.coroutine
-    def _update(self, query, resource):
-        yield self.dblayer.update(query, resource)
 
-    @tornado.gen.coroutine
-    def _put_resource(self, resource):
-        query = { self.Id: resource[self.Id] }
-        yield self._update(query, dict(resource._to_mongoiter()))
-
-    
     @tornado.web.asynchronous
     @tornado.web.removeslash
     @tornado.gen.coroutine

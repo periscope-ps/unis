@@ -75,7 +75,6 @@ class DBLayer(object, nllog.DoesLogging):
         fields = kwargs.pop("fields", {})
         fields["_id"] = 0
         cursor = self.collection.find(query, fields=fields, **kwargs)
-        
         return cursor
     
     def _insert_id(self, data):
@@ -99,9 +98,9 @@ class DBLayer(object, nllog.DoesLogging):
                 shards.append(self._create_manifest_shard(data))
             self._insert_id(data)
 
-        yield self.manifest.insert(shards)
-        results = yield self.collection.insert(data, callback=callback, **kwargs)
-        
+        sfut = self.manifest.insert(shards)
+        ifut = self.collection.insert(data, callback=callback, **kwargs)
+        results = yield [sfut, ifut]
         raise tornado.gen.Return(results)
     
     
@@ -111,10 +110,14 @@ class DBLayer(object, nllog.DoesLogging):
         self.log.debug("Update for Collection: [" + self._collection_name + "]")
         if summarize:
             shard = self._create_manifest_shard(data)
-            yield self.manifest.insert(shard)
+            sfut = self.manifest.insert(shard)
         if not replace:
             data = { "$set": data }
-        results = yield self.collection.update(query, data, **kwargs)
+        ufut =  self.collection.update(query, data, **kwargs)
+        results = yield [sfut, ufut]
+        for r in results:
+            if isinstance(r, dict) and not r.get("updatedExisting", True):
+                raise(Exception("Resource ID does not exist"))
         raise tornado.gen.Return(results)
     
     @tornado.gen.coroutine
@@ -122,7 +125,6 @@ class DBLayer(object, nllog.DoesLogging):
         """Remove objects from the database that matches a query."""
         self.log.debug("Delete for Collection: [" + self._collection_name + "]")
         results = yield self.collection.remove(query, callback=callback, **kwargs)
-        
         raise tornado.gen.Return(results)
     
     @tornado.gen.coroutine
