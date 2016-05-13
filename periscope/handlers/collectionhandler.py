@@ -40,11 +40,14 @@ class CollectionHandler(NetworkResourceHandler):
 
     @tornado.gen.coroutine
     def _put_resource(self, resource):
-        for key in self._collections:
-            if key in resource:
-                resource.pop(key, None)
+        try:
+            for key in self._collections:
+                if key in resource:
+                    resource.pop(key, None)
         
-        super(CollectionHandler, self)._put_resource(resource)
+            super(CollectionHandler, self)._put_resource(resource)
+        except Exception as exp:
+            raise exp
         
     @tornado.gen.coroutine
     def _process_resource(self, resource, res_id = None, run_validate = True):

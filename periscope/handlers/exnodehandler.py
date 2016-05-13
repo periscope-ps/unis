@@ -83,7 +83,12 @@ class ExnodeHandler(NetworkResourceHandler):
     
     @tornado.gen.coroutine
     def _insert(self, resources):
-        yield [ self.dblayer.update( { self.Id: resource[self.Id] }, resource) if self.modified else self.dblayer.insert(resource) for resource in resources ]
+        try:
+            yield [ self.dblayer.update( { self.Id: resource[self.Id] }, resource) 
+                    if self.modified 
+                    else self.dblayer.insert(resource) for resource in resources ]
+        except Exception as exp:
+            raise exp
         
     def _find(self, **kwargs):
         self._include_allocations = True
@@ -129,5 +134,8 @@ class ExnodeHandler(NetworkResourceHandler):
     
     @tornado.gen.coroutine
     def _put_resource(self, resource):
-        resource.pop("extents", None)
-        super(ExnodeHandler, self)._put_resource(resource)
+        try:
+            resource.pop("extents", None)
+            yield super(ExnodeHandler, self)._put_resource(resource)
+        except Exception as exp:
+            raise exp
