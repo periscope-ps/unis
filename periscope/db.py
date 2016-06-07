@@ -128,19 +128,20 @@ class DBLayer(object, nllog.DoesLogging):
         raise tornado.gen.Return(results)
     
     @tornado.gen.coroutine
-    def getRecParentNames(self,par,pmap):
-        """ Gets all the child folder ids recurssively for a given folder - specially for exnodes"""
-        if par :
-            cursor = self.collection.find({"parent" : par,"mode":"directory"})
+    def getRecParentNames(self, par, pmap):
+        """ Gets all the child folder ids recursively for a given folder
+            (exnode specific)"""
+        if par:
+            cursor = self.collection.find({"name": par, "mode": "directory"})
             self.log.debug("find for Collection: [" + self._collection_name + "]")
             pmap[par] = 1
             while (yield cursor.fetch_next):
                 resource = cursor.next_object()
-                if resource == None:                 
+                if resource == None:
                     pass
                 else:
                     pmap[resource.get('id')] = 1
-                yield self.getRecParentNames(resource.get('id'),pmap)
+                yield self.getRecParentNames(resource.get('id'), pmap)
             raise tornado.gen.Return(pmap.keys())
         else:          
             raise tornado.gen.Return(None)

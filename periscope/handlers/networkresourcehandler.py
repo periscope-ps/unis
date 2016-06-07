@@ -270,7 +270,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             in_split = value.split(",")
             if len(in_split) > 1:
                 raise tornado.gen.Return((yield process_in_query(key, in_split)[key]))
-            operators = ["lt", "lte", "gt", "gte","not","eq","null","recfind"]
+            operators = ["lt", "lte", "gt", "gte", "not", "eq", "null", "recfind", "reg"]
             for op in operators:
                 if value.startswith(op + "="):
                     if op == "not":
@@ -279,8 +279,11 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
                         tmpVal = yield process_value(key, value.lstrip(op + "="))
                         tmpVal = float(tmpVal)
                         raise tornado.gen.Return(tmpVal)
-                    elif op =="null":
+                    elif op == "null":
                         raise tornado.gen.Return(None)
+                    elif op == "reg":
+                        tmpVal = re.compile((yield process_value(key, value.lstrip(op + "="))), re.IGNORECASE)
+                        raise tornado.gen.Return(tmpVal)
                     elif op == "recfind":
                         tmpVal = yield process_value(key, value.lstrip(op + "="))
                         par = yield self.dblayer.getRecParentNames(tmpVal,{})
