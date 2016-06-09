@@ -265,8 +265,7 @@ class PeriscopeApplication(tornado.web.Application):
             if key not in ["ts", "id", "_id", "\\$shard", "\\$collection"]:
                 try:
                     prev = manifest["properties"][key] if key in manifest["properties"] else []
-                    oldPrev = prev
-                    if value == "*" or len(value) + len(prev) > self.options["unis"]["summary_size"]:
+                    if prev == "*" or value == "*" or len(value) + len(prev) > self.options["unis"]["summary_size"]:
                         prev = "*"
                     elif len(value) > 0 and type(value[0]) == dict:
                         prev += value
