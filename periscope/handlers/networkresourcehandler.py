@@ -567,7 +567,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             self._validate_request(res_id)
         except ValueError as exp:
             message = "Validation Error - {exp}".format(exp = exp)
-            self.send_error(400, message = message)
+            self.send_error(422, message = message)
             self.log.error(message)
             return
         
@@ -610,6 +610,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         """
         Return new records
         """
+        self._subscriptions.publish(resources, self._collection_name, { "action": "POST" })
         yield self._post_return(resources)
         
         accept = self.accept_content_type
@@ -650,7 +651,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             self._validate_request(res_id, require_id = True)
         except ValueError as exp:
             message = "Validation Error - {exp}".format(exp = exp)
-            self.send_error(400, message = message)
+            self.send_error(422, message = message)
             self.log.error(message)
             return
         
@@ -698,6 +699,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         
         try:
             query = { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp]  }
+            self._subscriptions.publish(resource, self._collection_name, { "action": "PUT" })
             yield self._return_resources(query)
         except ValueError as exp:
             message = message = "Could not process response - {exp}".format(exp = exp)
@@ -729,13 +731,14 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             self._validate_request(res_id, require_id = True)
         except ValueError as exp:
             message = "Validation Error - {exp}".format(exp = exp)
-            self.send_error(400, message = message)
+            self.send_error(422, message = message)
             self.log.error(message)
             return
         
         update = { "status": "DELETED", self.timestamp: int(time.time() * 1000000) }
         query = { self.Id: res_id }
         yield self.dblayer.update(query, update)
+        self._subscriptions.publish(query, self._collection_name, { "action": "DELETE" })
         self.set_status(204)
         self.finish()
 
@@ -801,7 +804,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
             while (yield cursor.fetch_next):
                 resource = ObjectDict._from_mongo(cursor.next_object())
                 response.append(resource)
-                self._subscriptions.publish(resource, self._collection_name)
         
             if len(response) == 1:
                 location = self.request.full_url().split('?')[0]

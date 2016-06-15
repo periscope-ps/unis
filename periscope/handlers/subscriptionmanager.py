@@ -38,7 +38,7 @@ class SubscriptionManager(nllog.DoesLogging):
     # @input:       resource is a json object corrosponding to the resource in question.
     #               trim_function is an optional argument that overrides any previous
     #                 filter on the subscription and replaces them with a custom filter.
-    def publish(self, resource, collection = None, trim_function = None):
+    def publish(self, resource, collection = None, headers = {}, trim_function = None):
         def _compare(op, val1, val2):
             try:
                 if op == "gt":
@@ -110,9 +110,13 @@ class SubscriptionManager(nllog.DoesLogging):
             if is_member:
                 trim = trim_function or self.trim_published_resource
                 trimmed_resource = trim(resource, query["fields"])
+                message = {
+                    "headers": headers,
+                    "data": trimmed_resource
+                }
                 
                 try:
-                    self.trc.publish(str(query["channel"]), tornado.escape.json_encode(trimmed_resource))
+                    self.trc.publish(str(query["channel"]), tornado.escape.json_encode(message))
                 except Exception as exp:
                     pass
                 
