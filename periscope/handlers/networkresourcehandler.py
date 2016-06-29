@@ -622,7 +622,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         """
         Return new records
         """
-        self._subscriptions.publish(resources, self._collection_name, { "action": "POST" })
         yield self._post_return(resources)
         
         accept = self.accept_content_type
@@ -633,6 +632,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
 
     @tornado.gen.coroutine
     def _insert(self, resources):
+        self._subscriptions.publish(resources, self._collection_name, { "action": "POST" })
         yield self.dblayer.insert(resources)
 
     @tornado.gen.coroutine
@@ -711,7 +711,6 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         
         try:
             query = { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp]  }
-            self._subscriptions.publish(resource, self._collection_name, { "action": "PUT" })
             yield self._return_resources(query)
         except ValueError as exp:
             message = message = "Could not process response - {exp}".format(exp = exp)
@@ -730,6 +729,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
     @tornado.gen.coroutine
     def _put_resource(self, resource):
         try:
+            self._subscriptions.publish(resource, self._collection_name, { "action": "PUT" })
             query = { self.Id: resource[self.Id] }
             yield self._update(query, dict(resource._to_mongoiter()))
         except Exception as exp:

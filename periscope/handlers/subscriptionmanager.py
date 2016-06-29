@@ -137,9 +137,9 @@ class SubscriptionManager(nllog.DoesLogging):
                 try:
                     self.trc.publish(str(query["channel"]), tornado.escape.json_encode(message))
                 except Exception as exp:
-                    pass
-                
-                
+                    self.log.error("Publish failed - {exp}".format(exp = exp))
+
+
     # @description: createChannel registers a series of conditions to a channel for later use
     #                 when publishing resources.
     # @input:       conditions is a dictionary of conditions which are matched against resources

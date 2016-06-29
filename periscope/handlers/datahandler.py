@@ -53,7 +53,8 @@ class DataHandler(NetworkResourceHandler):
 
         for mid, data in mids.iteritems():
             push_data = { 'id': mid, 'data': data }
-            self._subscriptions.publish(push_data, self._collection_name, self.trim_published_resource)
+            self._subscriptions.publish(push_data, self._collection_name, { "action": "POST" },
+                                        self.trim_published_resource)
             self.application.db[mid].insert(data)
             
     @tornado.gen.coroutine
