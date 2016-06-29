@@ -96,6 +96,7 @@ class ExnodeHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _insert(self, resources):
         try:
+            self._subscriptions.publish(resources, self._collection_name, { "action": "POST" })
             yield [ self.dblayer.update( { self.Id: resource[self.Id] }, resource) 
                     if self.modified 
                     else self.dblayer.insert(resource) for resource in resources ]
