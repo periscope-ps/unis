@@ -7,6 +7,5 @@ jsonschema
 jsonpath
 mock==0.8.0
 jsonpointer>=0.2
-argparse
 httplib2
 M2Crypto

@@ -61,7 +61,6 @@ setup(
         "jsonpath",
         "docopt",
         "jsonpointer>=0.2",
-        "argparse",
         "httplib2",
         "M2Crypto",
     ],
