@@ -15,7 +15,7 @@
 import tornado.web
 import json
 
-from periscope.settings import MIME
+from periscope.settings import MIME, Resources
 
 class MainHandler(tornado.web.RequestHandler):
     def initialize(self, base_url, resources):
@@ -26,6 +26,8 @@ class MainHandler(tornado.web.RequestHandler):
         for resource in self._resources:
             href = "%s://%s%s" % (self.request.protocol,
                 self.request.host, self.reverse_url(resource))
-            links.append({"href": href, "rel": "full"})
+            links.append({ "href": href, 
+                           "rel": "full",
+                           "targetschema": { "type": "array", "items": { "rel": "full", "href": Resources[resource]["schema"][MIME["PSJSON"]] } } })
         self.set_header("Content-Type", MIME["JSON"])
         self.write(json.dumps(links, indent=4))
