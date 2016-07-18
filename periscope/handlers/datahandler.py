@@ -146,7 +146,7 @@ class DataHandler(NetworkResourceHandler):
                 self.write(',\n')
         
         yield self._add_response_headers(count)
-        self.set_status(201)
+        self.set_status(200)
         self.finish()
     
     def trim_published_resource(self, resource, fields):

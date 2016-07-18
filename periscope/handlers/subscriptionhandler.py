@@ -16,29 +16,34 @@ import json
 import tornado.websocket
 import tornado.gen
 import tornadoredis
-from netlogger import nllog
 
 import periscope.settings as settings
 import subscriptionmanager
 
-class SubscriptionHandler(tornado.websocket.WebSocketHandler, nllog.DoesLogging):
+class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):
         super(SubscriptionHandler, self).__init__(*args, **kwargs)
-        nllog.DoesLogging.__init__(self)
+        self.log = self.application.log
         self._manager = subscriptionmanager.GetManager()
         self.listening = False
         self.channels = []
-
+    
+    @tornado.gen.coroutine
     def open(self, resource_type = None, resource_id = None):
         self.log.info("New websocket connection: {ip}".format(ip = self.request.remote_ip))
         
         # Initialize the redis client for publishing.
-        self.client = tornadoredis.Client()
-        self.client.connect()
+        try:
+            self.client = tornadoredis.Client()
+            self.client.connect()
+            yield tornado.gen.Task(self.client.ping)
+        except Exception as exp:
+            self.log.error("Failed to create subscription - Could not connect to Redis")
+            raise tornado.gen.Return()
         
         # Wait for further subscription information
         if not resource_type:
-            return
+            raise tornado.gen.Return()
         
         query_string = self.get_argument("query", None)
         fields_string = self.get_argument("fields", None)

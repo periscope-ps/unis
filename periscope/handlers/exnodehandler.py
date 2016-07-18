@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # =============================================================================
 #  periscope-ps (unis)
 #
@@ -10,7 +11,6 @@
 #  This software was created at the Indiana University Center for Research in
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
-#!/usr/bin/env python
 
 import json
 import functools
@@ -46,7 +46,14 @@ class FolderHandler(tornado.web.RequestHandler,nllog.DoesLogging):
 class ExnodeHandler(NetworkResourceHandler):
     @tornado.gen.coroutine
     def _process_resource(self, resource, res_id = None, run_validate = True):
-        resource = yield super(ExnodeHandler, self)._process_resource(resource, res_id, run_validate)
+        resource = yield super(ExnodeHandler, self)._process_resource(resource, res_id, False)
+        for extent in resource.get("extents", []):
+            extent["parent"] = {"href": resource["selfRef"],
+                                "rel": "full"}
+        
+        if run_validate:
+            resource._validate()
+        
         self.modified = False
         
         if resource["mode"] == "directory":
@@ -69,14 +76,12 @@ class ExnodeHandler(NetworkResourceHandler):
         else:
             yield [ self._insert_extents(extent, resource["selfRef"]) for extent in resource["extents"] ]
             resource.pop("extents", None)
-
+        
         resource["modified"] = resource.get("modified", resource.get(self.timestamp, 0))
         raise tornado.gen.Return(resource)
     
     def _insert_extents(self, extent, parent):
         http_client = AsyncHTTPClient()
-        extent["parent"] = {"href": parent,
-                            "rel": "full"}
         url = "{protocol}://{host}/extents"
         return tornado.gen.Task(
             http_client.fetch,

@@ -17,7 +17,6 @@ import json
 import jsonschema
 import re
 import urllib2
-from netlogger import nllog
 import time
 import traceback
 from tornado.httpclient import HTTPError
@@ -50,7 +49,7 @@ def decode(str):
     return dec
 
 
-class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
+class NetworkResourceHandler(SSEHandler):
     """Generic Network resources handler"""
 
     def initialize(self, dblayer, base_url,
@@ -100,7 +99,7 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         # TODO (AH): Add ability to Enable/Disable different HTTP methods
         #if not isinstance(dblayer, DBLayer):
         #    raise TypeError("dblayer is not instance of DBLayer")
-        nllog.DoesLogging.__init__(self)
+        self.log = self.application.log
         self.Id = Id
         self.timestamp = timestamp
         self._dblayer = dblayer
@@ -138,10 +137,10 @@ class NetworkResourceHandler(SSEHandler, nllog.DoesLogging):
         """
         HTTP has methods to allow the client and the server to negotiate
         the content type for their communication.
-
+        
         Rigth now, this is simple implementation, but additional more complex
         methods can be added in the future.
-
+        
         See:
             http://www.w3.org/Protocols/rfc2616/rfc2616-sec12.html
             

@@ -3,9 +3,7 @@ tab = "&nbsp;&nbsp;&nbsp;&nbsp;";
 $(document).ready(init);
 
 function init() {
-    open_websocket("measurement");
-    open_websocket("service");
-    open_websocket("measurement", "2");
+    open_websocket("exnodes");
 }
 
 

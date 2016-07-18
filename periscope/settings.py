@@ -123,6 +123,7 @@ NETLOGGER_NAMESPACE = "periscope"
 _log = None
 def config_logger(namespace=NETLOGGER_NAMESPACE, level = None, filename = None):
     tmpLog = nllog.get_logger(namespace)
+    tmpLog.propagate = False
     nllog.PROJECT_NAMESPACE = namespace
 
     if filename:

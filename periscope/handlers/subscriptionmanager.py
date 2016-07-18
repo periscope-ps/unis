@@ -18,7 +18,7 @@ import uuid
 import tornado.web
 import re
 
-from netlogger import nllog
+import periscope.settings as settings
 
 __manager__ = None
 
@@ -31,14 +31,16 @@ def GetManager():
     return __manager__
 
 
-class SubscriptionManager(nllog.DoesLogging):
+class SubscriptionManager(object):
     def __init__(self):
         global __manager__
         
-        nllog.DoesLogging.__init__(self)
-        
-        self.trc = tornadoredis.Client()
-        self.trc.connect()
+        self.log = settings.get_logger()
+        try:
+            self.trc = tornadoredis.Client()
+            self.trc.connect()
+        except Exception as exp:
+            self.log.error("Failed to connect to Redis service")
         self.subscriptions = []
         
         if __manager__:

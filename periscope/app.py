@@ -22,18 +22,19 @@ Options:
   -r --lookup                  Run UNIS as a lookup service
 '''
 
+import ConfigParser
+import docopt
+import functools
+import json
+import logging
 import motor
 import tornado.httpserver
 import tornado.web
 import tornado.ioloop
-import json
-import functools
+import sys
 import socket
-import docopt
-import ConfigParser
-import logging
-from netlogger import nllog
 
+from netlogger import nllog
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
 
@@ -46,13 +47,11 @@ from periscope.models import Manifest, ObjectDict
 from periscope.pp_interface import PP_INTERFACE as PPI
 from periscope.handlers.delegationhandler import DelegationHandler
 
-class PeriscopeApplication(tornado.web.Application):
+class PeriscopeApplication(tornado.web.Application):    
     @property
     def log(self):
-        if not hasattr(self, "_log"):
-            self._log = settings.get_logger()
         return self._log
-    
+        
     @property
     def options(self):
         if not hasattr(self, "_options"):
@@ -254,7 +253,7 @@ class PeriscopeApplication(tornado.web.Application):
             
     def registered(self, response, fatal = True):
         if response.error:
-            self.log.error("Couldn't connect to Client: ERROR {e}  {b}".format(e = response.error, b = response.body))
+            self._log.error("Couldn't connect to Client: ERROR {e}  {b}".format(e = response.error, b = response.body))
             if fatal:
                 import sys
                 sys.exit()
@@ -285,7 +284,7 @@ class PeriscopeApplication(tornado.web.Application):
                         prev = list(set(prev) | set(value))
                     manifest["properties"][key] = prev
                 except Exception as exp:
-                    self.log.error("Bad value in shard - {exp}".format(exp = exp))
+                    self._log.error("Bad value in shard - {exp}".format(exp = exp))
                     
         collections = set()
         for key, collection in settings.Resources.items():
@@ -323,6 +322,7 @@ class PeriscopeApplication(tornado.web.Application):
         self.cookie_secret="S19283u182u3j12j3k12n3u12i3nu12i3n12ui3"
         self._db = None
         self._ppi_classes = []
+        self._log = settings.get_logger()
         handlers = []
         
         # import and initialize pre/post content processing modules
@@ -335,7 +335,7 @@ class PeriscopeApplication(tornado.web.Application):
                 else:
                     self._ppi_classes.append(c())
             else:
-                self.log.error("Not a valid PPI class: {name}".format(name = c.__name__))
+                self._log.error("Not a valid PPI class: {name}".format(name = c.__name__))
         
         if 'auth' in self.options and self.options["auth"]["enabled"]:
             from periscope.auth import ABACAuthService
@@ -432,18 +432,16 @@ class PeriscopeApplication(tornado.web.Application):
     def db(self):
         if not getattr(self, '_db', None):
             db_config = { "host": self.options["unis"]["db_host"], "port": int(self.options["unis"]["db_port"]) }
-            self._db = motor.MotorClient(**db_config)[self.options.get("dbname", self.options["unis"]["db_name"])]
+            conn = motor.MotorClient(**db_config)
+            try:
+                tornado.ioloop.IOLoop.current().run_sync(conn.open)
+            except Exception as exp:
+                self._log.error("Failed to connect to the MongoDB service - {e}".format(e = exp))
+                sys.exit()
+            self._db = conn[self.options.get("dbname", self.options["unis"]["db_name"])]
             
         return self._db
 
-def get_log_handles(log):
-    handles = []
-    for handle in log.handlers:
-        handles.append(handle.stream)
-    if log.parent:
-        handles += get_log_handles(log.parent)
-    return handles
-    
 def run():
     ssl_opts = None
     app = PeriscopeApplication()
