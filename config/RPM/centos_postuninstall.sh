@@ -20,8 +20,11 @@ service ${SERVICE} stop
 
 if grep -q -i "release 6" /etc/redhat-release
 then
-    chkconfig --del ${SERVICE}
-    rm -f /etc/init.d/${SERVICE}
+    if [ "$1" = "0" ]; then
+      # Remove the SERVICE from the startup list
+      chkconfig --del ${SERVICE}
+      rm -f /etc/init.d/${SERVICE}
+    fi
 elif grep -q -i "release 7" /etc/redhat-release
 then
     if [ "$1" = "0" ]; then
