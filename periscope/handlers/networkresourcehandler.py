@@ -578,7 +578,7 @@ class NetworkResourceHandler(SSEHandler):
             self._validate_request(res_id)
         except ValueError as exp:
             message = "Validation Error - {exp}".format(exp = exp)
-            self.send_error(422, message = message)
+            self.send_error(400, message = message)
             self.log.error(message)
             return
         
@@ -662,7 +662,7 @@ class NetworkResourceHandler(SSEHandler):
             self._validate_request(res_id, require_id = True)
         except ValueError as exp:
             message = "Validation Error - {exp}".format(exp = exp)
-            self.send_error(422, message = message)
+            self.send_error(400, message = message)
             self.log.error(message)
             return
         
@@ -742,7 +742,7 @@ class NetworkResourceHandler(SSEHandler):
             self._validate_request(res_id, require_id = True)
         except ValueError as exp:
             message = "Validation Error - {exp}".format(exp = exp)
-            self.send_error(422, message = message)
+            self.send_error(400, message = message)
             self.log.error(message)
             return
         
@@ -774,18 +774,14 @@ class NetworkResourceHandler(SSEHandler):
 
         return body
 
-    def _validate_request(self, res_id, allow_id = False, require_id = False):
+    def _validate_request(self, res_id, require_id = False):
         if self.accept_content_type not in self.schemas_single:
             message = "Schema is not defined for content of type '%s'" % \
                       (self.accept_content_type)
             self.send_error(500, message=message)
             self.log.error(message)
             return False
-        if not require_id:
-            if not allow_id and res_id:
-                message = "NetworkResource ID should not be defined."
-                raise ValueError(message)
-        else:
+        if require_id:
             if not res_id:
                 message = "NetworkResource ID is not defined."
                 raise ValueError(message)
@@ -795,9 +791,18 @@ class NetworkResourceHandler(SSEHandler):
         return True
     
     def _add_post_metadata(self, resource):
-        resource["selfRef"] = "{host}/{rid}".format(host = self.request.full_url().split('?')[0],
-                                    rid  = resource[self.Id])
-        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
+        uri = self.request.full_url().split('?')[0]
+        re_str = '(?P<proto>http[s]?)://(?P<host>[^:/]+)(?::(?P<port>[0-9]{1,4}))?/(?P<col>[a-zA-Z]+)(?:/[^/]+)?$'
+        matches = re.compile(re_str).match(uri)
+        try:
+            resource["selfRef"] = "{proto}://{host}:{port}/{col}/{uid}".format(proto = matches.group("proto"),
+                                                                               host = matches.group("host"),
+                                                                               port = matches.group("port"),
+                                                                               col = matches.group("col"),
+                                                                               uid  = resource[self.Id])
+            resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
+        except Exception as exp:
+            self.log.error("failed to match uri - {e}".format(e = exp))
         
         return resource
 

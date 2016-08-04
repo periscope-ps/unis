@@ -50,7 +50,7 @@ class DataHandler(NetworkResourceHandler):
             if resource["mid"] not in mids:
                 mids[resource["mid"]] = []
             mids[resource["mid"]].extend(resource["data"])
-
+        
         for mid, data in mids.iteritems():
             push_data = { 'id': mid, 'data': data }
             self._subscriptions.publish(push_data, self._collection_name, { "action": "POST" },
