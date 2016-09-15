@@ -78,12 +78,7 @@ class CollectionHandler(NetworkResourceHandler):
         
         links = yield [ self._create_child(key, tmpResource) for key in self._collections.keys() if key in tmpResource ]
         for values in links:
-            tmpResource[values["collection"]] = []
-            for instance in values["hrefs"]:
-                tmpResource[values["collection"]].append({ "href": instance["selfRef"], "rel": "full" })
-                
-        #if run_validate:
-        #    tmpResource._validate()
+            tmpResource[values["collection"]] = values["hrefs"]
             
         raise tornado.gen.Return(tmpResource)
     
@@ -92,26 +87,37 @@ class CollectionHandler(NetworkResourceHandler):
     def _create_child(self, key, resource):
         http_client = AsyncHTTPClient()
         url = "{protocol}://{host}{path}?validate=false&complete_links=false"
-        response = yield tornado.gen.Task(
-            http_client.fetch,
-            url.format(protocol = self.request.protocol, host = self.request.host, path = self.reverse_url(key)),
-            method          = "POST",
-            body            = dumps_mongo(resource[key]),
-            request_timeout = 180,
-            validate_cert   = False,
-            client_cert     = settings.CLIENT_SSL_OPTIONS['certfile'],
-            client_key      = settings.CLIENT_SSL_OPTIONS['keyfile'],
-            headers         = { "Cache-Control": "no-cache",
-                                "Content-Type": MIME["PSJSON"],
-                                "connection": "close" }
-        )
-        if response.code >= 400:
-            raise Exception("Could not add child resource")
-        
-        response = json.loads(response.body)
-        if not isinstance(response, list):
-            response = [response]
-        raise tornado.gen.Return({ "collection": key, "hrefs": response })
+        links = []
+        query = []
+        for r in resource[key]:
+            links.append(r) if "rel" in r and "href" in r else query.append(r)
+        if query:
+            response = yield tornado.gen.Task(
+                http_client.fetch,
+                url.format(protocol = self.request.protocol, host = self.request.host, path = self.reverse_url(key)),
+                method          = "POST",
+                body            = dumps_mongo(query),
+                request_timeout = 180,
+                validate_cert   = False,
+                client_cert     = settings.CLIENT_SSL_OPTIONS['certfile'],
+                client_key      = settings.CLIENT_SSL_OPTIONS['keyfile'],
+                headers         = { "Cache-Control": "no-cache",
+                                    "Content-Type": MIME["PSJSON"],
+                                    "connection": "close" }
+            )
+            if response.code >= 400:
+                raise Exception("Could not add child resource")
+                        
+                        
+            if not isinstance(response, list):
+                response = json.loads(response.body)
+                links.append({ "href": response["selfRef"], "rel": "full" })
+            else:
+                response = json.loads(response.body)
+                for r in response:
+                    links.append({ "href": r["selfRef"], "rel": "full" })
+
+        raise tornado.gen.Return({ "collection": key, "hrefs": links })
     
         
     def set_self_ref(self, resource):
