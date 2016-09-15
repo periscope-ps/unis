@@ -106,7 +106,7 @@ class PeriscopeApplication(tornado.web.Application):
             self.db[collection_name].ensure_index([ (id_field_name, 1), (timestamp_field_name, -1)],
                                                   unique = True)
             self.db[collection_name].ensure_index([ (timestamp_field_name, -1)],
-                                                  unique = True)
+                                                  unique = False)
         
         # Create Layer
         db_layer = DBLayer(self.db,
