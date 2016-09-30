@@ -206,7 +206,7 @@ SCHEMAS = {
 # This is used to make writing `Resources` easier.
 default_resource_settings= {
     "base_url": "", # For additional URL extension, e.g. /mynetwork/unis will make /ports like /mynetwork/unis/ports
-    "handler_class": "periscope.handlers.networkresourcehandler.NetworkResourceHandler", # The HTTP Request Handler class
+    "handler_class": "periscope.handlers.NetworkResourceHandler", # The HTTP Request Handler class
     "is_capped_collection": False,
     "capped_collection_size": 0,
     "id_field_name": "id",
@@ -307,7 +307,7 @@ getSchema = dict( \
             "name": "getSchema",
             "pattern": "/getSchema$",
             "base_url":"",
-            "handler_class": "periscope.handlers.schemahandler.SchemaHandler",                            
+            "handler_class": "periscope.handlers.SchemaHandler",                            
         }.items()
 )
 getParent = dict( \
@@ -315,7 +315,7 @@ getParent = dict( \
             "name": "getFolder",
             "pattern": "/getFolder$",
             "base_url":"",
-            "handler_class": "periscope.handlers.exnodehandler.FolderHandler",
+            "handler_class": "periscope.handlers.FolderHandler",
         }.items()
 )
 paths = dict(default_resource_settings.items() + \
@@ -340,7 +340,7 @@ networks = dict(default_resource_settings.items() + \
         {
             "name": "networks",
             "pattern": "/networks$",
-            "handler_class": "periscope.handlers.collectionhandler.CollectionHandler",
+            "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Network",
             "collection_name": "networks",
             "schema": {MIME['PSJSON']: SCHEMAS["network"]},
@@ -351,7 +351,7 @@ network = dict(default_resource_settings.items() + \
         {
             "name": "network",
             "pattern": "/networks/(?P<res_id>[^\/]*)$",
-            "handler_class": "periscope.handlers.collectionhandler.CollectionHandler",
+            "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Network",
             "collection_name": "networks",
             "schema": {MIME['PSJSON']: SCHEMAS["network"]},
@@ -362,7 +362,7 @@ domains = dict(default_resource_settings.items() + \
         {
             "name": "domains",
             "pattern": "/domains$",
-            "handler_class": "periscope.handlers.collectionhandler.CollectionHandler",
+            "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Domain",
             "collection_name": "domains",
             "schema": {MIME['PSJSON']: SCHEMAS["domain"]},
@@ -373,7 +373,7 @@ domain = dict(default_resource_settings.items() + \
         {
             "name": "domain",
             "pattern": "/domains/(?P<res_id>[^\/]*)$",
-            "handler_class": "periscope.handlers.collectionhandler.CollectionHandler",
+            "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Domain",
             "collection_name": "domains",
             "schema": {MIME['PSJSON']: SCHEMAS["domain"]},
@@ -384,7 +384,7 @@ topologies = dict(default_resource_settings.items() + \
         {
             "name": "topologies",
             "pattern": "/topologies$",
-            "handler_class": "periscope.handlers.collectionhandler.CollectionHandler",
+            "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Topology",
             "collection_name": "topologies",
             "schema": {MIME['PSJSON']: SCHEMAS["topology"]},
@@ -395,7 +395,7 @@ topology = dict(default_resource_settings.items() + \
         {
             "name": "topology",
             "pattern": "/topologies/(?P<res_id>[^\/]*)$",
-            "handler_class": "periscope.handlers.collectionhandler.CollectionHandler",
+            "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Topology",
             "collection_name": "topologies",
             "schema": {MIME['PSJSON']: SCHEMAS["topology"]},
@@ -426,7 +426,7 @@ events = dict(default_resource_settings.items() + \
         {
             "name": "events",
             "pattern": "/events$", 
-            "handler_class" : "periscope.handlers.eventshandler.EventsHandler",
+            "handler_class" : "periscope.handlers.EventsHandler",
             "model_class": "periscope.models.Event",
             "collection_name": "events_cache",
             "schema": {MIME['PSJSON']: SCHEMAS["datum"]},
@@ -437,7 +437,7 @@ event = dict(default_resource_settings.items() + \
         {
             "name": "event",
             "pattern": "/events/(?P<res_id>[^\/]*)$",
-            "handler_class" : "periscope.handlers.eventshandler.EventsHandler",
+            "handler_class" : "periscope.handlers.EventsHandler",
             "model_class": "periscope.models.Event",
             "collection_name": None,
             "schema": {MIME['PSJSON']: SCHEMAS["datum"]},
@@ -448,7 +448,7 @@ datas = dict(default_resource_settings.items() + \
         {
             "name": "datas",
             "pattern": "/data$", 
-            "handler_class" : "periscope.handlers.datahandler.DataHandler",
+            "handler_class" : "periscope.handlers.DataHandler",
             "model_class": "periscope.models.Data",
             "collection_name": "data",
             "schema": {MIME['PSJSON']: SCHEMAS["data"]},
@@ -459,7 +459,7 @@ data = dict(default_resource_settings.items() + \
         {
             "name": "data",
             "pattern": "/data/(?P<res_id>[^\/]*)$",
-            "handler_class" : "periscope.handlers.datahandler.DataHandler",
+            "handler_class" : "periscope.handlers.DataHandler",
             "model_class": "periscope.models.Data",
             "collection_name": "data",
             "schema": {MIME['PSJSON']: SCHEMAS["data"]},
@@ -489,7 +489,6 @@ extents = dict(default_resource_settings.items() + \
          {
              "name"                   : "extents",
              "pattern"                : "/extents$",
-             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
              "model_class"            : "periscope.models.Extent",
              "collection_name"        : "extents",
              "schema": {MIME['PSJSON']: SCHEMAS["extent"]}
@@ -499,7 +498,6 @@ extent = dict(default_resource_settings.items() + \
          {
              "name"                   : "extent",
              "pattern"                : "/extents/(?P<res_id>[^\/]*)$",
-             "handler_class"          : "periscope.handlers.extenthandler.ExtentHandler",
              "model_class"            : "periscope.models.Extent",
              "collection_name"        : "extents",
              "schema": {MIME['PSJSON']: SCHEMAS["extent"]}
@@ -510,20 +508,22 @@ exnodes = dict(default_resource_settings.items() + \
          {
              "name"                   : "exnodes",
              "pattern"                : "/exnodes$",
-             "handler_class"          : "periscope.handlers.exnodehandler.ExnodeHandler",
+             "handler_class"          : "periscope.handlers.CollectionHandler",
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
+             "collections": { "extents": extent }
          }.items()
 )
 exnode = dict(default_resource_settings.items() + \
          {
              "name"                   : "exnode",
              "pattern"                : "/exnodes/(?P<res_id>[^\/]*)$",
-             "handler_class"          : "periscope.handlers.exnodehandler.ExnodeHandler",
+             "handler_class"          : "periscope.handlers.CollectionHandler",
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
+             "collections": { "extents": extent }
          }.items()
 )
 
@@ -532,7 +532,7 @@ reg_settings = dict(default_resource_settings.items() + \
             "name": "register",
             "pattern": "/register$",
             "model_class": "periscope.models.Service",
-            "handler_class": "periscope.handlers.registerhandler.RegisterHandler",
+            "handler_class": "periscope.handlers.RegisterHandler",
             "collection_name": "register",
             "allow_get": False, "allow_delete": False, "allow_put": False,
             "schema": {MIME['PSJSON']: SCHEMAS["service"]},
@@ -544,21 +544,21 @@ itemSubscription = {
     "base_url"      : "",
     "name"          : "itemSubscription",
     "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)/(?P<resource_id>[^\/]*)$",
-    "handler_class" : "periscope.handlers.subscriptionhandler.SubscriptionHandler"
+    "handler_class" : "periscope.handlers.SubscriptionHandler"
 }
 
 catSubscription = {
     "base_url"      : "",
     "name"          : "categorySubscription",
     "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)$",
-    "handler_class" : "periscope.handlers.subscriptionhandler.SubscriptionHandler"
+    "handler_class" : "periscope.handlers.SubscriptionHandler"
 }
 
 querySubscription = {
     "base_url"      : "",
     "name"          : "querySubscription",
     "pattern"       : "/subscribe",
-    "handler_class" : "periscope.handlers.subscriptionhandler.SubscriptionHandler"
+    "handler_class" : "periscope.handlers.SubscriptionHandler"
 }
 
 collections = {
@@ -624,7 +624,7 @@ main_handler_settings = {
     "name": "main",
     "base_url": "",
     "pattern": "/$",
-    "handler_class": "periscope.handlers.mainhandler.MainHandler",
+    "handler_class": "periscope.handlers.MainHandler",
 }
 
 ######################################################################

@@ -45,7 +45,7 @@ from periscope.db import DBLayer
 from periscope.utils import load_class
 from periscope.models import Manifest, ObjectDict
 from periscope.pp_interface import PP_INTERFACE as PPI
-from periscope.handlers.delegationhandler import DelegationHandler
+from periscope.handlers import DelegationHandler
 
 class PeriscopeApplication(tornado.web.Application):    
     @property
@@ -350,7 +350,7 @@ class PeriscopeApplication(tornado.web.Application):
         
         for res in settings.Resources:
             if bool(self.options["lookup"]):
-                settings.Resources[res]["handler_class"] = "periscope.handlers.delegationhandler.DelegationHandler"
+                settings.Resources[res]["handler_class"] = "periscope.handlers.DelegationHandler"
                 settings.Resources[res]["allow_delete"] = False
                 settings.Resources[res]["allow_put"] = False
                 settings.Resources[res]["allow_post"] = False

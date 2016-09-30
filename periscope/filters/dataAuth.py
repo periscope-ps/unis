@@ -147,7 +147,7 @@ class DataAuth(PPI, nllog.DoesLogging):
             """ Get a list of attributes for this certificate """
             return [{ str(AuthField) : { "$in" : str(attList).split(",") }}]
 
-from periscope.handlers.ssehandler import SSEHandler
+from periscope.handlers import SSEHandler
 # The authentication module
 class UserCredHandler(SSEHandler, nllog.DoesLogging):
     def get (self,res_id= None,*args):

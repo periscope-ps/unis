@@ -81,8 +81,8 @@ class CollectionHandler(NetworkResourceHandler):
             tmpResource[values["collection"]] = values["hrefs"]
             
         raise tornado.gen.Return(tmpResource)
-    
-
+        
+        
     @tornado.gen.coroutine
     def _create_child(self, key, resource):
         http_client = AsyncHTTPClient()
