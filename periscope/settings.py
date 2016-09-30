@@ -184,22 +184,22 @@ SCHEMA_HOST = 'unis.crest.iu.edu'
 
 _schema = "http://{host}/schema/{directory}/{name}"
 SCHEMAS = {
-    'manifest':        _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "manifest#"),
-    'networkresource': _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "networkresource#"),
-    'node':            _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "node#"),
-    'domain':          _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "domain#"),
-    'port':            _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "port#"),
-    'link':            _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "link#"),
-    'path':            _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "path#"),
-    'network':         _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "network#"),
-    'topology':        _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "topology#"),
-    'service':         _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "service#"),
-    'metadata':        _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "metadata#"),
-    'data':            _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "data#"),
-    'datum':           _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "datum#"),
-    'measurement':     _schema.format(host = SCHEMA_HOST, directory = "20151104", name = "measurement#"),
-    'exnode':          _schema.format(host = SCHEMA_HOST, directory = "exnode/4", name = "exnode#"),
-    'extent':          _schema.format(host = SCHEMA_HOST, directory = "exnode/4", name = "extent#"),
+    'manifest':        _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "manifest#"),
+    'networkresource': _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "networkresource#"),
+    'node':            _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "node#"),
+    'domain':          _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "domain#"),
+    'port':            _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "port#"),
+    'link':            _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "link#"),
+    'path':            _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "path#"),
+    'network':         _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "network#"),
+    'topology':        _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "topology#"),
+    'service':         _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "service#"),
+    'metadata':        _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "metadata#"),
+    'data':            _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "data#"),
+    'datum':           _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "datum#"),
+    'measurement':     _schema.format(host = SCHEMA_HOST, directory = "20160630", name = "measurement#"),
+    'exnode':          _schema.format(host = SCHEMA_HOST, directory = "exnode/6", name = "exnode#"),
+    'extent':          _schema.format(host = SCHEMA_HOST, directory = "exnode/6", name = "extent#"),
 }
 
 # Default settings that apply to almost all network resources
