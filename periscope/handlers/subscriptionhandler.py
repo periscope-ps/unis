@@ -21,37 +21,17 @@ import periscope.settings as settings
 import subscriptionmanager
 
 class SubscriptionHandler(tornado.websocket.WebSocketHandler):
-    @classmethod
-    def client(cls):
-        if not hasattr(cls, "_client"):
-            cls._client = tornadoredis.Client()
-            cls.connect()
-        return cls._client
-    @classmethod
-    def connect(cls):
-        cls.client().connect()
-    
     def __init__(self, *args, **kwargs):
         super(SubscriptionHandler, self).__init__(*args, **kwargs)
         self.log = self.application.log
-        self._manager = subscriptionmanager.GetManager()
         self.listening = False
         self.channels = []
+        self._manager = subscriptionmanager.GetManager()
+        self._client = subscriptionmanager.GetSubscriber()
     
     @tornado.gen.coroutine
     def open(self, resource_type = None, resource_id = None):
         self.log.info("New websocket connection: {ip}".format(ip = self.request.remote_ip))
-        
-        # Initialize the redis client for publishing.
-        try:
-            yield tornado.gen.Task(self.client().ping)
-        except Exception as exp:
-            self.connect()
-            try:
-                yield tornado.gen.Task(self.client().ping)
-            except:
-                self.log.error("Failed to create subscription - Could not connect to Redis")
-                raise tornado.gen.Return()
         
         # Wait for further subscription information
         if not resource_type:
@@ -74,18 +54,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         except ValueError as exp:
             self.write_message('Could not decode subscripition query: %s' % exp)
             self.log.warn('Could not decode subscription query: {exp} - {query}'.format(exp = exp, query = query_string))
-            self.client().disconnect()
-            self._client = None
-            
-            
-    @tornado.gen.engine
-    def listen(self, channel):
-        yield tornado.gen.Task(self.client().subscribe, str(channel))
-        
-        if not self.listening:
-            self.client().listen(self.deliver)
-            self.listening = True
-            
+
     def on_message(self, msg):
         body = None
         try:
@@ -111,12 +80,9 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
             self.close()
     
     def on_close(self):
-        if self.client() and self.client().subscribed:
-            for channel in self.channels:
-                self._manager.removeChannel(channel)
-                self.client().unsubscribe(channel)
-                
-            self.client().disconnect()
+        for channel in self.channels:
+            self._manager.removeChannel(channel)
+            self._client.unsubscribe(channel, self)
             
     def check_origin(self, origin):
         return True
@@ -125,5 +91,5 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         if resource_type:
             self.log.info("Adding subscription to websocket[{resource_type}]: {ip} - {query}".format(resource_type = resource_type, ip = self.request.remote_ip, query = query))
             channel = self._manager.createChannel(query, resource_type, fields)
+            self._client.subscribe(channel, self)
             self.channels.append(channel)
-            self.listen(channel)

@@ -13,14 +13,16 @@
 #!/usr/bin/env python
 
 import json
-import tornadoredis
 import uuid
-import tornado.web
 import re
+import tornadoredis
+import tornado.web
+from tornadoredis.pubsub import BaseSubscriber
 
 import periscope.settings as settings
 
 __manager__ = None
+__subscriber__ = None
 
 def GetManager():
     global __manager__
@@ -30,6 +32,25 @@ def GetManager():
 
     return __manager__
 
+def GetSubscriber():
+    global __subscriber__
+
+    if not __subscriber__:
+        __subscriber__ = SubscriptionSubscriber(tornadoredis.Client())
+
+    return __subscriber__
+
+class SubscriptionSubscriber(BaseSubscriber):
+    def on_message(self, msg):
+        if not msg:
+            return
+        
+        if msg.kind == 'message' and msg.body:
+            # Get the list of subscribers for this channel
+            subscribers = list(self.subscribers[msg.channel].keys())
+            if subscribers:
+                for s in subscribers:
+                    s.deliver(msg)
 
 class SubscriptionManager(object):
     def __init__(self):
@@ -45,7 +66,6 @@ class SubscriptionManager(object):
         
         if __manager__:
             self.log.warn("SubscriptionManager: Multiple instantiations of singleton SubscriptionManager")
-            
             
     # @description: publish informs all remote subscribers that a change has been
     #               made to the provided resource.
