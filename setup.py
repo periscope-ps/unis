@@ -54,7 +54,7 @@ setup(
         "tornado>=4.2",
         "tornado-redis",
         "pymongo==2.8.0",
-        "motor",
+        "motor==0.6.2",
         "unittest2",
         "netlogger>=4.3.0",
         "jsonschema",

@@ -108,12 +108,10 @@ class CollectionHandler(NetworkResourceHandler):
             if response.code >= 400:
                 raise Exception("Could not add child resource")
                         
-                        
+            response = json.loads(response.body)
             if not isinstance(response, list):
-                response = json.loads(response.body)
                 links.append({ "href": response["selfRef"], "rel": "full" })
             else:
-                response = json.loads(response.body)
                 for r in response:
                     links.append({ "href": r["selfRef"], "rel": "full" })
 
