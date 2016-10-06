@@ -470,7 +470,7 @@ class NetworkResourceHandler(SSEHandler):
                     is_list = False
             else:
                 is_list = "query" in options and options["query"]
-            options["query"]["status"] = { "$ne": "DELETED"  }
+            options["query"]["\\$status"] = { "$ne": "DELETED"  }
         except Exception as exp:
             self.send_error(403, message = exp)
             self.log.error(str(exp))
@@ -746,7 +746,7 @@ class NetworkResourceHandler(SSEHandler):
             self.log.error(message)
             return
         
-        update = { "status": "DELETED", self.timestamp: int(time.time() * 1000000) }
+        update = { "\\$status": "DELETED", self.timestamp: int(time.time() * 1000000) }
         query = { self.Id: res_id }
         yield self.dblayer.update(query, update)
         self._subscriptions.publish(query, self._collection_name, { "action": "DELETE" })

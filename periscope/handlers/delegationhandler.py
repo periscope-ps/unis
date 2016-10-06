@@ -14,9 +14,10 @@
 
 import json
 import functools
-from tornado.ioloop import IOLoop
+import time
 import tornado.web
 
+from tornado.ioloop import IOLoop
 
 from periscope.settings import MIME
 from networkresourcehandler import NetworkResourceHandler
@@ -54,16 +55,22 @@ class DelegationHandler(NetworkResourceHandler):
             raise tornado.gen.Return(count)
         
         count = 0
+        now = time.time()
         
         while (yield cursor.fetch_next):
             add_member = True
             member = cursor.next_object()
             properties = member["properties"]
-            if self._filter:
+            if now > member.get("ttl", 0) + member["ts"]:
+                self.log.debug("Removing {h}: Too old".format(h=member["href"]))
+                add_member = False
+            elif self._filter:
                 for field in interest_fields:
-                    if field not in properties or (properties[field] != "*" and unicode(self.get_argument(field)) not in properties[field]):
+                    vals = properties.get(field, [])
+                    if vals != "*" and unicode(self.get_argument(field)) not in vals:
+                        self.log.debug(u"Removing {h}: Bad member {m} - {v1} \u2209 {v2}".format(h=member["href"], m=field, v1=self.get_argument(field), v2=vals))
                         add_member = False
-
+                        
             if not self._filter or (add_member and properties):
                 manifest["instances"].append(member["href"])
                 count += 1

@@ -117,7 +117,7 @@ class DataHandler(NetworkResourceHandler):
             if res_id:
                 options["query"][self.Id] = res_id
                 
-            options["query"]["status"] = { "$ne": "DELETED"  }
+            options["query"]["\\$status"] = { "$ne": "DELETED"  }
             options["fields"] = { "_id": 0 }
         except Exception as exp:
             self.write_error(403, message = exp)

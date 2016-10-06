@@ -36,6 +36,7 @@ class RegisterHandler(NetworkResourceHandler):
         for manifest in resources[0]["properties"]["summary"]:
             manifest = ObjectDict._from_mongo(manifest)
             manifest["href"] = accessPoint
+            manifest["ttl"] = resources[0]["ttl"]
             manifest.pop(self.timestamp, 0)
             yield self._update_manifest(manifest, accessPoint)
         
