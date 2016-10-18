@@ -381,6 +381,11 @@ class NetworkResourceHandler(SSEHandler):
         query.pop("skip", None)
         if skip:
             skip = convert_value_type("skip", skip, "integer")
+
+        inline = self.get_argument("inline", default=False)
+        if not inline==False:
+            inline = True
+        query.pop("inline", None)
             
         sort = self.get_argument("sort", default = [])
         query.pop("sort", None)
@@ -440,10 +445,10 @@ class NetworkResourceHandler(SSEHandler):
                     for item in query_ret["query"]["$and"]:
                         ret.append(item)
                 query_ret["query"].update({"$and": ret})        
-        ret_val = {"fields": fields, "limit": limit, "query": query_ret , "skip" : skip , "sort" : sort , "cert" : cert}
+        ret_val = {"fields": fields, "limit": limit, "query": query_ret, "skip": skip,
+                   "sort": sort , "cert": cert, "inline": inline}
         raise tornado.gen.Return(ret_val)
-    
-    
+
     
     # Template Method for GET
     @tornado.web.asynchronous
@@ -460,6 +465,7 @@ class NetworkResourceHandler(SSEHandler):
                            limit  = parsed["limit"],
                            sort   = parsed["sort"],
                            skip   = parsed["skip"])
+            inline = parsed["inline"]
             if not options["limit"]:
                 options.pop("limit", None)
             if res_id:
@@ -490,7 +496,7 @@ class NetworkResourceHandler(SSEHandler):
                 return
             
             try:
-                count = yield self._write_get(cursor, is_list)
+                count = yield self._write_get(cursor, is_list, inline)
             except Exception as exp:
                 message = "Failure during post processing - {exp}".format(exp = exp)
                 self.send_error(404, message = message)
@@ -515,7 +521,7 @@ class NetworkResourceHandler(SSEHandler):
         raise tornado.gen.Return(count)
     
     @tornado.gen.coroutine
-    def _write_get(self, cursor, is_list = False):
+    def _write_get(self, cursor, is_list=False, inline=False):
         count = yield cursor.count(with_limit_and_skip=True)
         is_list = count > 1 or is_list
         if not count:
@@ -527,14 +533,14 @@ class NetworkResourceHandler(SSEHandler):
         # Write first entry
         yield cursor.fetch_next
         resource = cursor.next_object()
-        resource = yield self._post_get(resource)
+        resource = yield self._post_get(resource, inline)
         json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
         self.write(json_response)
         
         while (yield cursor.fetch_next):
             self.write(',\n')
             resource = cursor.next_object()
-            resource = yield self._post_get(resource)
+            resource = yield self._post_get(resource, inline)
             json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
             self.write(json_response)
             
@@ -544,7 +550,7 @@ class NetworkResourceHandler(SSEHandler):
         raise tornado.gen.Return(count)
 
     @tornado.gen.coroutine
-    def _post_get(self, resource):
+    def _post_get(self, resource, inline=False):
         raise tornado.gen.Return(resource)
     
     @tornado.gen.coroutine

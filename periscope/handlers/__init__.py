@@ -2,6 +2,7 @@ from collectionhandler import CollectionHandler
 from datahandler import DataHandler
 from delegationhandler import DelegationHandler
 from exnodehandler import FolderHandler
+from exnodehandler import ExnodeHandler
 from eventshandler import EventsHandler
 from mainhandler import MainHandler
 from networkresourcehandler import NetworkResourceHandler
