@@ -508,7 +508,7 @@ exnodes = dict(default_resource_settings.items() + \
          {
              "name"                   : "exnodes",
              "pattern"                : "/exnodes$",
-             "handler_class"          : "periscope.handlers.CollectionHandler",
+             "handler_class"          : "periscope.handlers.ExnodeHandler",
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
@@ -519,7 +519,7 @@ exnode = dict(default_resource_settings.items() + \
          {
              "name"                   : "exnode",
              "pattern"                : "/exnodes/(?P<res_id>[^\/]*)$",
-             "handler_class"          : "periscope.handlers.CollectionHandler",
+             "handler_class"          : "periscope.handlers.ExnodeHandler",
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
