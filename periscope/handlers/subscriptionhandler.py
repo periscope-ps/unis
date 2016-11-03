@@ -67,7 +67,10 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         
         query = body.get("query", {})
         fields = body.get("fields", None)
-        resource_type = body.get("resourceType", None)
+        address = body.get("resourceType", "").split("/")
+        resource_type = address[0]
+        if len(address) == 2:
+            query["id"] = address[1]
         
         self._addSubscription(resource_type, query, fields)
         

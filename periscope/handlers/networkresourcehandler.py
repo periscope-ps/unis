@@ -385,7 +385,7 @@ class NetworkResourceHandler(SSEHandler):
         sort = self.get_argument("sort", default = [])
         query.pop("sort", None)
         if sort:
-            sortDict = {}
+            sortDict = { self.timestamp: -1 }
             sortStr = convert_value_type("sort", sort, "string")
             """ Parse sort options and create the array """
             sortStr = sortStr.split(",")
@@ -395,7 +395,6 @@ class NetworkResourceHandler(SSEHandler):
                     sortDict[pair[0]] = int(pair[1])
                 else:
                     raise ValueError("sort parameter is not a tuple!")
-            sortDict[self.timestamp] = -1
             sort = sortDict.items()
         else:
             sortDict = { self.timestamp: -1 }

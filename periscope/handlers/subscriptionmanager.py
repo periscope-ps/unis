@@ -115,7 +115,6 @@ class SubscriptionManager(object):
         for query in self.subscriptions:
             is_member = True
             tmpConditions = query["conditions"]
-            
             if "collection" in query and query["collection"] != collection:
                 continue
             
@@ -151,11 +150,12 @@ class SubscriptionManager(object):
             if is_member:
                 trim = trim_function or self.trim_published_resource
                 trimmed_resource = trim(resource, query["fields"])
+                headers["collection"] = headers.get("collection", collection)
+                headers["id"] = headers.get("id", resource["id"])
                 message = {
                     "headers": headers,
                     "data": trimmed_resource
                 }
-                
                 try:
                     self.trc.publish(str(query["channel"]), tornado.escape.json_encode(message))
                 except Exception as exp:

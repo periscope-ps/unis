@@ -53,7 +53,7 @@ class DataHandler(NetworkResourceHandler):
         
         for mid, data in mids.iteritems():
             push_data = { 'id': mid, 'data': data }
-            self._subscriptions.publish(push_data, self._collection_name, { "action": "POST" },
+            self._subscriptions.publish(push_data, self._collection_name, { "action": "POST", "collection": "data/{}".format(mid) },
                                         self.trim_published_resource)
             self.application.db[mid].insert(data)
             
@@ -114,19 +114,18 @@ class DataHandler(NetworkResourceHandler):
                            skip   = parsed["skip"])
             if not options["limit"]:
                 options.pop("limit", None)
-            if res_id:
-                options["query"][self.Id] = res_id
-                
+            
             options["query"]["\\$status"] = { "$ne": "DELETED"  }
             options["fields"] = { "_id": 0 }
         except Exception as exp:
             self.write_error(403, message = exp)
             return
-
+            
         # we don't want to wait here since this is a direct query on the state of the collection
         # we could have an SSE endpoint that implemented a hanging GET, allowing more data
         # over the HTTP connection as it arrived
-        cursor = self.application.db[res_id].find(tailable=False, await_data=False, **options)
+        query = options.pop("query")
+        cursor = self.application.db[res_id].find(spec=query, tailable=False, await_data=False, **options)
         count = yield cursor.count(with_limit_and_skip=True)
         
         if not count:

@@ -344,9 +344,6 @@ class JSONSchemaModel(ObjectDict):
         except jsonschema.exceptions.ValidationError as exp:
             raise(Exception("Validation error from json - {e}".format(e = exp.message)))
         except jsonschema.exceptions.RefResolutionError as exp:
-            print(self)
-            print(" ")
-            print(self._schema_data)
             raise(Exception("Resolution error on schema - {e}".format(e = exp)))
         
     @staticmethod
