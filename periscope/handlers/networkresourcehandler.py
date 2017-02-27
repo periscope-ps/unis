@@ -34,10 +34,12 @@ import bson
 if hasattr(bson, "dumps"):
     # standalone bson
     bson_decode = bson.loads
+    bson_encode = bson.dumps
     bson_valid = None
 else:
     # pymongo's bson
     bson_decode = bson.decode_all
+    bson_encode = bson.BSON.encode
     bson_valid = bson.is_valid
 
 def decode(str):
@@ -363,10 +365,10 @@ class NetworkResourceHandler(SSEHandler):
         query = copy.copy(self.request.arguments)
         # First Reterive special parameters
         # fields
-        fields = self.get_argument("fields", {})
+        field_ls = self.get_argument("fields", "").split('neg=')
+        state = 0 if len(field_ls) >= 2 else 1
+        fields = dict([(name, state) for name in field_ls.pop().split(',')])
         query.pop("fields", None)
-        if fields:
-            fields = dict([(name, 1) for name in fields.split(",")])
         # max results
         limit = self.get_argument("limit", default=None)
         query.pop("limit", None)
@@ -455,7 +457,7 @@ class NetworkResourceHandler(SSEHandler):
     @tornado.gen.coroutine
     def get(self, res_id = None, *args):
         super(NetworkResourceHandler, self).get(*args)
-
+        
         # Parse arguments and set up query
         try:
             parsed = yield self._parse_get_arguments()
@@ -522,29 +524,42 @@ class NetworkResourceHandler(SSEHandler):
     @tornado.gen.coroutine
     def _write_get(self, cursor, is_list=False, inline=False):
         count = yield cursor.count(with_limit_and_skip=True)
-        is_list = count > 1 or is_list
-        if not count:
-            self.write('[]')
-            raise tornado.gen.Return(count)
-        elif is_list:
-            self.write('[\n')
-
-        # Write first entry
-        yield cursor.fetch_next
-        resource = cursor.next_object()
-        resource = yield self._post_get(resource, inline)
-        json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
-        self.write(json_response)
+        is_list = count != 1 or is_list
         
-        while (yield cursor.fetch_next):
-            self.write(',\n')
+        if self.accept_content_type == MIME["PSBSON"]:
+            results = []
+            while (yield cursor.fetch_next):
+                resource = yield self._post_get(cursor.next_object(), inline)
+                results.append(resource)
+                
+            if not is_list:
+                results = results[0]
+            else:
+                results = { "data": results }
+            self.write(bson_encode(results))
+        else:
+            if not count:
+                self.write('[]')
+                raise tornado.gen.Return(count)
+            elif is_list:
+                self.write('[\n')
+                
+            # Write first entry
+            yield cursor.fetch_next
             resource = cursor.next_object()
             resource = yield self._post_get(resource, inline)
             json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
             self.write(json_response)
             
-        if is_list:
-            self.write('\n]')
+            while (yield cursor.fetch_next):
+                self.write(',\n')
+                resource = cursor.next_object()
+                resource = yield self._post_get(resource, inline)
+                json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+                self.write(json_response)
+            
+            if is_list:
+                self.write('\n]')
             
         raise tornado.gen.Return(count)
 
@@ -593,7 +608,7 @@ class NetworkResourceHandler(SSEHandler):
         Decode and create the resources
         """
         try:
-            resources = self._get_json()
+            resources = self._get_documents()
         except ValueError as exp:
             self.send_error(400, message = exp)
             self.log.error("%s" % exp)
@@ -672,7 +687,7 @@ class NetworkResourceHandler(SSEHandler):
             return
         
         try:
-            resource = self._get_json()
+            resource = self._get_documents()
             resource = self._model_class(resource, auto_id = False)
             resource = self._add_put_metadata(resource)
         except ValueError as exp:
@@ -759,7 +774,7 @@ class NetworkResourceHandler(SSEHandler):
         self.finish()
 
         
-    def _get_json(self):
+    def _get_documents(self):
         if self.content_type == MIME['PSBSON']:
             if bson_valid:
                 if not bson_valid(self.request.body):

@@ -72,10 +72,6 @@ class EventsHandler(NetworkResourceHandler):
         response = []
         if cursor:
             count = yield cursor.count()
-            if not count:
-                self.write('[]')
-                raise tornado.gen.Return(count)
-        
             while (yield cursor.fetch_next):
                 resource = cursor.next_object()
                 mid = resource["metadata_URL"].split('/')[resource["metadata_URL"].split('/').__len__() - 1]
@@ -104,7 +100,10 @@ class EventsHandler(NetworkResourceHandler):
                         count += 1
                         response.insert(0, res)
                         
-        json_response = dumps_mongo(response, indent=2)
+        if self.accept_content_type == MIME["PSBSON"]:
+            json_response = bson_encode(response)
+        else:
+            json_response = dumps_mongo(response, indent=2)
         self.write(json_response)
         raise tornado.gen.Return(count)
         

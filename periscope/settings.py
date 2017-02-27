@@ -215,7 +215,7 @@ default_resource_settings= {
     "allow_post": True,
     "allow_put": True,
     "allow_delete": True,
-    "accepted_mime": [MIME['SSE'], MIME['PSJSON']],
+    "accepted_mime": [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON']],
     "content_types_mime": [MIME['SSE'], MIME['PSJSON']]
 }
 
@@ -225,7 +225,7 @@ links = dict(default_resource_settings.items() + \
             "pattern": "/links$", # The regex used to match the handler in URI
             "model_class": "periscope.models.Link", # The name of the database collection
             "collection_name": "links",
-            "schema": {MIME['PSJSON']: SCHEMAS["link"]}, # JSON Schema fot this resource
+            "schema": {MIME['PSJSON']: SCHEMAS["link"], MIME['PSBSON']: SCHEMAS["link"]}, # JSON Schema fot this resource
         }.items()
 )
 link = dict(default_resource_settings.items() + \
@@ -234,7 +234,7 @@ link = dict(default_resource_settings.items() + \
             "pattern": "/links/(?P<res_id>[^\/]*)$",
             "model_class": "periscope.models.Link",
             "collection_name": "links",
-            "schema": {MIME['PSJSON']: SCHEMAS["link"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["link"], MIME['PSBSON']: SCHEMAS["link"]},
         }.items()
 )
 
@@ -254,7 +254,7 @@ ports = dict(default_resource_settings.items() + \
             "pattern": "/ports$",
             "model_class": "periscope.models.Port",
             "collection_name": "ports",
-            "schema": {MIME['PSJSON']: SCHEMAS["port"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["port"], MIME['PSBSON']: SCHEMAS["port"]},
         }.items()
 )
 port = dict(default_resource_settings.items() + \
@@ -263,7 +263,7 @@ port = dict(default_resource_settings.items() + \
             "pattern": "/ports/(?P<res_id>[^\/]*)$",
             "model_class": "periscope.models.Port",
             "collection_name": "ports",
-            "schema": {MIME['PSJSON']: SCHEMAS["port"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["port"], MIME['PSBSON']: SCHEMAS["port"]},
         }.items()
 )
 nodes = dict(default_resource_settings.items() + \
@@ -272,7 +272,7 @@ nodes = dict(default_resource_settings.items() + \
             "pattern": "/nodes$",
             "model_class": "periscope.models.Node",
             "collection_name": "nodes",
-            "schema": {MIME['PSJSON']: SCHEMAS["node"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["node"], MIME['PSBSON']: SCHEMAS["node"]},
         }.items()
 )
 node = dict(default_resource_settings.items() + \
@@ -281,7 +281,7 @@ node = dict(default_resource_settings.items() + \
             "pattern": "/nodes/(?P<res_id>[^\/]*)$",
             "model_class": "periscope.models.Node",
             "collection_name": "nodes",
-            "schema": {MIME['PSJSON']: SCHEMAS["node"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["node"], MIME['PSBSON']: SCHEMAS["node"]},
         }.items()
 )
 services = dict(default_resource_settings.items() + \
@@ -290,7 +290,7 @@ services = dict(default_resource_settings.items() + \
             "pattern": "/services$",
             "model_class": "periscope.models.Service",
             "collection_name": "services",
-            "schema": {MIME['PSJSON']: SCHEMAS["service"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["service"], MIME['PSBSON']: SCHEMAS["service"]},
         }.items()
 )
 service = dict(default_resource_settings.items() + \
@@ -299,7 +299,7 @@ service = dict(default_resource_settings.items() + \
             "pattern": "/services/(?P<res_id>[^\/]*)$",
             "model_class": "periscope.models.Service",
             "collection_name": "services",
-            "schema": {MIME['PSJSON']: SCHEMAS["service"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["service"], MIME['PSBSON']: SCHEMAS["service"]},
         }.items()
 )
 getSchema = dict( \
@@ -307,7 +307,7 @@ getSchema = dict( \
             "name": "getSchema",
             "pattern": "/getSchema$",
             "base_url":"",
-            "handler_class": "periscope.handlers.SchemaHandler",                            
+            "handler_class": "periscope.handlers.SchemaHandler",
         }.items()
 )
 getParent = dict( \
@@ -324,7 +324,7 @@ paths = dict(default_resource_settings.items() + \
             "pattern": "/paths$",
             "model_class": "periscope.models.Path",
             "collection_name": "paths",
-            "schema": {MIME['PSJSON']: SCHEMAS["path"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["path"], MIME['PSBSON']: SCHEMAS["path"]},
         }.items()
 )
 path = dict(default_resource_settings.items() + \
@@ -333,7 +333,7 @@ path = dict(default_resource_settings.items() + \
             "pattern": "/paths/(?P<res_id>[^\/]*)$",
             "model_class": "periscope.models.Path",
             "collection_name": "paths",
-            "schema": {MIME['PSJSON']: SCHEMAS["path"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["path"], MIME['PSBSON']: SCHEMAS["path"]},
         }.items()
 )
 networks = dict(default_resource_settings.items() + \
@@ -343,7 +343,7 @@ networks = dict(default_resource_settings.items() + \
             "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Network",
             "collection_name": "networks",
-            "schema": {MIME['PSJSON']: SCHEMAS["network"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["network"], MIME['PSBSON']: SCHEMAS["network"]},
             "collections": {},
         }.items()
 )
@@ -354,7 +354,7 @@ network = dict(default_resource_settings.items() + \
             "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Network",
             "collection_name": "networks",
-            "schema": {MIME['PSJSON']: SCHEMAS["network"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["network"], MIME['PSBSON']: SCHEMAS["network"]},
             "collections": {},
         }.items()
 )
@@ -365,7 +365,7 @@ domains = dict(default_resource_settings.items() + \
             "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Domain",
             "collection_name": "domains",
-            "schema": {MIME['PSJSON']: SCHEMAS["domain"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["domain"], MIME['PSBSON']: SCHEMAS["domain"]},
             "collections": {},
         }.items()
 )
@@ -376,7 +376,7 @@ domain = dict(default_resource_settings.items() + \
             "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Domain",
             "collection_name": "domains",
-            "schema": {MIME['PSJSON']: SCHEMAS["domain"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["domain"], MIME['PSBSON']: SCHEMAS["domain"]},
             "collections": {},
         }.items()
 )
@@ -387,7 +387,7 @@ topologies = dict(default_resource_settings.items() + \
             "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Topology",
             "collection_name": "topologies",
-            "schema": {MIME['PSJSON']: SCHEMAS["topology"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["topology"], MIME['PSBSON']: SCHEMAS["topology"]},
             "collections": {},
         }.items()
 )
@@ -398,7 +398,7 @@ topology = dict(default_resource_settings.items() + \
             "handler_class": "periscope.handlers.CollectionHandler",
             "model_class": "periscope.models.Topology",
             "collection_name": "topologies",
-            "schema": {MIME['PSJSON']: SCHEMAS["topology"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["topology"], MIME['PSBSON']: SCHEMAS["topology"]},
             "collections": {},
         }.items()
 )
@@ -409,7 +409,7 @@ metadatas = dict(default_resource_settings.items() + \
             "pattern": "/metadata$", 
             "model_class": "periscope.models.Metadata",
             "collection_name": "metadata",
-            "schema": {MIME['PSJSON']: SCHEMAS["metadata"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["metadata"], MIME['PSBSON']: SCHEMAS["metadata"]},
         }.items()
 )
 metadata = dict(default_resource_settings.items() + \
@@ -418,7 +418,7 @@ metadata = dict(default_resource_settings.items() + \
             "pattern": "/metadata/(?P<res_id>[^\/]*)$",
             "model_class": "periscope.models.Metadata",
             "collection_name": "metadata",
-            "schema": {MIME['PSJSON']: SCHEMAS["metadata"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["metadata"], MIME['PSBSON']: SCHEMAS["metadata"]},
         }.items()
 )
 
@@ -429,7 +429,7 @@ events = dict(default_resource_settings.items() + \
             "handler_class" : "periscope.handlers.EventsHandler",
             "model_class": "periscope.models.Event",
             "collection_name": "events_cache",
-            "schema": {MIME['PSJSON']: SCHEMAS["datum"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["datum"], MIME['PSBSON']: SCHEMAS["datum"]},
         }.items()
 )
 
@@ -440,7 +440,7 @@ event = dict(default_resource_settings.items() + \
             "handler_class" : "periscope.handlers.EventsHandler",
             "model_class": "periscope.models.Event",
             "collection_name": None,
-            "schema": {MIME['PSJSON']: SCHEMAS["datum"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["datum"], MIME['PSBSON']: SCHEMAS["datum"]},
         }.items()
 )
 
@@ -451,7 +451,7 @@ datas = dict(default_resource_settings.items() + \
             "handler_class" : "periscope.handlers.DataHandler",
             "model_class": "periscope.models.Data",
             "collection_name": "data",
-            "schema": {MIME['PSJSON']: SCHEMAS["data"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["data"], MIME['PSBSON']: SCHEMAS["data"]},
         }.items()
 )
 
@@ -462,7 +462,7 @@ data = dict(default_resource_settings.items() + \
             "handler_class" : "periscope.handlers.DataHandler",
             "model_class": "periscope.models.Data",
             "collection_name": "data",
-            "schema": {MIME['PSJSON']: SCHEMAS["data"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["data"], MIME['PSBSON']: SCHEMAS["data"]},
         }.items()
 )
 
@@ -472,16 +472,16 @@ measurements = dict(default_resource_settings.items() + \
             "pattern": "/measurements$",
             "model_class": "periscope.models.Measurement",
             "collection_name": "measurements",
-            "schema": {MIME['PSJSON']: SCHEMAS["measurement"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["measurement"], MIME['PSBSON']: SCHEMAS["measurement"]},
         }.items()
 )
 measurement = dict(default_resource_settings.items() + \
-         {
+        {
             "name": "measurement",
             "pattern": "/measurements/(?P<res_id>[^\/]*)$",
             "model_class": "periscope.models.Measurement",
             "collection_name": "measurements",
-            "schema": {MIME['PSJSON']: SCHEMAS["measurement"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["measurement"], MIME['PSBSON']: SCHEMAS["measurement"]},
         }.items()
 )
 
@@ -491,7 +491,7 @@ extents = dict(default_resource_settings.items() + \
              "pattern"                : "/extents$",
              "model_class"            : "periscope.models.Extent",
              "collection_name"        : "extents",
-             "schema": {MIME['PSJSON']: SCHEMAS["extent"]}
+             "schema": {MIME['PSJSON']: SCHEMAS["extent"], MIME['PSBSON']: SCHEMAS["extent"]}
          }.items()
 )
 extent = dict(default_resource_settings.items() + \
@@ -500,7 +500,7 @@ extent = dict(default_resource_settings.items() + \
              "pattern"                : "/extents/(?P<res_id>[^\/]*)$",
              "model_class"            : "periscope.models.Extent",
              "collection_name"        : "extents",
-             "schema": {MIME['PSJSON']: SCHEMAS["extent"]}
+             "schema": {MIME['PSJSON']: SCHEMAS["extent"], MIME['PSBSON']: SCHEMAS["extent"]}
          }.items()
 )
 
@@ -511,7 +511,7 @@ exnodes = dict(default_resource_settings.items() + \
              "handler_class"          : "periscope.handlers.ExnodeHandler",
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
-             "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
+             "schema": {MIME['PSJSON']: SCHEMAS["exnode"], MIME['PSBSON']: SCHEMAS["exnode"]},
              "collections": { "extents": extent }
          }.items()
 )
@@ -522,7 +522,7 @@ exnode = dict(default_resource_settings.items() + \
              "handler_class"          : "periscope.handlers.ExnodeHandler",
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
-             "schema": {MIME['PSJSON']: SCHEMAS["exnode"]},
+             "schema": {MIME['PSJSON']: SCHEMAS["exnode"], MIME['PSBSON']: SCHEMAS["exnode"]},
              "collections": { "extents": extent }
          }.items()
 )
@@ -535,7 +535,7 @@ reg_settings = dict(default_resource_settings.items() + \
             "handler_class": "periscope.handlers.RegisterHandler",
             "collection_name": "register",
             "allow_get": False, "allow_delete": False, "allow_put": False,
-            "schema": {MIME['PSJSON']: SCHEMAS["service"]},
+            "schema": {MIME['PSJSON']: SCHEMAS["service"], MIME['PSBSON']: SCHEMAS["service"]},
         }.items()
 )
 
