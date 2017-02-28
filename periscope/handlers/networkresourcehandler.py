@@ -367,7 +367,9 @@ class NetworkResourceHandler(SSEHandler):
         # fields
         field_ls = self.get_argument("fields", "").split('neg=')
         state = 0 if len(field_ls) >= 2 else 1
-        fields = dict([(name, state) for name in field_ls.pop().split(',')])
+        fields = {}
+        if field_ls[-1]:
+            fields = dict([(name, state) for name in field_ls.pop().split(',')])
         query.pop("fields", None)
         # max results
         limit = self.get_argument("limit", default=None)
