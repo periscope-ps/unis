@@ -1,0 +1,17 @@
+# Change Log
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](http://keepachangelog.com/)
+and this project adheres to [Semantic Versioning](http://semver.org/).
+
+## [2.2-1] - 2017-03-09
+### Fixes
+- Better inlining of exnodes
+- Improved pub/sub implementation
+
+## Changes
+- Removed ts uniqueness requirement.
+- Added a negation option for fields
+
+## [2.1dev0-1] - 2016-07-29
+- Second DLT packaged release
