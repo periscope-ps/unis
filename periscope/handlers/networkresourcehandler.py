@@ -706,14 +706,6 @@ class NetworkResourceHandler(SSEHandler):
             self.log.error(message)
             return
         
-        try:
-            resource._validate()
-        except Exception as exp:
-            message="Not valid body " + str(exp)
-            self.send_error(400, message = message)
-            self.log.error(message)
-            return
-        
         """
         Update resources
         """
