@@ -1,0 +1,11 @@
+{% extends "!layout.html" %}
+
+{% block relbar1 %}
+
+{{ super() }}
+{% endblock %}
+
+{% block sidebartoc %}
+<h3>{{ _('Table Of Contents') }}</h3>
+{{ toctree() }}
+{% endblock %}
