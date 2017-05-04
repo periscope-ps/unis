@@ -16,4 +16,7 @@ UNIS Representations Reference
    network_schema
    topology_schema
    metadata_schema
+   exnode_schema
+   extent_schema
+   
    

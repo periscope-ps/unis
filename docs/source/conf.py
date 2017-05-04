@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Periscope documentation build configuration file, created by
+# UNIS documentation build configuration file, created by
 # sphinx-quickstart on Fri May 11 16:13:17 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import sys, os
+import sphinx_rtd_theme
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -44,8 +45,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Periscope'
-copyright = u'2012, Ahmed El-Hassany'
+project = u'UNIS'
+copyright = u'2017, Indiana University (CREST)'
+author = 'Ahmed El-Hassany'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -95,12 +97,18 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #html_theme_options = {}
+html_theme_options = {
+    "sticky_navigation": True,
+    "display_version": False
+}
+html_logo = "_static/LOGO.jpg"
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -168,7 +176,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Periscopedoc'
+htmlhelp_basename = 'UNISdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -187,7 +195,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Periscope.tex', u'Periscope Documentation',
+  ('index', 'UNIS.tex', u'UNIS Documentation',
    u'Ahmed El-Hassany', 'manual'),
 ]
 
@@ -217,7 +225,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'periscope', u'Periscope Documentation',
+    ('index', 'unis', u'UNIS Documentation',
      [u'Ahmed El-Hassany'], 1)
 ]
 
@@ -231,8 +239,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Periscope', u'Periscope Documentation',
-   u'Ahmed El-Hassany', 'Periscope', 'One line description of project.',
+  ('index', 'UNIS', u'UNIS Documentation',
+   u'Ahmed El-Hassany', 'UNIS', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -249,10 +257,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'Periscope'
+epub_title = u'UNIS'
 epub_author = u'Ahmed El-Hassany'
 epub_publisher = u'Ahmed El-Hassany'
-epub_copyright = u'2012, Ahmed El-Hassany'
+epub_copyright = u'2017, Ahmed El-Hassany'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.
