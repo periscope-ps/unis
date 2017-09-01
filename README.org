@@ -74,12 +74,12 @@ business. Or at least you should get some errors that have to do with
 your config. Running with SSL or ABAC turned on may require some
 additional packages. See the configuration section.
 
-***mongodb issue
+*** MongoDB issue
 If you face the following error probably you haven't installed mongodb
 #+BEGIN_SRC
 event=netlogger.periscope.Failed to connect to the MongoDB service - [Errno 111] Connection refused level=Error
 #+END_SRC
-please install mongodb mentioned in the following tutorial <a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/">MongoDB installation</a>
+please install mongodb mentioned in the following tutorial [[https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/][MongoDB-installation-ubuntu]]
 
 
 ** Special note on ABAC 
