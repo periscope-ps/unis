@@ -95,3 +95,11 @@ Actions
 
 .. rubric:: Footnotes
 .. [NML] See Network Markup Language Base Schema version 1
+
+Extensions
+----------
+
+.. toctree::
+   :maxdepth: 2
+
+   ofswitch_node.rst
