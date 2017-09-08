@@ -478,7 +478,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     def get_app(self):
         app = tornado.web.Application([])
         app.log = logging.getLogger()
-        return return app
+        return app
     
     def setUp(self):
         super(NetworkResourceHandlerTest, self).setUp()
