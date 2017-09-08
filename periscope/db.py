@@ -110,23 +110,25 @@ class DBLayer(object, nllog.DoesLogging):
                 shards.append(self._create_manifest_shard(data))
             self._insert_id(data)
 
-        sfut = self.manifest.insert(shards)
-        ifut = self.collection.insert(data, callback=callback, **kwargs)
-        results = yield [sfut, ifut]
+        futures = [self.collection.insert(data, callback=callback, **kwargs)]
+        if summarize:
+            futures.append(self.manifest.insert(shards))
+        results = yield futures
         raise tornado.gen.Return(results)
     
     
     @tornado.gen.coroutine
-    def update(self, query, data,cert=None, replace = False, summarize = True, **kwargs):
+    def update(self, query, data, cert=None, replace=False, summarize=True, **kwargs):
         """Updates data found by query in the collection."""
         self.log.debug("Update for Collection: [" + self._collection_name + "]")
+        if not replace:
+            data = { "$set": data }
+        futures =  [self.collection.update(query, data, **kwargs)]
         if summarize:
             shard = self._create_manifest_shard(data)
             sfut = self.manifest.insert(shard)
-        if not replace:
-            data = { "$set": data }
-        ufut =  self.collection.update(query, data, **kwargs)
-        results = yield [sfut, ufut]
+            futures.append(sfut)
+        results = yield futures
         for r in results:
             if isinstance(r, dict) and not r.get("updatedExisting", True):
                 raise(Exception("Resource ID does not exist"))

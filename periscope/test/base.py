@@ -13,7 +13,7 @@
 """
 Basic classes for unit testing.
 """
-import asyncmongo
+import motor
 import pymongo
 import random
 import tornado.web
@@ -41,18 +41,10 @@ class PeriscopeTestCase(AsyncTestCase, unittest2.TestCase):
     
     @property
     def async_db(self):
-        """Returns a reference to asyncmongo DB connection."""
+        """Returns a reference to motor DB connection."""
         if not getattr(self, '_async_db', None):
-            self._async_db = asyncmongo.Client(**settings.ASYNC_DB)
+            self._async_db = motor.MotorClient(**settings.ASYNC_DB)
         return self._async_db
-
-    @property
-    def sync_db(self):
-        """Returns a reference to pymongo DB connection."""
-        if not getattr(self, '_sync_db', None):
-            conn = pymongo.Connection(**settings.SYNC_DB)
-            self._sync_db = conn[settings.DB_NAME]
-        return self._sync_db
 
 
 class PeriscopeHTTPTestCase(PeriscopeTestCase, AsyncHTTPTestCase):
@@ -67,10 +59,14 @@ class PeriscopeHTTPTestCase(PeriscopeTestCase, AsyncHTTPTestCase):
                 self.write("Dummy Handler")
         
         class TestApp(tornado.web.Application):
+            @property
+            def log(self):
+                import logging
+                return logging.getLogger()
             
             @property
             def async_db(self):
-                """Returns a reference to asyncmongo DB connection."""
+                """Returns a reference to motor DB connection."""
                 if not getattr(self, '_async_db', None):
                     if hasattr(self, 'io_loop'):
                         # Unit testint is going to create different IOLoop instances
@@ -79,17 +75,9 @@ class PeriscopeHTTPTestCase(PeriscopeTestCase, AsyncHTTPTestCase):
                         settings.ASYNC_DB['io_loop'] = self.io_loop
                         settings.ASYNC_DB['pool_id'] = "pool_" \
                                     "%d" % int(random.random() * 100000)
-                    self._async_db = asyncmongo.Client(**settings.ASYNC_DB)
+                    self._async_db = motor.MotorClient(**settings.ASYNC_DB)
                 return self._async_db
 
-            @property
-            def sync_db(self):
-                """Returns a reference to pymongo DB connection."""
-                if not getattr(self, '_sync_db', None):
-                    conn = pymongo.Connection(**settings.SYNC_DB)
-                    self._sync_db = conn[settings.DB_NAME]
-                return self._sync_db
-        
             def get_db_layer(self, collection_name, id_field_name,
                 timestamp_field_name, is_capped_collection, capped_collection_size):
                 # Initialize the capped collection, if necessary!

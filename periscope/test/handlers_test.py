@@ -15,6 +15,7 @@ import copy
 import json
 import functools
 import time
+import logging
 import tornado.web
 from mock import Mock
 from mock import patch
@@ -73,7 +74,9 @@ class SSEHandlerTest(PeriscopeHTTPTestCase):
                     self.write("None SSE Request")
                     self.finish()
 
-        return tornado.web.Application([("/sse", SimpleSSEHandler)])
+        app = tornado.web.Application([("/sse", SimpleSSEHandler)])
+        app.log = logging.getLogger()
+        return 
 
     def test_stream(self):
         def stream_callback(response):
@@ -425,7 +428,7 @@ class NetworkResourceHandlerIntegrationTest(PeriscopeHTTPTestCase):
                                 "Connection": "close"})
         
         # Assert
-        self.assertEqual(good_response.code, 201)
+        self.assertEqual(good_response.code, 204)
         
     def test_delete(self):
         """Test retrieving each node"""
@@ -473,7 +476,9 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         super(NetworkResourceHandlerTest, self).__init__(*args, **kwargs)
     
     def get_app(self):
-        return tornado.web.Application([])
+        app = tornado.web.Application([])
+        app.log = logging.getLogger()
+        return return app
     
     def setUp(self):
         super(NetworkResourceHandlerTest, self).setUp()
@@ -483,7 +488,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     def test_accept_content_type(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"tests": None})
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"tests": None}, log=logging.getLogger())
         dblayer_mock = Mock(spec=DBLayer)
         
         wildcard_request = Mock()
@@ -551,7 +556,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     def test_content_type(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"tests": None})
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"tests": None}, log=logging.getLogger())
         dblayer_mock = Mock(spec=DBLayer)
         
         psjson_request = Mock()
@@ -590,7 +595,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     def test_supports_streaming(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"tests": None})
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"tests": None}, log=logging.getLogger())
         dblayer_mock = Mock(spec=DBLayer)
         
         psjson_request = Mock()
@@ -629,7 +634,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     def test_dblayer(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"tests": None})
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"tests": None}, log=logging.getLogger())
         dblayer_mock = Mock(spec=DBLayer)
         request = Mock()
         
@@ -645,7 +650,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     def test_put_psjson(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None})
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, log=logging.getLogger())
         bad_dblayer_mock = Mock(spec=DBLayer)
         good_dblayer_mock = Mock(spec=DBLayer)
         id_dblayer_mock = Mock(spec=DBLayer)
@@ -811,7 +816,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
         
     def test_on_put(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None})
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, log=logging.getLogger())
         dblayer_mock = Mock(spec=DBLayer)
         psjson_header = "%s; profile=%s" % (MIME['PSJSON'], schemas['networkresource'])
         
@@ -848,7 +853,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     
     def test_post_psjson(self):
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, _ppi_classes=[])
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, _ppi_classes=[], log=logging.getLogger())
         
         with_id_dblayer_mock = Mock(spec=DBLayer)
         no_id_dblayer_mock = Mock(spec=DBLayer)
@@ -941,7 +946,7 @@ class NetworkResourceHandlerTest(PeriscopeHTTPTestCase):
     def test_post_psjson_bad_schema_body(self):
         print("Here")
         # Arrange
-        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, _ppi_classes=[])
+        app = Mock(ui_methods={}, ui_modules={}, async_db={"test": None}, _ppi_classes=[], log=logging.getLogger())
         
         goodsingle_dblayer_mock = Mock(spec=DBLayer)
         badsingle_dblayer_mock = Mock(spec=DBLayer)

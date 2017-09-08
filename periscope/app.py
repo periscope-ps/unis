@@ -231,7 +231,8 @@ class PeriscopeApplication(tornado.web.Application):
                 u"rel": u"full"
             },
             u"properties": {
-                u"summary": manifests
+                u"summary": manifests,
+                u"depth": self._depth
             }
         }
         
@@ -320,6 +321,7 @@ class PeriscopeApplication(tornado.web.Application):
         
     def __init__(self):
         self.cookie_secret="S19283u182u3j12j3k12n3u12i3nu12i3n12ui3"
+        self._depth = 1 if bool(self.options["lookup"]) else 0
         self._db = None
         self._ppi_classes = []
         self._log = settings.get_logger()

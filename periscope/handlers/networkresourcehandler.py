@@ -716,26 +716,17 @@ class NetworkResourceHandler(SSEHandler):
             self.send_error(404, message = message)
             self.log.error(message)
             return
-
+            
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + \
                         " ;profile="+ self.schemas_single[accept])
         self.set_status(204)
-        
-        try:
-            query = { self.Id: resource[self.Id], self.timestamp: resource[self.timestamp]  }
-            yield self._return_resources(query)
-        except ValueError as exp:
-            message = message = "Could not process response - {exp}".format(exp = exp)
-            self.send_error(409, message = message)
-            self.log.error(message)
-            return
         self.finish()
         
     @tornado.gen.coroutine
     def _update(self, query, resource):
         try:
-            yield self.dblayer.update(query, resource)
+            yield self.dblayer.update(query, resource, multi=True)
         except Exception as exp:
             raise exp
 
@@ -760,9 +751,9 @@ class NetworkResourceHandler(SSEHandler):
             self.log.error(message)
             return
         
-        update = { "\\$status": "DELETED", self.timestamp: int(time.time() * 1000000) }
+        update = { "\\$status": "DELETED" }
         query = { self.Id: res_id }
-        yield self.dblayer.update(query, update)
+        yield self.dblayer.update(query, update, summarize=False, multi=False)
         self._subscriptions.publish(query, self._collection_name, { "action": "DELETE" })
         self.set_status(204)
         self.finish()
@@ -839,7 +830,7 @@ class NetworkResourceHandler(SSEHandler):
                 location = self.request.full_url().split('?')[0]
                 if not location.endswith(response[0][self.Id]):
                     location = location + "/" + response[0][self.Id]
-
+                    
                 self.set_header("Location", location)
                 self.write(dumps_mongo(response[0], indent=2))
             else:
