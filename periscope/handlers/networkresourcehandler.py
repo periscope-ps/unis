@@ -726,7 +726,7 @@ class NetworkResourceHandler(SSEHandler):
     @tornado.gen.coroutine
     def _update(self, query, resource):
         try:
-            yield self.dblayer.update(query, resource, multi=True)
+            yield self.dblayer.update(query, resource, multi=False)
         except Exception as exp:
             raise exp
 
@@ -753,7 +753,7 @@ class NetworkResourceHandler(SSEHandler):
         
         update = { "\\$status": "DELETED" }
         query = { self.Id: res_id }
-        yield self.dblayer.update(query, update, summarize=False, multi=False)
+        yield self.dblayer.update(query, update, summarize=False, multi=True)
         self._subscriptions.publish(query, self._collection_name, { "action": "DELETE" })
         self.set_status(204)
         self.finish()
