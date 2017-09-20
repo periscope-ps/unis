@@ -475,13 +475,11 @@ http_client = httplib2.Http(SCHEMA_CACHE_DIR)
 schemaLoader = SchemasHTTPLib2(http_client, cache=CACHE)
 
 JSONSchema = schemaLoader.get_class(
-    "http://json-schema.org/draft-03/schema#", "JSONSchema")
+    "http://json-schema.org/draft-04/schema#", "JSONSchema")
 HyperSchema = schemaLoader.get_class(
-    "http://json-schema.org/draft-03/hyper-schema#", "HyperSchema")
+    "http://json-schema.org/draft-04/hyper-schema#", "HyperSchema")
 HyperLink = schemaLoader.get_class(
-    "http://json-schema.org/draft-03/links#", "HyperLink")
-JSONRef = schemaLoader.get_class(
-    "http://json-schema.org/draft-03/json-ref#", "JSONRef")
+    "http://json-schema.org/draft-04/links#", "HyperLink")
 
 # Load the basic Network Resources defined by UNIS
 NetworkResourceMeta = schemaMetaFactory("NetworkResourceMeta",  schema=schemaLoader.get(SCHEMAS["networkresource"]))
