@@ -733,7 +733,10 @@ class NetworkResourceHandler(SSEHandler):
     @tornado.gen.coroutine
     def _put_resource(self, resource):
         try:
-            self._subscriptions.publish(resource, self._collection_name, { "action": "PUT" })
+            publish = {}
+            publish.update(resource)
+            publish["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
+            self._subscriptions.publish(publish, self._collection_name, { "action": "PUT" })
             query = { self.Id: resource[self.Id] }
             yield self._update(query, dict(resource._to_mongoiter()))
         except Exception as exp:
@@ -813,8 +816,6 @@ class NetworkResourceHandler(SSEHandler):
 
     def _add_put_metadata(self, resource):
         resource["selfRef"] = self.request.full_url().split('?')[0]
-        resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
-        
         return resource
 
     @tornado.gen.coroutine
