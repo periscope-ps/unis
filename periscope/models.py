@@ -181,7 +181,7 @@ class ObjectDict(dict):
             elif "$schema" in value:
                 cls = loader.get_class(value["$schema"])
             elif "href" in value:
-                cls = loader.get_class("http://json-schema.org/draft-03/links#")
+                cls = HyperLink
             
             if issubclass(cls, JSONSchemaModel):
                 value = cls(value,
@@ -311,7 +311,7 @@ class JSONSchemaModel(ObjectDict):
             elif "$schema" in value:
                 cls = loader.get_class(value["$schema"])
             elif "href" in value:
-                cls = loader.get_class("http://json-schema.org/draft-03/links#")
+                cls = HyperLink
             elif prop_name:
                 prop_type = (self._get_property_type(prop_name) or \
                     {}).get("type", None)
