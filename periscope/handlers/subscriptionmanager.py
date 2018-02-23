@@ -111,7 +111,6 @@ class SubscriptionManager(object):
             
             return True
         
-        
         for query in self.subscriptions:
             is_member = True
             tmpConditions = query["conditions"]

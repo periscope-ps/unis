@@ -11,3 +11,4 @@ from schemahandler import SchemaHandler
 from ssehandler import SSEHandler
 from subscriptionhandler import SubscriptionHandler
 from subscriptionmanager import SubscriptionManager
+from abouthandler import AboutHandler

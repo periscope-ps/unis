@@ -37,6 +37,7 @@ import socket
 from netlogger import nllog
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
+from uuid import uuid4
 
 import settings
 from settings import MIME
@@ -201,7 +202,16 @@ class PeriscopeApplication(tornado.web.Application):
             )
         )
         return main_handler
-
+    
+    @gen.coroutine
+    def _generate_uuid(self):
+        cursor = self.db['about'].find()
+        exists = yield cursor.fetch_next
+        self.options['uuid'] = cursor.next_object()['uuid'] if exists else uuid4()
+        if not exists:
+            yield self.db['about'].insert({'uuid': self.options['uuid']})
+        
+    
     @gen.coroutine
     def _report_to_root(self):
         manifests = []
@@ -363,6 +373,7 @@ class PeriscopeApplication(tornado.web.Application):
             handlers.append(self.make_simple_handler(**settings.Subscriptions[sub]))
         handlers.append(self._make_getSchema_handler(**settings.getSchema))
         handlers.append(self._make_main_handler(**settings.main_handler_settings))
+        handlers.append(self._make_main_handler(**settings.about_handler_settings))
         handlers.append(self._make_getparent_handler(**settings.getParent))
 
         # Setup hierarchy
@@ -371,7 +382,8 @@ class PeriscopeApplication(tornado.web.Application):
             handlers.append(self.make_resource_handler(**settings.reg_settings))
         if self.options["unis"]["root_urls"]:
             self._report_to_root()
-            
+        
+        tornado.ioloop.IOLoop.current().run_sync(self._generate_uuid)
         tornado.web.Application.__init__(self, handlers,
             default_host="localhost", **settings.APP_SETTINGS)
         

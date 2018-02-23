@@ -626,6 +626,13 @@ main_handler_settings = {
     "pattern": "/$",
     "handler_class": "periscope.handlers.MainHandler",
 }
+about_handler_settings = {
+    "resources": [],
+    "name": "about",
+    "base_url": "",
+    "pattern": "/about$",
+    "handler_class": "periscope.handlers.AboutHandler"
+}
 
 ######################################################################
 # PRE/POST content processing module definitions.
