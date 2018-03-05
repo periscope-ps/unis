@@ -27,7 +27,7 @@
 
 from setuptools import setup
 
-version = "2.3"
+version = "2.3.1"
 
 setup(
     name="periscope",
