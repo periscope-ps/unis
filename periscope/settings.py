@@ -25,9 +25,11 @@ LIST_OPTIONS = ["unis.root_urls"]
 ######################################################################
 # Setting up path names.
 ######################################################################
-PERISCOPE_ROOT = os.path.dirname(os.path.abspath(__file__)) + os.sep
-sys.path.append(os.path.dirname(os.path.dirname(PERISCOPE_ROOT)))
-SCHEMA_CACHE_DIR = "/var/lib/periscope/.cache"
+PERISCOPE_ROOT = os.path.expandvars("$PERISCOPE_USER_ROOT")
+if PERISCOPE_ROOT == "$PERISCOPE_USER_ROOT":
+    PERISCOPE_ROOT = os.path.expanduser("~/.unis")
+
+SCHEMA_CACHE_DIR = os.path.join(PERISCOPE_ROOT, ".cache")
 
 GCF_PATH = "/opt/gcf/src/"
 sys.path.append(os.path.dirname(GCF_PATH))
