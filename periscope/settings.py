@@ -25,8 +25,8 @@ LIST_OPTIONS = ["unis.root_urls"]
 ######################################################################
 # Setting up path names.
 ######################################################################
-PERISCOPE_ROOT = os.path.expandvars("$PERISCOPE_USER_ROOT")
-if PERISCOPE_ROOT == "$PERISCOPE_USER_ROOT":
+PERISCOPE_ROOT = os.path.expandvars("$PERISCOPE_ROOT")
+if PERISCOPE_ROOT == "$PERISCOPE_ROOT":
     PERISCOPE_ROOT = os.path.expanduser("~/.unis")
 
 SCHEMA_CACHE_DIR = os.path.join(PERISCOPE_ROOT, ".cache")
