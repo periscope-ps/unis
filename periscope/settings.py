@@ -686,10 +686,11 @@ if GEMINI_NODE_INFO is not None:
 else:
     AUTH_UUID = None
 
-try:
-    from M2Crypto import X509
-    SERVER_CERT_FINGERPRINT = X509.load_cert(SSL_OPTIONS['certfile'], X509.FORMAT_PEM).get_fingerprint('sha1')
-except Exception as e:
-    SERVER_CERT_FINGERPRINT = ''
-    logger = get_logger()
-    logger.warn("read_settings", msg="Could not open SSL CERTFILE: %s" % e)
+if DEFAULT_CONFIG["unis_ssl"]["enable"]:
+    try:
+        from M2Crypto import X509
+        SERVER_CERT_FINGERPRINT = X509.load_cert(SSL_OPTIONS['certfile'], X509.FORMAT_PEM).get_fingerprint('sha1')
+    except Exception as e:
+        SERVER_CERT_FINGERPRINT = ''
+        logger = get_logger()
+        logger.warn("read_settings", msg="Could not open SSL CERTFILE: %s" % e)

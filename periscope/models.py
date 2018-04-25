@@ -395,8 +395,11 @@ except OSError as e:
         raise e
 for n in os.listdir(SCHEMA_CACHE_DIR):
     with open(SCHEMA_CACHE_DIR + "/" + n) as f:
-        schema = json.load(f)
-        _CACHE[schema['id']] = schema
+        try:
+            schema = json.load(f)
+            _CACHE[schema['id']] = schema
+        except:
+            print("Skipping invalid JSON schema: {}".format(n))
         
 schemaLoader = SchemaCache()
 
