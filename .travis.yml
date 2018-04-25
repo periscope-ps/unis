@@ -1,7 +1,7 @@
 language: python
 
 python:
- - "2.7.9"
+ - "2.7"
 
 virtualenv:
       system_site_packages: true
@@ -14,14 +14,12 @@ services:
 install: 
  - "sudo apt-get install swig python-dev python-m2crypto redis-server"
  - "sudo python setup.py install"
- - "sudo mkdir /var/lib/periscope"
- - "sudo chown ${USER} /var/lib/periscope"
 
 script:
  - periscope/test/test.sh
 
 notifications:
-  slack: crest-networks:nctOxrMsZdnYU8jGrkpSjpvf
+  slack: open-prog-net:kntQ6BsTfzplCztzIGIPgSdk
 #  email:
 #    on_success: never
 #    on_failure: change
