@@ -61,7 +61,7 @@ class ObjectDict(dict):
         
         data: initial data in the dict.
         """
-        assert isinstance(schemas_loader, (SchemasLoader, type(None))), \
+        assert isinstance(schemas_loader, (SchemaCache, type(None))), \
             "schemas_loader is not of type Schemas or None."
         setattr(self, "_$schemas_loader", schemas_loader)
         data = data or {}
@@ -247,7 +247,7 @@ class JSONSchemaModel(ObjectDict):
             "data is not of type dict or None."
         assert isinstance(set_defaults, (bool, type(None))), \
             "set_defaults is not of type bool."
-        assert isinstance(schemas_loader, (SchemasLoader, type(None))), \
+        assert isinstance(schemas_loader, (SchemaCache, type(None))), \
             "schemas_loader is not of type Schemas or None."
         
         data = data or {}

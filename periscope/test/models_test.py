@@ -19,7 +19,7 @@ import copy
 from mock import MagicMock
 from periscope.models import ObjectDict
 from periscope.models import JSONSchemaModel
-from periscope.models import SchemasLoader
+from periscope.models import SchemaCache
 from periscope.test.base import PeriscopeTestCase
 
 
@@ -366,7 +366,7 @@ class JSONSchemaModelTest(PeriscopeTestCase):
         Schema = JSONSchemaModel.json_model_factory("Schema", schema)
         Schema2 = JSONSchemaModel.json_model_factory("Schema2", schema2,
             extends=Schema)
-        loader_mock = SchemasLoader()
+        loader_mock = SchemaCache()
         loader_mock.get_class = MagicMock()
         loader_mock.get_class.return_value = Schema2
         
@@ -409,9 +409,9 @@ class SchemasLoaderTest(PeriscopeTestCase):
         }
         cache = {schema["id"]: schema}
         # Act
-        obj = SchemasLoader(cache=cache)
+        obj = SchemaCache()
         schema_get = obj.get(schema["id"])
         # Assert
-        self.assertTrue(isinstance(obj, SchemasLoader))
+        self.assertTrue(isinstance(obj, SchemaCache))
         self.assertEqual(schema_get, schema)
 
