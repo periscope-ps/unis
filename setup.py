@@ -62,6 +62,7 @@ setup(
         "docopt",
         "jsonpointer>=0.2",
         "httplib2",
+        "requests",
         "M2Crypto",
     ],
     entry_points = {

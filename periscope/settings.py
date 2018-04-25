@@ -36,9 +36,6 @@ sys.path.append(os.path.dirname(GCF_PATH))
 
 AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
 
-JSON_SCHEMAS_ROOT = PERISCOPE_ROOT + "/schemas"
-UNIS_SCHEMAS_USE_LOCAL = False
-
 ######################################################################
 # Configuration options
 ######################################################################

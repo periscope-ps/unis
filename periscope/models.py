@@ -14,6 +14,8 @@
 """
 Database models.
 """
+import os
+import errno
 import copy
 import time
 from json import JSONEncoder
@@ -22,11 +24,12 @@ import jsonschema
 import time
 import re
 import functools
-import httplib2
+import requests
 from periscope.utils import json_schema_merge_extends
-from settings import JSON_SCHEMAS_ROOT,SCHEMA_CACHE_DIR,SCHEMAS,UNIS_SCHEMAS_USE_LOCAL
+from settings import SCHEMA_CACHE_DIR,SCHEMAS
 from bson.objectid import ObjectId
 
+_CACHE = {}
 if not SCHEMA_CACHE_DIR:
     SCHEMA_CACHE_DIR=".cache"
 
@@ -221,10 +224,7 @@ def schemaMetaFactory(name, schema, extends=None):
                         setattr(newtype, prop, make_property(prop, doc))
             
             setattr(newtype, '_schema_data', schema)
-            if UNIS_SCHEMAS_USE_LOCAL:
-                setattr(newtype, '_resolver', jsonschema.RefResolver(schema['id'], schema, store=CACHE))
-            else:
-                setattr(newtype, '_resolver', jsonschema.RefResolver.from_schema(schema))
+            setattr(newtype, '_resolver', jsonschema.RefResolver(schema['id'], schema, store=_CACHE))
             return newtype
     return SchemaMetaClass
 
@@ -358,121 +358,47 @@ class JSONSchemaModel(ObjectDict):
         meta = schemaMetaFactory("%sMeta" % name, schema, extends=parent_meta)
         return meta(name, (parent, ), {'__metaclass__': meta})
 
-
-class SchemasLoader(object):
-    """JSON Schema Loader"""
-    __CACHE__ = {}
-    __CLASSES_CACHE__ = {}
-    __LOCATIONS__ = {}
+class SchemaCache(object):
+    _CLASSES = {}
+    def get(self, schema_uri):
+        self.get_class(schema_uri) # force caching
+        return _CACHE.get(schema_uri, None) or requests.get(schema_uri).json()
     
-    def __init__(self, locations=None, cache=None, class_cache=None):
-        assert isinstance(locations, (dict, type(None))), \
-            "locations is not of type dict or None."
-        assert isinstance(cache, (dict, type(None))), \
-            "cache is not of type dict or None."
-        assert isinstance(class_cache, (dict, type(None))), \
-            "class_cache is not of type dict or None."
-        self.__LOCATIONS__ = locations or {}
-        self.__CACHE__ = cache or {}
-        self.__CLASSES_CACHE__ = class_cache or {}
+    def get_class(self, schema_uri, class_name=None, extends=None, raw=False, *args, **kwargs):
+        key = (schema_uri, raw)
+        def _make_class(class_name=None, extends=None):
+            schema = _CACHE.get(schema_uri, None) or requests.get(schema_uri).json()
+            if SCHEMA_CACHE_DIR and schema_uri not in _CACHE:
+                with open(SCHEMA_CACHE_DIR + "/" + schema['id'].replace('/', ''), 'w') as f:
+                    json.dump(schema, f)
+                
+            _CACHE[schema['id']] = schema
+            class_name = class_name or str(schema.get("name", None))
+            cls = JSONSchemaModel.json_model_factory(class_name, schema, extends,
+                                                     *args, **kwargs)
+            self._CLASSES[key] = cls
+            return self._CLASSES[key]
+        return self._CLASSES.get(key, None) or _make_class(class_name, extends)
     
-    def get(self, uri):
-        if uri in self.__CACHE__:
-            return self.__CACHE__[uri]
-        location = self.__LOCATIONS__.get(uri, uri)
-        return self._load_schema(location)
-    
-    def get_class(self, schema_uri, class_name=None, extends=None, *args, **kwargs):
-        """Return a class type of JSONSchemaModel based on schema."""
-        if schema_uri in self.__CLASSES_CACHE__:
-            return self.__CLASSES_CACHE__[schema_uri]
-        schema = self.get(schema_uri)
-        class_name = class_name or str(schema.get("name", None))
-        if not class_name:
-            raise AttributeError(
-                "class_name is defined and the schema has not 'name'.")
-        cls = JSONSchemaModel.json_model_factory(class_name, schema, extends,
-            *args, **kwargs)
-        self.set_class(schema_uri, cls)
-        return cls
-    
-    def set_class(self, schema_uri, cls):
-        """Set a class type to returned by get_class."""
-        self.__CLASSES_CACHE__[schema_uri] = cls
-    
-    def _load_schema(self, name):
-         raise NotImplementedError("Schemas._load_schema is not implemented")
-
-
-class SchemasHTTPLib2(SchemasLoader):
-    """Relies on HTTPLib2 HTTP client to load schemas"""
-    def __init__(self, http, locations=None, cache=None, class_cache=None):
-        super(SchemasHTTPLib2, self).__init__(locations, cache, class_cache)
-        self._http = http
-     
-    def _load_schema(self, uri):
-        resp, content = self._http.request(uri, "GET")
-        self.__CACHE__[uri] = json.loads(content)
-        # Work around that 'extends' is not supported in validictory
-        json_schema_merge_extends(self.__CACHE__[uri], self.__CACHE__)
-        return self.__CACHE__[uri]
-
-
-class SchemasAsyncHTTP(SchemasLoader):
-    """Relies on Tornado's AsyncHTTP client to load schemas"""
-    def __init__(self, async_http, locations=None, cache=None, class_cache=None):
-        super(SchemasAsyncHTTP, self).__init__(locations, cache, class_cache)
-        self._http = async_http
-    
-    def _save_schema(self, response, uri, callback):        
-        self.__CACHE__[uri] = json.loads(response.body)
-        # Work around that 'extends' is not supported in validictory
-        json_schema_merge_extends(self.__CACHE__[uri], self.__CACHE__)
-        callback(self.__CACHE__[uri])
-    
-    def get(self, uri, callback):
-        if not callback:
-            raise ValueError("callback is not defined.")
-        if uri in self.__CACHE__:
-            callback(self.__CACHE__[uri])
-        else:
-            location = self.__LOCATIONS__.get(uri, uri)
-            self._load_schema(location, callback)
-     
-    def _load_schema(self, uri, callback):
-        cb = functools.partial(callback, uri=uri)
-        self._http.fetch(uri, callback=cb)
-
-
 def json_object_hook(json_object, schemas, default_class=None):
     default_class = default_class or ObjectDict
     if "$schema" in json_object:
         cls = schemas.get_class(json_object["$schema"])
     return cls(json_object)
-    
+
+try:
+    os.makedirs(SCHEMA_CACHE_DIR)
+except OSError as e:
+    if e.errno == errno.EEXIST:
+        pass
+    else:
+        raise e
+for n in os.listdir(SCHEMA_CACHE_DIR):
+    with open(SCHEMA_CACHE_DIR + "/" + n) as f:
+        schema = json.load(f)
+        _CACHE[schema['id']] = schema
         
-
-# Define the default JSON Schemas that are defiend in the JSON schema RFC
-JSON_SCHEMA = json.loads(open(JSON_SCHEMAS_ROOT + "/schema").read())
-HYPER_SCHEMA = json.loads(open(JSON_SCHEMAS_ROOT + "/hyper-schema").read())
-HYPER_LINKS_SCHEMA = json.loads(open(JSON_SCHEMAS_ROOT + "/links").read())
-
-CACHE = {
-    "http://json-schema.org/draft-04/schema#": JSON_SCHEMA,
-    "http://json-schema.org/draft-04/hyper-schema#": HYPER_SCHEMA,
-    "http://json-schema.org/draft-04/links#": HYPER_LINKS_SCHEMA,
-}
-
-# Load a locally stored copy of the schemas if requested
-if UNIS_SCHEMAS_USE_LOCAL:
-    for s in SCHEMAS.iterkeys():
-        try:
-            CACHE[SCHEMAS[s]] = json.loads(open(JSON_SCHEMAS_ROOT + "/" + s).read())
-        except Exception as e:
-            print "Error loading cached schema for %s: %s" % (s, e)
-
-http_client = httplib2.Http(SCHEMA_CACHE_DIR)
-schemaLoader = SchemasHTTPLib2(http_client, cache=CACHE)
+schemaLoader = SchemaCache()
 
 JSONSchema = schemaLoader.get_class(
     "http://json-schema.org/draft-04/schema#", "JSONSchema")
@@ -482,8 +408,8 @@ HyperLink = schemaLoader.get_class(
     "http://json-schema.org/draft-04/links#", "HyperLink")
 
 # Load the basic Network Resources defined by UNIS
-NetworkResourceMeta = schemaMetaFactory("NetworkResourceMeta",  schema=schemaLoader.get(SCHEMAS["networkresource"]))
-MetadataMeta = schemaMetaFactory("MetadataMeta",  schema=schemaLoader.get(SCHEMAS["metadata"]))
+NetworkResourceMeta = schemaMetaFactory("NetworkResourceMeta", schema=schemaLoader.get(SCHEMAS["networkresource"]))
+MetadataMeta = schemaMetaFactory("MetadataMeta", schema=schemaLoader.get(SCHEMAS["metadata"]))
 
 class NetworkResource(JSONSchemaModel):
     __metaclass__ = NetworkResourceMeta
