@@ -42,7 +42,7 @@ class DelegationHandler(NetworkResourceHandler):
     def _write_get(self, cursor, is_list, inline=False):
         exclude = [ "sort", "limit", "fields", "skip", "cert" ]
         interest_fields = [ key for key, val in self.request.arguments.items() if key not in exclude]
-        interest_fields = map(lambda val: val.replace(".", "$DOT$"), interest_fields)
+        interest_fields = [v.replace(".", "$DOT$") for v in interest_fields]
         
         manifest = {
             "redirect": True,
@@ -60,20 +60,21 @@ class DelegationHandler(NetworkResourceHandler):
         while (yield cursor.fetch_next):
             add_member = True
             member = cursor.next_object()
-            properties = member["properties"]
-            if now > member.get("ttl", 0) + member["ts"]:
-                self.log.debug("Removing {h}: Too old".format(h=member["href"]))
-                add_member = False
-            elif self._filter:
-                for field in interest_fields:
-                    vals = properties.get(field, [])
-                    if vals != "*" and unicode(self.get_argument(field)) not in vals:
-                        self.log.debug(u"Removing {h}: Bad member {m} - {v1} \u2209 {v2}".format(h=member["href"], m=field, v1=self.get_argument(field), v2=vals))
-                        add_member = False
+            if "href" in member:
+                properties = member["properties"]
+                if now > member.get("ttl", 0) + member["ts"]:
+                    self.log.debug("Removing {h}: Too old".format(h=member['href']))
+                    add_member = False
+                elif self._filter:
+                    for field in interest_fields:
+                        vals = properties.get(field, [])
+                        if vals != "*" and unicode(self.get_argument(field)) not in vals:
+                            self.log.debug(u"Removing {h}: Bad member {m} - {v1} \u2209 {v2}".format(h=member["href"], m=field, v1=self.get_argument(field), v2=vals))
+                            add_member = False
                         
-            if not self._filter or (add_member and properties):
-                manifest["instances"].append(member["href"])
-                count += 1
+                if not self._filter or (add_member and properties):
+                    manifest["instances"].append(member["href"])
+                    count += 1
                 
         self.write(json.dumps(manifest, indent = 2))
         raise tornado.gen.Return(count)
