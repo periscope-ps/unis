@@ -28,7 +28,7 @@ class RegisterHandler(NetworkResourceHandler):
     def _insert(self, resources):
         accessPoint = resources[0]["accessPoint"]
         tmpExists = yield self.dblayer.find_one({ "accessPoint": accessPoint })
-        self.application._level = max(self.application._level, resources[0]["properties"]["depth"] + 1)
+        self.application._depth = max(self.application._depth, resources[0]["properties"]["depth"] + 1)
         if tmpExists:
             yield self.dblayer.update({ "accessPoint": accessPoint }, resources[0], replace = True, multi=False)
         else:

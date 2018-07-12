@@ -24,7 +24,8 @@ class AboutHandler(tornado.web.RequestHandler):
     def get(self):
         about = {
             "uid": str(self.application.options["uuid"]),
-            "haschild": self.application.options["lookup"]
+            "haschild": self.application.options["lookup"],
+            "depth": self.application._depth
         }
         self.set_header("Content-Type", MIME["JSON"])
         self.write(json.dumps(about, indent=4))
