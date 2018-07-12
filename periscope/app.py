@@ -37,6 +37,7 @@ import socket
 from netlogger import nllog
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
+from urlparse import urlparse
 from uuid import uuid4
 
 import settings
@@ -48,11 +49,11 @@ from periscope.models import Manifest, ObjectDict
 from periscope.pp_interface import PP_INTERFACE as PPI
 from periscope.handlers import DelegationHandler
 
-class PeriscopeApplication(tornado.web.Application):    
+class PeriscopeApplication(tornado.web.Application):
     @property
     def log(self):
         return self._log
-        
+
     @property
     def options(self):
         if not hasattr(self, "_options"):
@@ -85,7 +86,7 @@ class PeriscopeApplication(tornado.web.Application):
             
             for key, option in tmpOptions.items():
                 self._options[key.lstrip("--")] = option
-            
+        
         return self._options
     
     
@@ -221,24 +222,18 @@ class PeriscopeApplication(tornado.web.Application):
             manifests.append(ObjectDict._from_mongo(cursor.next_object()))
             
         import time
-        if self.options["unis_ssl"]["enable"]:
-            http_str = "https"
-        else:
-            http_str = "http"
-            
         callback = functools.partial(self.registered, fatal = False)
-        ref = u"%s://%s:%d" % (http_str, socket.getfqdn(), int(self.options["port"]))
         service = {
-            u"id": u"unis_" + socket.gethostname(),
+            u"id": u"unis_" + urlparse(self.options['unis']['url']).hostname,
             u"ts": int(time.time() * 1e6),
             u"\$schema": unicode(SCHEMAS["service"]),
-            u"accessPoint": u"%s/" % (ref),
-            u"name": u"unis_" + socket.gethostname(),
+            u"accessPoint": u"%s/" % (self.options['unis']['url']),
+            u"name": u"unis_" + urlparse(self.options['unis']['url']).hostname,
             u"status": u"ON",
             u"serviceType": u"ps:tools:unis",
             u"ttl": int(self.options["unis"]["summary_collection_period"]),
             u"runningOn": {
-                u"href": u"%s/nodes/%s" % (ref, socket.gethostname()),
+                u"href": u"%s/nodes/%s" % (self.options['unis']['url'], socket.gethostname()),
                 u"rel": u"full"
             },
             u"properties": {
@@ -337,6 +332,14 @@ class PeriscopeApplication(tornado.web.Application):
         self._ppi_classes = []
         self._log = settings.get_logger()
         handlers = []
+
+        ref = "http{}://{}:{}".format(
+            's' if self.options["unis_ssl"]["enable"] else '',
+            socket.getfqdn(),
+            self.options['port']
+        )
+        self.options['unis']['url'] = self._options['unis']['url'] or ref
+        self.options['unis']['ms_url'] = self._options['unis']['ms_url'] or ref
         
         # import and initialize pre/post content processing modules
         for pp in settings.PP_MODULES:
@@ -421,8 +424,8 @@ class PeriscopeApplication(tornado.web.Application):
             
             if settings.AUTH_UUID:
                 service['properties'].update({"geni": {"slice_uuid": settings.AUTH_UUID}})
-            
-            if 'localhost' in self.options["unis"]["ms_url"] or "127.0.0.1" in self.options["unis"]["ms_url"]:
+
+            if socket.getfqdn() in self.options['unis']['ms_url']:
                 self.db["services"].insert(service)
             else:
                 service_url = self.options["unis"]["ms_url"]+'/services'

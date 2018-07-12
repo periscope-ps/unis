@@ -44,12 +44,12 @@ DEFAULT_CONFIG = {
         "enable": False,
     },
     "unis": {
-        "url": "http://localhost:8888",
+        "url": "",
         "summary_collection_period": 60 * 60,
         "root_urls": [],
         "summary_size": 10,
         "use_ms": True,
-        "ms_url": "http://localhost:8888",
+        "ms_url": "",
         "db_host": "127.0.0.1",
         "db_port": 27017,
         "db_name": "unis_db"
