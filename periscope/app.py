@@ -227,17 +227,18 @@ class PeriscopeApplication(tornado.web.Application):
             http_str = "http"
             
         callback = functools.partial(self.registered, fatal = False)
+        ref = u"%s://%s:%d" % (http_str, socket.getfqdn(), int(self.options["port"]))
         service = {
             u"id": u"unis_" + socket.gethostname(),
             u"ts": int(time.time() * 1e6),
             u"\$schema": unicode(SCHEMAS["service"]),
-            u"accessPoint": self.options["unis"]["url"],
+            u"accessPoint": u"%s/" % (ref),
             u"name": u"unis_" + socket.gethostname(),
             u"status": u"ON",
             u"serviceType": u"ps:tools:unis",
             u"ttl": int(self.options["unis"]["summary_collection_period"]),
             u"runningOn": {
-                u"href": u"%s/nodes/%s" % (self.options["unis"]["url"], socket.gethostname()),
+                u"href": u"%s/nodes/%s" % (ref, socket.gethostname()),
                 u"rel": u"full"
             },
             u"properties": {
