@@ -12,10 +12,7 @@
 # =============================================================================
 #!/usr/bin/env python
 
-import tornado.web
-import copy
 import json
-import functools
 import time
 from tornado.httpclient import AsyncHTTPClient
 import tornado.gen

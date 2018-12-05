@@ -653,8 +653,8 @@ class NetworkResourceHandler(SSEHandler):
 
     @tornado.gen.coroutine
     def _insert(self, resources):
-        self._subscriptions.publish(resources, self._collection_name, { "action": "POST" })
         yield self.dblayer.insert(resources)
+        self._subscriptions.publish(resources, self._collection_name, { "action": "POST" })
 
     @tornado.gen.coroutine
     def _process_resource(self, resource, res_id = None, run_validate = True):
@@ -736,9 +736,9 @@ class NetworkResourceHandler(SSEHandler):
             publish = {}
             publish.update(resource)
             publish["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
-            self._subscriptions.publish(publish, self._collection_name, { "action": "PUT" })
             query = { self.Id: resource[self.Id] }
             yield self._update(query, dict(resource._to_mongoiter()))
+            self._subscriptions.publish(publish, self._collection_name, { "action": "PUT" })
         except Exception as exp:
             raise exp
 
