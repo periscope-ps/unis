@@ -73,11 +73,11 @@ class SubscriptionManager(object):
     #               trim_function is an optional argument that overrides any previous
     #                 filter on the subscription and replaces them with a custom filter.
     def publish(self, resources, collection = None, headers = {}, trim_function = None):
-        if isinstance(resources, list):
-            for resource in resources:
-                self._publish(resource, collection, headers, trim_function)
-        else:
-            self._publish(resources, collection, headers, trim_function)
+        resources = resources if isinstance(resources, list) else [resources]
+        for resource in resources:
+            if "_id" in resource:
+                del resource["_id"]
+            self._publish(resource, collection, headers, trim_function)
 
     def _publish(self, resource, collection = None, headers = {}, trim_function = None):
         def _compare(op, val1, val2):
