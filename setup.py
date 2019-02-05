@@ -51,6 +51,7 @@ setup(
         "https://pypi.python.org/pypi/jsonpath/"
         ],
     install_requires=[
+        "six>=1.11.0",
         "tornado==4.2",
         "tornado-redis",
         "pymongo==2.8.0",
