@@ -48,7 +48,7 @@ class EventsHandler(NetworkResourceHandler):
                 raise ValueError("event collection exists already")
             
     def _find(self, **options):
-        options["query"].pop("status", None)
+        options["query"].pop("\\$status", None)
         if not options["query"]:
             return self.dblayer.find()
         elif self.Id in options["query"] or "$or" in options["query"]:
