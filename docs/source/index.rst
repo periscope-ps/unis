@@ -1,9 +1,4 @@
 .. UNIS documentation
-
-.. image:: _static/CREST.png
-      :align: center
-
-.. _BLiPP: http://github.com/periscope-ps/blipp
 	      
 Welcome to the UNIS documentation!
 =====================================

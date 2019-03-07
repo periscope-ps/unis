@@ -46,8 +46,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'UNIS'
-copyright = u'2017, Indiana University (CREST)'
-author = 'Ahmed El-Hassany'
+copyright = u'2019, Indiana University'
+author = 'Ahmed El-Hassany, Jeremy Musser'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -108,7 +108,7 @@ html_theme_options = {
     "sticky_navigation": True,
     "display_version": False
 }
-html_logo = "_static/LOGO.jpg"
+html_logo = "_static/iu-open-logo.png"
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
