@@ -131,7 +131,7 @@ class DBLayer(object, nllog.DoesLogging):
         results = yield futures
         for r in results:
             if isinstance(r, dict) and not r.get("updatedExisting", True):
-                raise(Exception("Resource ID does not exist"))
+                raise(LookupError("Resource ID does not exist"))
         raise tornado.gen.Return(results)
     
     @tornado.gen.coroutine

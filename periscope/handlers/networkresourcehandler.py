@@ -756,11 +756,14 @@ class NetworkResourceHandler(SSEHandler):
         
         update = { "\\$status": "DELETED" }
         query = { self.Id: res_id }
-        yield self.dblayer.update(query, update, summarize=False, multi=True)
+        try:
+            yield self.dblayer.update(query, update, summarize=False, multi=True)
+            self.set_status(204)
+        except LookupError:
+            # handle case where object does not exist
+            self.set_status(404)
         self._subscriptions.publish(query, self._collection_name, { "action": "DELETE" })
-        self.set_status(204)
         self.finish()
-
         
     def _get_documents(self):
         if self.content_type == MIME['PSBSON']:
