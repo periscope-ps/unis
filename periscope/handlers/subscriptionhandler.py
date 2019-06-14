@@ -27,7 +27,6 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         self.listening = False
         self.channels = []
         self._manager = subscriptionmanager.GetManager()
-        self._client = subscriptionmanager.GetSubscriber()
     
     @tornado.gen.coroutine
     def open(self, resource_type = None, resource_id = None):
@@ -75,17 +74,11 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         self._addSubscription(resource_type, query, fields)
         
     def deliver(self, msg):
-        if msg.kind == 'message':
-            self.write_message(str(msg.body))
-        if msg.kind == 'disconnect':
-            self.write_message('This connection terminated '
-                               'due to a Redis server error.')
-            self.close()
+        self.write_message(str(msg))
     
     def on_close(self):
         for channel in self.channels:
-            self._manager.removeChannel(channel)
-            self._client.unsubscribe(channel, self)
+            self._manager.removeChannel(channel, self)
             
     def check_origin(self, origin):
         return True
@@ -93,6 +86,5 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def _addSubscription(self, resource_type, query, fields):
         if resource_type:
             self.log.info("Adding subscription to websocket[{resource_type}]: {ip} - {query}".format(resource_type = resource_type, ip = self.request.remote_ip, query = query))
-            channel = self._manager.createChannel(query, resource_type, fields)
-            self._client.subscribe(channel, self)
+            channel = self._manager.createChannel(query, resource_type, fields, self)
             self.channels.append(channel)

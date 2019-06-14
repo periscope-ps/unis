@@ -17,12 +17,11 @@ import uuid
 import re
 import tornadoredis
 import tornado.web
-from tornadoredis.pubsub import BaseSubscriber
 
 import periscope.settings as settings
 
+
 __manager__ = None
-__subscriber__ = None
 
 def GetManager():
     global __manager__
@@ -31,26 +30,6 @@ def GetManager():
         __manager__ = SubscriptionManager()
 
     return __manager__
-
-def GetSubscriber():
-    global __subscriber__
-
-    if not __subscriber__:
-        __subscriber__ = SubscriptionSubscriber(tornadoredis.Client())
-
-    return __subscriber__
-
-class SubscriptionSubscriber(BaseSubscriber):
-    def on_message(self, msg):
-        if not msg:
-            return
-        
-        if msg.kind == 'message' and msg.body:
-            # Get the list of subscribers for this channel
-            subscribers = list(self.subscribers[msg.channel].keys())
-            if subscribers:
-                for s in subscribers:
-                    s.deliver(msg)
 
 class SubscriptionManager(object):
     def __init__(self):
@@ -155,10 +134,11 @@ class SubscriptionManager(object):
                     "headers": headers,
                     "data": trimmed_resource
                 }
-                try:
-                    self.trc.publish(str(query["channel"]), tornado.escape.json_encode(message))
-                except Exception as exp:
-                    self.log.error("Publish failed - {exp}".format(exp = exp))
+                for client in query["clients"]:
+                    try:
+                        client.deliver(tornado.escape.json_encode(message))
+                    except Exception as exp:
+                        self.log.error("Publish failed - {exp}".format(exp = exp))
 
 
     # @description: createChannel registers a series of conditions to a channel for later use
@@ -167,26 +147,36 @@ class SubscriptionManager(object):
     #                 when published.
     #               fields is an array of fields to filter for when publishing.
     # @output:      createChannel returns the channel that the listener should subscribe to.
-    def createChannel(self, conditions, collection, fields):
+    def createChannel(self, conditions, collection, fields, client=None):
         for query in self.subscriptions:
             if conditions == query["conditions"] and collection == query["collection"]:
                 query["subscribers"] += 1
+                query["clients"].append(client)
                 return query["channel"]
             
         channel = uuid.uuid4().hex
-        self.subscriptions.append({ "channel": channel, "conditions": conditions, "fields": fields, "collection": collection, "subscribers": 1 })
+        self.subscriptions.append({ "channel": channel,
+                                    "conditions": conditions,
+                                    "fields": fields,
+                                    "collection": collection,
+                                    "subscribers": 1,
+                                    "clients": [client] })
         return channel
 
     # @description: removeChannel removes a channel from the availible channels
     # @input:       channel is the hex reference to the channel
     # @output:      boolean succes/failure
-    def removeChannel(self, channel):
+    def removeChannel(self, channel, client=None):
         to_remove = None
         
         for query in self.subscriptions:
             if query["channel"] == channel:
                 query["subscribers"] -= 1
-                
+                try:
+                    query["clients"].remove(client)
+                except KeyError:
+                    pass
+
                 if query["subscribers"] == 0:
                     to_remove = query
 

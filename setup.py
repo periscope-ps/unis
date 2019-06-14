@@ -53,7 +53,6 @@ setup(
     install_requires=[
         "six>=1.11.0",
         "tornado==4.2",
-        "tornado-redis",
         "pymongo==2.8.0",
         "motor==0.6.2",
         "unittest2",
