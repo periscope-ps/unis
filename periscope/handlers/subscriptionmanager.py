@@ -15,7 +15,6 @@
 import json
 import uuid
 import re
-import tornadoredis
 import tornado.web
 
 import periscope.settings as settings

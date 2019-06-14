@@ -15,7 +15,6 @@
 import json
 import tornado.websocket
 import tornado.gen
-import tornadoredis
 
 import periscope.settings as settings
 import subscriptionmanager
