@@ -50,6 +50,8 @@ def decode(str):
         str = dec
     return dec
 
+def _render(resource):
+    return dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
 
 class NetworkResourceHandler(SSEHandler):
     """Generic Network resources handler"""
@@ -301,7 +303,7 @@ class NetworkResourceHandler(SSEHandler):
                         tmpVal = yield process_value(key, value.lstrip(op + "="))
                         par = yield self.dblayer.getRecParentNames(tmpVal,{})
                         raise tornado.gen.Return({"$in" : par})
-                    else:                        
+                    else:
                         tmpVal = yield process_value(key, value.lstrip(op + "="))
                         if op in ["lt", "lte", "gt", "gte"]:
                             tmpVal = float(tmpVal)
@@ -408,7 +410,8 @@ class NetworkResourceHandler(SSEHandler):
         else:
             sortDict = { self.timestamp: -1 }
             sort = sortDict.items()
-            
+
+        unique = query.pop('unique', ['false']) != ['false']
         query_ret = []
         for arg in query:
             if isinstance(query[arg], list) and len(query[arg]) > 1:
@@ -449,7 +452,7 @@ class NetworkResourceHandler(SSEHandler):
                         ret.append(item)
                 query_ret["query"].update({"$and": ret})        
         ret_val = {"fields": fields, "limit": limit, "query": query_ret, "skip": skip,
-                   "sort": sort , "cert": cert, "inline": inline}
+                   "sort": sort , "cert": cert, "inline": inline, "unique": unique}
         raise tornado.gen.Return(ret_val)
 
     
@@ -499,7 +502,7 @@ class NetworkResourceHandler(SSEHandler):
                 return
             
             try:
-                count = yield self._write_get(cursor, is_list, inline)
+                count = yield self._write_get(cursor, is_list, inline, parsed['unique'])
             except Exception as exp:
                 message = "Failure during post processing - {exp}".format(exp = exp)
                 self.send_error(404, message = message)
@@ -524,7 +527,8 @@ class NetworkResourceHandler(SSEHandler):
         raise tornado.gen.Return(count)
     
     @tornado.gen.coroutine
-    def _write_get(self, cursor, is_list=False, inline=False):
+    def _write_get(self, cursor, is_list=False, inline=False, unique=False):
+        seen = {}
         count = yield cursor.count(with_limit_and_skip=True)
         is_list = count != 1 or is_list
         
@@ -532,13 +536,13 @@ class NetworkResourceHandler(SSEHandler):
             results = []
             while (yield cursor.fetch_next):
                 resource = yield self._post_get(cursor.next_object(), inline)
-                results.append(resource)
-                
-            if not is_list:
-                results = results[0]
-            else:
-                results = { "data": results }
-            self.write(bson_encode(results))
+                if not unique or str(resource.get('id', resource)) not in seen:
+                    seen[str(resource.get('id', resource))] = True
+                    results.append(resource)
+
+            if results and not is_list: results = results[0]
+            results = bson_encode({'d': results})
+            self.write(results)
         else:
             if not count:
                 self.write('[]')
@@ -550,15 +554,18 @@ class NetworkResourceHandler(SSEHandler):
             yield cursor.fetch_next
             resource = cursor.next_object()
             resource = yield self._post_get(resource, inline)
-            json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+            json_response = _render(resource)
+            seen[str(resource.get('id', resource))] = True
             self.write(json_response)
             
             while (yield cursor.fetch_next):
-                self.write(',\n')
                 resource = cursor.next_object()
                 resource = yield self._post_get(resource, inline)
-                json_response = dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
-                self.write(json_response)
+                if not unique or str(resource.get('id', resource)) not in seen:
+                    self.write(',\n')
+                    seen[str(resource.get('id', resource))] = True
+                    json_response = _render(resource)
+                    self.write(json_response)
             
             if is_list:
                 self.write('\n]')

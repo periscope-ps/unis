@@ -39,7 +39,7 @@ class DelegationHandler(NetworkResourceHandler):
         return self.dblayer.find()
     
     @tornado.gen.coroutine
-    def _write_get(self, cursor, is_list, inline=False):
+    def _write_get(self, cursor, is_list, inline=False, unique=False):
         exclude = [ "sort", "limit", "fields", "skip", "cert" ]
         interest_fields = [ key for key, val in self.request.arguments.items() if key not in exclude]
         interest_fields = [v.replace(".", "$DOT$") for v in interest_fields]
