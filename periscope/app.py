@@ -33,6 +33,7 @@ import tornado.web
 import tornado.ioloop
 import sys
 import socket
+import requests
 
 from netlogger import nllog
 from tornado import gen
@@ -232,6 +233,7 @@ class PeriscopeApplication(tornado.web.Application):
             u"status": u"ON",
             u"serviceType": u"ps:tools:unis",
             u"ttl": int(self.options["unis"]["summary_collection_period"]),
+            u"communities": self.options["unis"]["communities"],
             u"runningOn": {
                 u"href": u"%s/nodes/%s" % (self.options['unis']['url'], socket.gethostname()),
                 u"rel": u"full"
@@ -333,11 +335,23 @@ class PeriscopeApplication(tornado.web.Application):
         self._log = settings.get_logger()
         handlers = []
 
-        ref = "http{}://{}:{}".format(
-            's' if self.options["unis_ssl"]["enable"] else '',
-            socket.getfqdn(),
-            self.options['port']
-        )
+        try:
+            for url in settings.SELF_LOOKUP_URLS:
+                res = requests.get(url)
+                if res.status_code == 200:
+                    ref = "http{}://{}:{}".format(
+                        's' if self.options["unis_ssl"]["enable"] else '',
+                        res.text,
+                        self.options['port']
+                    )
+                    break
+        except:
+            ref = "http{}://{}:{}".format(
+                's' if self.options["unis_ssl"]["enable"] else '',
+                socket.getfqdn(),
+                self.options['port']
+            )
+            
         self.options['unis']['url'] = self._options['unis']['url'] or ref
         self.options['unis']['ms_url'] = self._options['unis']['ms_url'] or ref
         
