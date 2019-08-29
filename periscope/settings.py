@@ -20,7 +20,8 @@ import sys
 from netlogger import nllog
 from tornado.log import LogFormatter, enable_pretty_logging
 
-LIST_OPTIONS = ["unis.root_urls"]
+LIST_OPTIONS = ["unis.root_urls", "unis.communities"]
+SELF_LOOKUP_URLS = ["http://ident.me"]
 
 ######################################################################
 # Setting up path names.
@@ -47,6 +48,7 @@ DEFAULT_CONFIG = {
         "url": "",
         "summary_collection_period": 60 * 60,
         "root_urls": [],
+        "communities": [],
         "summary_size": 10,
         "use_ms": True,
         "ms_url": "",
