@@ -814,7 +814,7 @@ class NetworkResourceHandler(SSEHandler):
         try:
             resource["selfRef"] = "{scheme}://{netloc}/{col}/{uid}".format(scheme=uri.scheme,
                                                                            netloc=uri.netloc,
-                                                                           col=uri.path.split("/")[0],
+                                                                           col=uri.path.split("/")[1],
                                                                            uid = resource[self.Id])
             resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         except Exception as exp:
