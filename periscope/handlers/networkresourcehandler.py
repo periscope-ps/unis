@@ -17,6 +17,7 @@ import json
 import jsonschema
 import re
 import urllib2
+from urlparse import urlparse
 import time
 import traceback
 from tornado.httpclient import HTTPError
@@ -809,15 +810,12 @@ class NetworkResourceHandler(SSEHandler):
         return True
     
     def _add_post_metadata(self, resource):
-        uri = self.request.full_url().split('?')[0]
-        re_str = '(?P<proto>http[s]?)://(?P<host>[^:/]+)(?::(?P<port>[0-9]{1,4}))?/(?P<col>[a-zA-Z]+)(?:/[^/]+)?$'
-        matches = re.compile(re_str).match(uri)
+        uri = urlparse(self.request.full_url())
         try:
-            resource["selfRef"] = "{proto}://{host}:{port}/{col}/{uid}".format(proto = matches.group("proto"),
-                                                                               host = matches.group("host"),
-                                                                               port = matches.group("port"),
-                                                                               col = matches.group("col"),
-                                                                               uid  = resource[self.Id])
+            resource["selfRef"] = "{scheme}://{netloc}/{col}/{uid}".format(scheme=uri.scheme,
+                                                                           netloc=uri.netloc,
+                                                                           col=uri.path.split("/")[0],
+                                                                           uid = resource[self.Id])
             resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         except Exception as exp:
             self.log.error("failed to match uri - {e}".format(e = exp))

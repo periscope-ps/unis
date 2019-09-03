@@ -62,7 +62,7 @@ class PeriscopeApplication(tornado.web.Application):
                 def get(self, k, default=None):
                     val = super(DefaultDict, self).get(k, default)
                     return val or default
-            
+
             tmpOptions = docopt.docopt(__doc__)
             self._options = DefaultDict(settings.DEFAULT_CONFIG)
             tmpConfig = ConfigParser.RawConfigParser(allow_no_value = True)
@@ -334,7 +334,7 @@ class PeriscopeApplication(tornado.web.Application):
         self._ppi_classes = []
         self._log = settings.get_logger()
         handlers = []
-
+        
         try:
             for url in settings.SELF_LOOKUP_URLS:
                 res = requests.get(url)
@@ -345,6 +345,7 @@ class PeriscopeApplication(tornado.web.Application):
                         self.options['port']
                     )
                     break
+            raise Exception("No valid lookup url found")
         except:
             ref = "http{}://{}:{}".format(
                 's' if self.options["unis_ssl"]["enable"] else '',
