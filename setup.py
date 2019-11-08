@@ -57,7 +57,7 @@ setup(
         "motor==0.6.2",
         "unittest2",
         "netlogger>=4.3.0",
-        "jsonschema",
+        "jsonschema==2.6.0",
         "jsonpath",
         "docopt",
         "jsonpointer>=0.2",
