@@ -62,8 +62,7 @@ setup(
         "docopt",
         "jsonpointer>=0.2",
         "httplib2",
-        "requests",
-        "M2Crypto",
+        "requests"
     ],
     entry_points = {
         'console_scripts': [
