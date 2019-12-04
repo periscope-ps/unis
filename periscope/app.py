@@ -18,7 +18,7 @@ Options:
   -l FILE --log=FILE           File to store log information
   -d LEVEL --log-level=LEVEL   Select log verbosity [TRACE, DEBUG, CONSOLE]
   -c FILE --config-file=FILE   File with extra configurations [default: /etc/periscope/unis.cfg]
-  -p PORT --port=PORT          Run on PORT [default: 8888]
+  -p PORT --port=PORT          Run on PORT
   -r --lookup                  Run UNIS as a lookup service
 '''
 
@@ -69,7 +69,13 @@ class PeriscopeApplication(tornado.web.Application):
             tmpConfig.read(tmpOptions["--config-file"])
             
             for section in tmpConfig.sections():
-                if not section in self._options:
+                if section.lower() == 'connection':
+                    for k, o in tmpConfig.items(section):
+                        self._options[k] = {'true': True, 'false': False}.get(o, o)
+                        if k in settings.LIST_OPTIONS:
+                            self._options[k] = [] if not o else o.split(',')
+                    continue
+                elif not section in self._options:
                     self._options[section] = {}
                 
                 for key, option in tmpConfig.items(section):
@@ -86,7 +92,8 @@ class PeriscopeApplication(tornado.web.Application):
                         self._options[section][key] = option
             
             for key, option in tmpOptions.items():
-                self._options[key.lstrip("--")] = option
+                if option is not None:
+                    self._options[key.lstrip("--")] = option
         
         return self._options
     
@@ -332,7 +339,7 @@ class PeriscopeApplication(tornado.web.Application):
         self._depth = 1 if bool(self.options["lookup"]) else 0
         self._db = None
         self._ppi_classes = []
-        self._log = settings.get_logger()
+        self._log = settings.get_logger(level=self.options['log-level'], filename=self.options['log'])
         handlers = []
         
         try:
@@ -478,6 +485,7 @@ class PeriscopeApplication(tornado.web.Application):
 def run():
     ssl_opts = None
     app = PeriscopeApplication()
+    
     app.log.info('periscope.start')
     settings.app = app
     
@@ -493,10 +501,7 @@ def run():
     app.log.info("periscope.end")
     
 def main():
-    tmpOptions = docopt.docopt(__doc__)
-    log = settings.get_logger(level = tmpOptions["--log-level"],
-                              filename = tmpOptions["--log"])
-    
+    tmpOptions = docopt.docopt(__doc__)    
     run()
         
     

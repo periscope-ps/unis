@@ -58,7 +58,10 @@ DEFAULT_CONFIG = {
     },
     "auth": {
         "enabled": False
-    }
+    },
+    "port": "8888",
+    "log": None,
+    "log-level": "WARN"
 }
 
 
