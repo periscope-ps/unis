@@ -734,7 +734,7 @@ class NetworkResourceHandler(SSEHandler):
     @tornado.gen.coroutine
     def _update(self, query, resource):
         try:
-            yield self.dblayer.update(query, resource, multi=False)
+            yield self.dblayer.update(query, resource, multi=False, sort={self.timestamp: -1})
         except Exception as exp:
             raise exp
 

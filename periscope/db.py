@@ -123,7 +123,7 @@ class DBLayer(object, nllog.DoesLogging):
         self.log.debug("Update for Collection: [" + self._collection_name + "]")
         if not replace:
             data = { "$set": data }
-        futures =  [self.collection.update(query, data, **kwargs)]
+        futures =  [self.collection.find_and_modify(query, data, upsert=False, **kwargs)]
         if summarize:
             shard = self._create_manifest_shard(data)
             sfut = self.manifest.insert(shard)
