@@ -26,7 +26,7 @@ import re
 import functools
 import requests
 from periscope.utils import json_schema_merge_extends
-from settings import SCHEMA_CACHE_DIR,SCHEMAS
+from .settings import SCHEMA_CACHE_DIR,SCHEMAS
 from bson.objectid import ObjectId
 
 _CACHE = {}
@@ -67,7 +67,7 @@ class ObjectDict(dict):
         data = data or {}
         super(ObjectDict, self).__init__(data)
         if _set_attributes:
-            for key, value in data.iteritems():
+            for key, value in data.items():
                 if not hasattr(self, key):
                     self._add_property(key)
                 self._set_property(key, value)
@@ -114,21 +114,21 @@ class ObjectDict(dict):
         self._del_property(name)
     
     def __iter__(self):
-        for key in self.iterkeys():
+        for key in self.keys():
             yield key
     
     def iteritems(self):
-        for key in self.iterkeys():
+        for key in self.keys():
             yield key, self[key]
     
     def itervalues(self):
-        for key in self.iterkeys():
+        for key in self.keys():
             yield self[key]
     
     def _to_mongoiter(self):
         """Escapes mongo's special characters in the keys."""
         for key, value in self.iteritems():
-            if isinstance(key, (str, unicode)):
+            if isinstance(key, (str, bytes)):
                 key = key.replace(".", "$DOT$")
                 if key.startswith("$"):
                     key = "\\" + key
@@ -144,8 +144,8 @@ class ObjectDict(dict):
     def _from_mongo(cls, data, schemas_loader=None):
         assert isinstance(data, dict)
         tmp = {}
-        for key, value in data.iteritems():
-            if isinstance(key, (str, unicode)):
+        for key, value in data.items():
+            if isinstance(key, (str, bytes)):
                 key = key.replace("$DOT$", ".")
                 if key.startswith("\\$"):
                     key = key.lstrip("\\")
@@ -256,7 +256,7 @@ class JSONSchemaModel(ObjectDict):
         self._set_defaults = set_defaults
         setattr(self, "_$schemas_loader", schemas_loader)
         
-        for key, value in data.iteritems():
+        for key, value in data.items():
             if not hasattr(self, key):
                 prop_type = self._get_property_type(key) or {}
                 doc = prop_type.get("description", None)

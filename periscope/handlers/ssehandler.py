@@ -65,7 +65,7 @@ class SSEHandler(tornado.web.RequestHandler):
             try:
                 for pp in self.application._ppi_classes:
                     pp.pre_get(None, self.application, self.request,self)
-            except Exception, msg:
+            except Exception as msg:
                 self.send_error(400, message=msg)
                 return
         
@@ -176,10 +176,10 @@ class SSEHandler(tornado.web.RequestHandler):
             if not self._finished:
                 args = [self.decode_argument(arg) for arg in args]
                 kwargs = dict((k, self.decode_argument(v, name=k))
-                              for (k, v) in kwargs.iteritems())
+                              for (k, v) in kwargs.items())
                 getattr(self, self.request.method.lower())(*args, **kwargs)
                 if self._auto_finish and not self._finished:
                     print("Finish SSE")
                     self.finish()
-        except Exception, e:
+        except Exception as e:
             self._handle_request_exception(e)

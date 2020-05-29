@@ -16,13 +16,13 @@ Usage:
 
 Options:
   -l FILE --log=FILE           File to store log information
-  -d LEVEL --log-level=LEVEL   Select log verbosity [TRACE, DEBUG, CONSOLE]
+  -d LEVEL --log-level=LEVEL   Select log verbosity [ERROR, DEBUG, CONSOLE]
   -c FILE --config-file=FILE   File with extra configurations [default: /etc/periscope/unis.cfg]
   -p PORT --port=PORT          Run on PORT
   -r --lookup                  Run UNIS as a lookup service
 '''
 
-import ConfigParser
+import configparser
 import docopt
 import functools
 import json
@@ -35,15 +35,14 @@ import sys
 import socket
 import requests
 
-from netlogger import nllog
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
-from urlparse import urlparse
+from urllib.parse import urlparse
 from uuid import uuid4
 
-import settings
-from settings import MIME
-from settings import SCHEMAS
+from .settings import MIME
+from .settings import SCHEMAS
+from . import settings
 from periscope.db import DBLayer
 from periscope.utils import load_class
 from periscope.models import Manifest, ObjectDict
@@ -65,7 +64,7 @@ class PeriscopeApplication(tornado.web.Application):
 
             tmpOptions = docopt.docopt(__doc__)
             self._options = DefaultDict(settings.DEFAULT_CONFIG)
-            tmpConfig = ConfigParser.RawConfigParser(allow_no_value = True)
+            tmpConfig = configparser.RawConfigParser(allow_no_value = True)
             tmpConfig.read(tmpOptions["--config-file"])
             
             for section in tmpConfig.sections():
@@ -151,9 +150,9 @@ class PeriscopeApplication(tornado.web.Application):
         db_layer = self.get_db_layer(collection_name, id_field_name, timestamp_field_name, is_capped_collection, capped_collection_size)            
         
         # Load classes
-        if type(handler_class) in [str, unicode]:
+        if type(handler_class) in [str, bytes]:
             handler_class = load_class(handler_class)
-        if type(model_class) in [str, unicode]:
+        if type(model_class) in [str, bytes]:
             model_class = load_class(model_class)
                         
         # Make the handler
@@ -199,7 +198,7 @@ class PeriscopeApplication(tornado.web.Application):
         return scm_handler
     
     def _make_main_handler(self, name,  pattern, base_url, handler_class, resources):
-        if type(handler_class) in [str, unicode]:
+        if type(handler_class) in [str, bytes]:
             handler_class = load_class(handler_class)
         main_handler = (
             tornado.web.URLSpec(base_url + pattern, handler_class,
@@ -234,7 +233,7 @@ class PeriscopeApplication(tornado.web.Application):
         service = {
             u"id": u"unis_" + urlparse(self.options['unis']['url']).hostname,
             u"ts": int(time.time() * 1e6),
-            u"\$schema": unicode(SCHEMAS["service"]),
+            u"\$schema": str(SCHEMAS["service"]),
             u"accessPoint": u"%s/" % (self.options['unis']['url']),
             u"name": u"unis_" + urlparse(self.options['unis']['url']).hostname,
             u"status": u"ON",
@@ -277,7 +276,7 @@ class PeriscopeApplication(tornado.web.Application):
             body=json.loads(response.body)
             
     def make_simple_handler(self, name, pattern, base_url, handler_class, **kwargs):
-        if type(handler_class) in [str, unicode]:
+        if type(handler_class) in [str, bytes]:
             handler_class = load_class(handler_class)
         handler = ( tornado.web.URLSpec(base_url + pattern, handler_class, dict(**kwargs), name=name) )
         return handler
@@ -423,7 +422,7 @@ class PeriscopeApplication(tornado.web.Application):
             service = {
                 u"id": u"ms_" + socket.gethostname(),
                 u"ts": int(time.time() * 1e6),
-                u"\$schema": unicode(SCHEMAS["service"]),
+                u"\$schema": str(SCHEMAS["service"]),
                 u"accessPoint": u"%s://%s:%d/" % (http_str, socket.getfqdn(), int(self.options["port"])),
                 u"name": u"ms_" + socket.gethostname(),
                 u"status": u"ON",
@@ -495,7 +494,7 @@ def run():
     http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_opts)
     
     http_server.listen(int(app.options["port"]))
-    
+
     loop = tornado.ioloop.IOLoop.instance()
     loop.start()
     app.log.info("periscope.end")

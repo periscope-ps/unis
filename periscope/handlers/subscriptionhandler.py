@@ -17,7 +17,7 @@ import tornado.websocket
 import tornado.gen
 
 import periscope.settings as settings
-import subscriptionmanager
+import periscope.handlers.subscriptionmanager as subscriptionmanager
 
 class SubscriptionHandler(tornado.websocket.WebSocketHandler):
     def __init__(self, *args, **kwargs):

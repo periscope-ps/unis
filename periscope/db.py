@@ -16,12 +16,11 @@ Databases related classes
 """
 import time
 import functools
-import settings
+from . import settings
 import tornado.gen
 import json
 from json import JSONEncoder
-from netlogger import nllog
-from settings import DB_AUTH
+from .settings import DB_AUTH
 
 from periscope.models import ObjectDict
 
@@ -41,7 +40,7 @@ class MongoEncoder(JSONEncoder):
         else:
             return JSONEncoder._iterencode(self, obj, markers)
 
-class DBLayer(object, nllog.DoesLogging):
+class DBLayer(object):
     """Thin layer asynchronous model to handle network objects.
 
     Right now this layer doesn't do much, but provides away to intercept
@@ -55,7 +54,7 @@ class DBLayer(object, nllog.DoesLogging):
     def __init__(self, client, collection_name, capped=False, Id="id", \
         timestamp="ts"):
         """Intializes with a reference to the mongodb collection."""
-        nllog.DoesLogging.__init__(self)
+        self.log = settings.get_logger()
         self.Id = Id
         self.timestamp = timestamp
         self.capped = capped

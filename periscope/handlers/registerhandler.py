@@ -21,7 +21,7 @@ from tornado.httpclient import AsyncHTTPClient
 from periscope import settings
 from periscope.settings import MIME
 from periscope.models import Manifest, ObjectDict
-from networkresourcehandler import NetworkResourceHandler
+from .networkresourcehandler import NetworkResourceHandler
 
 class RegisterHandler(NetworkResourceHandler):
     @tornado.gen.coroutine

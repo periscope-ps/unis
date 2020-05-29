@@ -19,7 +19,7 @@ import tornado.web
 import periscope.settings as settings
 from periscope.db import dumps_mongo
 from periscope.settings import MIME
-from networkresourcehandler import NetworkResourceHandler
+from .networkresourcehandler import NetworkResourceHandler
 
 class DataHandler(NetworkResourceHandler):        
     def _validate_request(self, res_id, allow_id = False, require_id = False):
@@ -51,7 +51,7 @@ class DataHandler(NetworkResourceHandler):
                 mids[resource["mid"]] = []
             mids[resource["mid"]].extend(resource["data"])
         
-        for mid, data in mids.iteritems():
+        for mid, data in mids.items():
             push_data = { 'id': mid, 'data': data }
             self._subscriptions.publish(push_data, self._collection_name, { "action": "POST", "collection": "data/{}".format(mid) },
                                         self.trim_published_resource)
@@ -70,7 +70,7 @@ class DataHandler(NetworkResourceHandler):
             mids[resource["mid"]]["$or"].append( { self.timestamp: resource[self.timestamp] } )
             
         results = []
-        for mid, query in mids.iteritems():
+        for mid, query in mids.items():
             results = yield self._return_resources(mid, query)
             
             for result in results:

@@ -146,7 +146,7 @@ class AuthUserCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
             try:
                 cert = self.request.get_ssl_certificate(binary_form=True)
                 auth.add_credential(cert, self.request.body)
-            except Exception, msg:
+            except Exception as msg:
                 self.send_error(400, message=msg)
                 return
         else:
@@ -178,7 +178,7 @@ class AuthSliceCredHandler(tornado.web.RequestHandler, nllog.DoesLogging):
             try:
                 cert = self.request.get_ssl_certificate(binary_form=True)
                 auth.bootstrap_slice_credential(cert, self.request.body)
-            except Exception, msg:
+            except Exception as msg:
                 self.send_error(400, message=msg)
                 return
         else:

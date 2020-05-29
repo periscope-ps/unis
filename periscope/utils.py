@@ -12,7 +12,7 @@
 # =============================================================================
 import copy
 import json
-import urllib2
+import urllib.request
 import jsonschema
 import sys
 
@@ -24,7 +24,7 @@ def load_json_url(url, cache=None):
     if not cache:
         cache = {}
     if url not in cache:
-        doc = urllib2.urlopen(url)
+        doc = urllib.request.urlopen(url)
         cache[url] = json.load(doc)
     res = cache.get(url)
     # Make sure to return a copy of the cache resource

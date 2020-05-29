@@ -56,7 +56,7 @@ setup(
         "pymongo==2.8.0",
         "motor==0.6.2",
         "unittest2",
-        "netlogger>=4.3.0",
+        #"netlogger>=4.3.0",
         "jsonschema==2.6.0",
         "jsonpath",
         "docopt",

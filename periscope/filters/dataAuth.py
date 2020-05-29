@@ -124,7 +124,7 @@ class DataAuth(PPI, nllog.DoesLogging):
                 cert2 = ssl.DER_cert_to_PEM_cert(cert2)
             # Expects a PEM format cert always
             user = ABAC.ID_chunk(cert2)
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not load user ccccert: %s" % e)
     
         #out = self.ctx.credentials()
@@ -164,7 +164,7 @@ class UserCredHandler(SSEHandler, nllog.DoesLogging):
             try:
                 for pp in self.application._ppi_classes:
                     pp.pre_post(None, self.application, self.request,Handler=self)
-            except Exception, msg:
+            except Exception as msg:
                 self.send_error(400, message=msg)
                 return            
         """ Just send the login status """

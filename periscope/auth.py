@@ -101,7 +101,7 @@ class ABACAuthService:
             sf_cert = sf_cred.get_signature().get_issuer_gid().save_to_string()
             sf_user = ABAC.ID_chunk(sf_cert)
             sf_req = sf_cred.get_tails()[0]
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not read the speaks-for cert: %s" % e)
         
         if (str(sf_req) != str(user.keyid())):
@@ -133,21 +133,21 @@ class ABACAuthService:
             slice_cred = GENICredential(string=slice_cred)
             # can't just give it a bundle, need to split out each cert into its own file, argh!
             #slice_cred.verify(trusted_certs=[settings.SSL_OPTIONS['ca_certs']])
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not verify slice credential: %s" % e)
 
         # now load the cert from the client SSL context)
         try:
             cert = ssl.DER_cert_to_PEM_cert(cert)
             user = ABAC.ID_chunk(cert)
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not read user cert: %s" % e)
 
         # make sure the requesting cert matches the credential owner
         try:
             req_cert = slice_cred.get_gid_caller().save_to_string()
             req_id = ABAC.ID_chunk(req_cert)
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not read user cert: %s" % e)
 
         if (sf_cred):
@@ -284,7 +284,7 @@ class ABACAuthService:
         try:
             cert = ssl.DER_cert_to_PEM_cert(cert)
             user = ABAC.ID_chunk(cert)
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not load user cert: %s" % e)
 
         if role and pcert and sf_cred:
@@ -302,7 +302,7 @@ class ABACAuthService:
 
             try:
                 puser = ABAC.ID_chunk(pcert)
-            except Exception, e:
+            except Exception as e:
                 raise AbacError("Could not load proxy cert identity: %s" % e)
             
             co = GID(string=pcert)
@@ -339,7 +339,7 @@ class ABACAuthService:
                 f = open(os.path.join(self.ABAC_STORE_DIR, attr_filename), 'w')
                 f.write(cred)
                 f.close()            
-            except Exception, e:
+            except Exception as e:
                 raise AbacError("Could not load attribute cert: %s" % e)
         else:
             raise AbacError("Unrecognized request")
@@ -351,7 +351,7 @@ class ABACAuthService:
                 cert2 = ssl.DER_cert_to_PEM_cert(cert2)
             # Expects a PEM format cert always
             user = ABAC.ID_chunk(cert2)
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not load user cert: %s" % e)
     
         #out = self.ctx.credentials()
@@ -374,7 +374,7 @@ class ABACAuthService:
                 cert = ssl.DER_cert_to_PEM_cert(cert)
             # Expects a PEM format cert always
             user = ABAC.ID_chunk(cert)
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not load user cert: %s" % e)
 
         #out = self.ctx.credentials()
@@ -393,7 +393,7 @@ class ABACAuthService:
         try:
             cert = ssl.DER_cert_to_PEM_cert(cert)
             user = ABAC.ID_chunk(cert)
-        except Exception, e:
+        except Exception as e:
             raise AbacError("Could not load user cert: %s" % e)
 
         now = int(time.time() * 1000000)

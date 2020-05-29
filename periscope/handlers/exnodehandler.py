@@ -15,19 +15,17 @@
 import json
 import functools
 from tornado.ioloop import IOLoop
-from netlogger import nllog
 from tornado.httpclient import AsyncHTTPClient
 import tornado.web
 import tornado.gen
 
 import periscope.settings as settings
 from periscope.settings import MIME
-from collectionhandler import CollectionHandler
+from .collectionhandler import CollectionHandler
 from periscope.db import dumps_mongo
 
-class FolderHandler(tornado.web.RequestHandler,nllog.DoesLogging):
+class FolderHandler(tornado.web.RequestHandler):
     def initialize(self, dblayer,base_url):
-        nllog.DoesLogging.__init__(self)
         self._dblayer = dblayer
         
     @tornado.web.asynchronous

@@ -44,7 +44,7 @@ class SubscriptionManager(object):
         
         if __manager__:
             self.log.warn("SubscriptionManager: Multiple instantiations of singleton SubscriptionManager")
-            
+
     # @description: publish informs all remote subscribers that a change has been
     #               made to the provided resource.
     # @input:       resource is a json object corrosponding to the resource in question.
@@ -95,7 +95,7 @@ class SubscriptionManager(object):
             if "collection" in query and query["collection"] != collection:
                 continue
             
-            for key, value in tmpConditions.iteritems():
+            for key, value in tmpConditions.items():
                 tmpKeyList = key.split('.')
                 if tmpKeyList[0] not in resource:
                     is_member = False
@@ -114,7 +114,7 @@ class SubscriptionManager(object):
                 # If the value of the query condition is a dict, it contains an operation that must be
                 # evaluated.  If not, the value can be tested as-is.
                 if type(value) is dict:
-                    for op, inner_val in value.iteritems():
+                    for op, inner_val in value.items():
                         if not _compare(op, tmpResourceValue, inner_val):
                             is_member = False
                             break

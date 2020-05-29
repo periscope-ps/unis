@@ -19,7 +19,7 @@ import tornado.gen
 
 import periscope.settings as settings
 from periscope.settings import MIME
-from networkresourcehandler import NetworkResourceHandler
+from .networkresourcehandler import NetworkResourceHandler
 from periscope.db import dumps_mongo
 
 

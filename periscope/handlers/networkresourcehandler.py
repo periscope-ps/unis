@@ -16,8 +16,8 @@ import copy
 import json
 import jsonschema
 import re
-import urllib2
-from urlparse import urlparse
+import urllib.request
+from urllib.parse import urlparse
 import time
 import traceback
 from tornado.httpclient import HTTPError
@@ -27,9 +27,9 @@ import tornado.gen
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
 from periscope.settings import MIME
-from ssehandler import SSEHandler
+from .ssehandler import SSEHandler
 
-import subscriptionmanager
+import periscope.handlers.subscriptionmanager as subscriptionmanager
 
 import bson
 if hasattr(bson, "dumps"):
@@ -45,7 +45,7 @@ else:
 
 def decode(str):
     while True:
-        dec = urllib2.unquote(str)
+        dec = urllib.request.unquote(str)
         if dec == str:
             break
         str = dec
@@ -331,7 +331,10 @@ class NetworkResourceHandler(SSEHandler):
                     
         @tornado.gen.coroutine
         def process_in_query(key, values):
-            in_q = [(yield process_value(key, val)) for val in values]            
+            in_q = [] 
+            for val in values:
+                tmpVal = yield process_value(key, val)
+                in_q.append(tmpVal)
             raise tornado.gen.Return({key: {"$in": in_q}})
                 
         @tornado.gen.coroutine
@@ -366,6 +369,8 @@ class NetworkResourceHandler(SSEHandler):
             raise tornado.gen.Return({"$and": and_q})
         
         query = copy.copy(self.request.arguments)
+        for k in query.keys():
+            query[k] = list(map(lambda x: x.decode() if type(x) == bytes else x, query[k]))
         # First Reterive special parameters
         # fields
         field_ls = self.get_argument("fields", "").split('neg=')
@@ -393,7 +398,7 @@ class NetworkResourceHandler(SSEHandler):
         if not inline==False:
             inline = True
         query.pop("inline", None)
-            
+        
         sort = self.get_argument("sort", default = [])
         query.pop("sort", None)
         if sort:
@@ -407,10 +412,10 @@ class NetworkResourceHandler(SSEHandler):
                     sortDict[pair[0]] = int(pair[1])
                 else:
                     raise ValueError("sort parameter is not a tuple!")
-            sort = sortDict.items()
+            sort = list(sortDict.items())
         else:
             sortDict = { self.timestamp: -1 }
-            sort = sortDict.items()
+            sort = list(sortDict.items())
 
         unique = query.pop('unique', ['false']) != ['false']
         query_ret = []
@@ -497,7 +502,7 @@ class NetworkResourceHandler(SSEHandler):
             try:
                 cursor = self._find(**options)
             except Exception as exp:
-                message = message = "Could not find resource - {exp}".format(exp = exp)
+                message = "Could not find resource - {exp}".format(exp = exp)
                 self.send_error(404, message = message)
                 self.log.error(message)
                 return

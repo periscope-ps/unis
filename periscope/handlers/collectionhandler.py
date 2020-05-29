@@ -17,13 +17,12 @@ import functools
 import jsonpointer
 from jsonpath import jsonpath
 from periscope.models import schemaLoader
-from netlogger import nllog
 import tornado.web
 from tornado.httpclient import AsyncHTTPClient
 
 import periscope.settings as settings
 from periscope.settings import MIME
-from networkresourcehandler import NetworkResourceHandler
+from .networkresourcehandler import NetworkResourceHandler
 from periscope.db import dumps_mongo
 from periscope.models import NetworkResource
 from periscope.models import HyperLink
@@ -136,7 +135,7 @@ class CollectionHandler(NetworkResourceHandler):
         """Resolves self hyperlinks (JSONPath and JSONPointers."""
         if isinstance(current, HyperLink) or \
            (isinstance(current, dict) and "href" in current):
-            if isinstance(current["href"], (unicode, str)):
+            if isinstance(current["href"], (bytes, str)):
                 resource = None
                 if current["href"] in self._cache:
                     resource = self._cache[current["href"]]
