@@ -1,31 +1,22 @@
-# =============================================================================
-#  periscope-ps (unis)
-#
-#  Copyright (c) 2012-2016, Trustees of Indiana University,
-#  All rights reserved.
-#
-#  This software may be modified and distributed under the terms of the BSD
-#  license.  See the COPYING file for details.
-#
-#  This software was created at the Indiana University Center for Research in
-#  Extreme Scale Technologies (CREST).
-# =============================================================================
-#!/usr/bin/env python
-
-import tornado.web
 import json
+from pymongo import MongoClient
+from uuid import uuid4
+from periscope.settings import MIME, Resources
+from periscope.handlers.basehandler import BaseHandler
 
-from periscope.settings import MIME
-
-class AboutHandler(tornado.web.RequestHandler):
-    def initialize(self, **kwargs):
-        pass
+class AboutHandler(BaseHandler):
         
-    def get(self):
+    def on_get(self, req, resp):
+
+        self._mongo = MongoClient('localhost', 27017)
+    
+        uuid = self._mongo.unis_db['about'].find()[0]['uuid']
+        
         about = {
-            "uid": str(self.application.options["uuid"]),
-            "haschild": self.application.options["lookup"],
-            "depth": self.application._depth
+            "uid": str(uuid),
+            "haschild": "false",
+            "depth": 0
         }
-        self.set_header("Content-Type", MIME["JSON"])
-        self.write(json.dumps(about, indent=4))
+
+        resp.set_header("Content-Type", MIME["JSON"])
+        resp.body = json.dumps(about, indent=4)

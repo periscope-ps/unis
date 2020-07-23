@@ -1,33 +1,19 @@
-# =============================================================================
-#  periscope-ps (unis)
-#
-#  Copyright (c) 2012-2016, Trustees of Indiana University,
-#  All rights reserved.
-#
-#  This software may be modified and distributed under the terms of the BSD
-#  license.  See the COPYING file for details.
-#
-#  This software was created at the Indiana University Center for Research in
-#  Extreme Scale Technologies (CREST).
-# =============================================================================
-#!/usr/bin/env python
-
-import tornado.web
 import json
-
 from periscope.settings import MIME, Resources
+from periscope.handlers.basehandler import BaseHandler
 
-class MainHandler(tornado.web.RequestHandler):
-    def initialize(self, base_url, resources):
-        self._resources = resources
-    
-    def get(self):
+class MainHandler(BaseHandler):
+        
+    def on_get(self, req, resp):
+
         links = []
-        for resource in self._resources:
-            href = "%s://%s%s" % (self.request.protocol,
-                self.request.host, self.reverse_url(resource))
+        resources = ["links", "ports", "nodes", "services", "paths", "networks", "domains", "topologies", "events", "data", "metadata", "measurements", "exnodes", "extents"]
+        
+        for resource in resources:
+            href = "%s://%s/%s" % (req.scheme, req.host, resource)
             links.append({ "href": href, 
                            "rel": "full",
                            "targetschema": { "type": "array", "items": { "rel": "full", "href": Resources[resource]["schema"][MIME["PSJSON"]] } } })
-        self.set_header("Content-Type", MIME["JSON"])
-        self.write(json.dumps(links, indent=4))
+        
+        resp.set_header("Content-Type", MIME["JSON"])
+        resp.body = json.dumps(links, indent=4)

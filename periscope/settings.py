@@ -17,11 +17,25 @@ import ssl
 import logging
 import logging.handlers
 import os
+import falcon_jsonify
 import sys
-from tornado.log import LogFormatter, enable_pretty_logging
 
 LIST_OPTIONS = ["unis.root_urls", "unis.communities"]
 SELF_LOOKUP_URLS = ["http://ident.me"]
+
+
+dbcfg = {
+    'host': 'localhost', # or external server address
+    'port': 27017,
+    'username': os.environ.get('MONGO_USER'),
+    'password': os.environ.get('MONGO_PASS'),
+}
+
+
+middleware = [
+    falcon_jsonify.Middleware(help_messages=True),
+]
+
 
 ######################################################################
 # Setting up path names.
@@ -133,7 +147,7 @@ def config_logger(namespace=LOGGER_NAMESPACE, level = None, filename = None):
         add_filehandler(tmpLog, filename)
     else:
         handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(LogFormatter("%(message)s"))
+        #handler.setFormatter(LogFormatter("%(message)s"))
         tmpLog.addHandler(handler)
 
     if level == "WARN":
@@ -142,8 +156,8 @@ def config_logger(namespace=LOGGER_NAMESPACE, level = None, filename = None):
         tmpLog.setLevel(logging.ERROR)
     elif level == "DEBUG":
         tmpLog.setLevel(logging.DEBUG)
-        if not filename:
-            enable_pretty_logging()
+        #if not filename:
+        #    enable_pretty_logging()
     elif level == "CONSOLE":
         tmpLog.setLevel(25)
     else:

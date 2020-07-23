@@ -26,7 +26,7 @@ import re
 import functools
 import requests
 from periscope.utils import json_schema_merge_extends
-from .settings import SCHEMA_CACHE_DIR,SCHEMAS
+from periscope.settings import SCHEMA_CACHE_DIR,SCHEMAS
 from bson.objectid import ObjectId
 
 _CACHE = {}
