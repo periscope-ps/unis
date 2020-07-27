@@ -428,7 +428,7 @@ class NetworkResource(JSONSchemaModel):
         if auto_ts:
             self.ts = self.ts or int(time.time() * 1000000)
 
-class Metadata(JSONSchemaModel):
+class Metadatas(JSONSchemaModel):
     __metaclass__ = MetadataMeta
     def __init__(self, data=None, set_defaults=True, schemas_loader=None,
         auto_id=True, auto_ts=True):
@@ -456,3 +456,4 @@ Data = schemaLoader.get_class(SCHEMAS["data"], extends=NetworkResource)
 Measurement = schemaLoader.get_class(SCHEMAS['measurement'], extends=NetworkResource)
 Exnode = schemaLoader.get_class(SCHEMAS['exnode'], extends=NetworkResource)
 Extent = schemaLoader.get_class(SCHEMAS['extent'], extends=NetworkResource)
+Metadata = schemaLoader.get_class(SCHEMAS["metadata"], extends=Metadatas)

@@ -122,24 +122,25 @@ class ResourceHandler(BaseHandler):
         else:
             return False
         
-    def on_get(self, req, resp):
+    def on_get(self, req, resp, res_id=None):
 
         self.req = req
         self.resp = resp
         self.timestamp = "ts"
         self.Id = "id"
         self._tailable = False
-        self.collection_name = req.path.split("/")[1]
-        self.schemas_single = Resources[self.collection_name]["schema"]
-        self._model_class = load_class(Resources[self.collection_name]["model_class"])
+        self.resource_name = req.path.split("/")[1]
+        self.collection_name = Resources[self.resource_name]["collection_name"]
+        self.schemas_single = Resources[self.resource_name]["schema"]
+        self._model_class = load_class(Resources[self.resource_name]["model_class"])
         self._accepted_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']]
         self._content_types_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]
-        
-        res_id = None
-        
+        self._mongo = MongoClient('localhost', 27017)
+
         # Parse arguments and set up query
         try:
             parsed = self._parse_get_arguments() 
+            
             options = dict(query  = parsed["query"]["query"],
                            fields = parsed["fields"],
                            limit  = parsed["limit"],
@@ -198,7 +199,6 @@ class ResourceHandler(BaseHandler):
             
     def _find(self, **kwargs):
         
-        self._mongo = MongoClient('localhost', 27017)
         query = kwargs.pop("query", {})
         
         fields = kwargs.pop("fields", {})
@@ -375,7 +375,8 @@ class ResourceHandler(BaseHandler):
 
         # First Reterive special parameters
         # fields
-        field_ls = self.req.get_param("fields").split('neg=')
+        field_ls = self.req.get_param("fields", default="").split('neg=')
+        
         state = 0 if len(field_ls) >= 2 else 1
         fields = {}
         if field_ls[-1]:
@@ -471,18 +472,24 @@ class ResourceHandler(BaseHandler):
         
         
         
-    def on_post(self, req, resp):
+    def on_post(self, req, resp, res_id=None):
         
-        res_id = None
+        #res_id = None
         self.timestamp = "ts"
         self.Id = "id"
         self.req = req
         self.resp = resp
-        self.collection_name = req.path.split("/")[1]
-        self.schemas_single = Resources[self.collection_name]["schema"]
-        self._model_class = load_class(Resources[self.collection_name]["model_class"])
+        self.resource_name = req.path.split("/")[1]
+        self.collection_name = Resources[self.resource_name]["collection_name"] 
+        self.schemas_single = Resources[self.resource_name]["schema"]
+        self._model_class = load_class(Resources[self.resource_name]["model_class"])
+        self._accepted_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']]
+        self._content_types_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]
         self.publisher = SubscriptionHandler()
         self.action = "POST"
+        self._mongo = MongoClient('localhost', 27017)
+        
+        #print ("Hitting post req => {}".format(req))
         
         try:
             self._validate_request(res_id)
@@ -546,7 +553,7 @@ class ResourceHandler(BaseHandler):
     def _insert(self, resources):
         
         self.insert(resources)
-        self.publisher.publish(resources, self.collection_name, self.action)
+        self.publisher.publish(resources, self.collection_name, { "action": "POST" })
     
     def _insert_id(self, data):
         if "_id" not in data and not self.capped:
@@ -558,9 +565,8 @@ class ResourceHandler(BaseHandler):
         """Inserts data to the collection."""
         
         self.capped = False
-        self._mongo = MongoClient('localhost', 27017)
         self.manifests = "manifests"
-        
+                
         shards = []
         if isinstance(data, list) and not self.capped:
             for item in data:
@@ -571,12 +577,12 @@ class ResourceHandler(BaseHandler):
             if summarize:
                 shards.append(self._create_manifest_shard(data))
             self._insert_id(data)
-            
+
         futures = [self._mongo.unis_db[self.collection_name].insert(data, **kwargs)]
         if summarize:
             futures.append(self._mongo.unis_db[self.manifests].insert(shards))
         results = futures
-        
+
         return results
    
     def _create_manifest_shard(self, resource):
@@ -622,6 +628,9 @@ class ResourceHandler(BaseHandler):
         tmpResource = self._model_class(resource)
         tmpResource = self._add_post_metadata(tmpResource)
                 
+        if tmpResource.get(self.timestamp) == None:
+            tmpResource[self.timestamp] = int(time.time() * 1000000)
+        
         if run_validate == True:
             tmpResource._validate()
             
@@ -700,10 +709,9 @@ class ResourceHandler(BaseHandler):
     def _return_resources(self, query):
 
         try:
-            cursor = self._find(query = query)
             response = []
-            for doc in self._mongo.unis_db[self.collection_name].find(query): #while (yield cursor.fetch_next):
-                resource = ObjectDict._from_mongo(doc) #cursor.next_object())
+            for doc in self._mongo.unis_db[self.collection_name].find(query):
+                resource = ObjectDict._from_mongo(doc)
                 response.append(resource)
         
             if len(response) == 1:
