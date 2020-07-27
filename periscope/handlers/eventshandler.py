@@ -88,7 +88,7 @@ class EventsHandler(ResourceHandler):
     def _return_resoures(self, query):
         try:                
             for resource in self._mongo.unis_db[self.collection_name].find(query):
-                self._subscriptions.publish(resource, self.collection_name)
+                self.publisher.publish(resource, self.collection_name)
         except Exception as exp:
             raise ValueError(exp)
         
