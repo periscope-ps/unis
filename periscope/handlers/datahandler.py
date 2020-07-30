@@ -39,7 +39,7 @@ class DataHandler(ResourceHandler):
         
         for mid, data in mids.items():
             push_data = { 'id': mid, 'data': data }
-            self._mongo.unis_db[self.collection_name].insert(push_data)
+            self._mongo.unis_db[mid].insert(push_data)
             self.publisher.publish(push_data, self.collection_name, { "action": "POST", "collection": "data/{}".format(mid) },
                                         self.trim_published_resource)
             

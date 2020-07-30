@@ -133,6 +133,7 @@ class ResourceHandler(BaseHandler):
         self.collection_name = Resources[self.resource_name]["collection_name"]
         self.schemas_single = Resources[self.resource_name]["schema"]
         self._model_class = load_class(Resources[self.resource_name]["model_class"])
+        self.publisher = GetSubscriptionManager()
         self._accepted_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']]
         self._content_types_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]
         self._mongo = MongoClient('localhost', 27017)
@@ -485,12 +486,10 @@ class ResourceHandler(BaseHandler):
         self._model_class = load_class(Resources[self.resource_name]["model_class"])
         self._accepted_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']]
         self._content_types_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]
-        self.publisher = SubscriptionHandler()
+        self.publisher = GetSubscriptionManager() #SubscriptionHandler() 
         self.action = "POST"
         self._mongo = MongoClient('localhost', 27017)
-        
-        #print ("Hitting post req => {}".format(req))
-        
+                
         try:
             self._validate_request(res_id)
         except ValueError as exp:
