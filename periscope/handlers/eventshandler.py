@@ -19,6 +19,10 @@ class EventsHandler(ResourceHandler):
             self.resp.status = falcon.HTTP_400
             self.resp.body = json.dumps(str(exp), indent=4)
         else:
+            self._mongo.unis_db.create_collection(metadata_id,
+                                      capped      = True,
+                                      size        = resource["collection_size"],
+                                      autoIndexId = False)
             resource[self.timestamp] = int(time.time() * 1000000)
             resource[self.Id] = metadata_id
             self.insert(resource, summarize = False)
