@@ -10,13 +10,15 @@ import bson
 from pymongo import MongoClient
 from uuid import uuid4
 from urllib.parse import urlparse
-from bson.json_util import dumps
+from bson.json_util import dumps, loads
 from bson.objectid import ObjectId
-from periscope.settings import MIME, Resources
+from periscope.settings import MIME, Resources, collections
 from periscope.utils import *
 from periscope.models import *
 from periscope.handlers.subscriptionhandler import *
 from periscope.handlers.basehandler import BaseHandler
+
+dumps_mongo = dumps
 
 if hasattr(bson, "dumps"):
     # standalone bson
@@ -36,6 +38,26 @@ def decode(str):
             break
         str = dec
     return dec
+
+def _render(resource):
+    return loads(dumps_mongo(resource, indent=2).replace('\\\\$', '$').replace('$DOT$', '.'))
+        
+def initialize(req, resp, resource, params):
+
+        resource.req = req
+        resource.resp = resp
+        resource.timestamp = "ts"
+        resource.Id = "id"
+        resource._tailable = False
+        resource.resource_name = req.path.split("/")[1]
+        resource.collection_name = Resources[resource.resource_name]["collection_name"]
+        resource.schemas_single = Resources[resource.resource_name]["schema"]
+        resource._model_class = load_class(Resources[resource.resource_name]["model_class"])
+        resource.publisher = GetSubscriptionManager()
+        resource._accepted_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']]
+        resource._content_types_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]
+        resource._mongo = MongoClient('localhost', 27017)
+
     
 class ResourceHandler(BaseHandler):
 
@@ -122,8 +144,11 @@ class ResourceHandler(BaseHandler):
         else:
             return False
         
+
+    @falcon.before(initialize)
     def on_get(self, req, resp, res_id=None):
 
+        '''
         self.req = req
         self.resp = resp
         self.timestamp = "ts"
@@ -137,7 +162,8 @@ class ResourceHandler(BaseHandler):
         self._accepted_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']]
         self._content_types_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]
         self._mongo = MongoClient('localhost', 27017)
-
+        '''
+        
         # Parse arguments and set up query
         try:
             parsed = self._parse_get_arguments() 
@@ -225,11 +251,11 @@ class ResourceHandler(BaseHandler):
         if self.accept_content_type == MIME["PSBSON"]:
             results = []
             for resource in cursor:
+                resource = self._post_get(resource, inline)
                 if not unique or str(resource.get('id', resource)) not in seen:
-                
-                  seen[str(resource.get('id', resource))] = True
-                  results.append(resource)
-                  buf.append(resource)
+                    seen[str(resource.get('id', resource))] = True
+                    results.append(resource)
+                    buf.append(resource)
             
             if results and not is_list: results = results[0]
             results = bson_encode({'d': results})
@@ -239,13 +265,22 @@ class ResourceHandler(BaseHandler):
             if not count:
                 return (buf, count)
                 
+            inline = True
             for resource in cursor:
+                resource = self._post_get(resource, inline)
+                json_response = _render(resource)
+                
                 if not unique or str(resource.get('id', resource)) not in seen:                
-                  seen[str(resource.get('id', resource))] = True
-                  buf.append(resource)
+                    seen[str(resource.get('id', resource))] = True
+                    buf.append(json_response)
         
         return (buf, count)
 
+    def _post_get(self, resource, inline=False):
+        
+        return resource
+        
+        
     def _parse_get_arguments(self):
         
         """Parses the HTTP GET areguments given by the user."""
@@ -472,9 +507,10 @@ class ResourceHandler(BaseHandler):
         
         
         
-        
+    @falcon.before(initialize)
     def on_post(self, req, resp, res_id=None):
-        
+    
+        '''    
         #res_id = None
         self.timestamp = "ts"
         self.Id = "id"
@@ -487,9 +523,22 @@ class ResourceHandler(BaseHandler):
         self._accepted_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML']]
         self._content_types_mime = [MIME['SSE'], MIME['PSJSON'], MIME['PSBSON'], MIME['PSXML'], MIME['HTML']]
         self.publisher = GetSubscriptionManager() #SubscriptionHandler() 
-        self.action = "POST"
         self._mongo = MongoClient('localhost', 27017)
-                
+        self._cache = {}
+        self._collections = collections
+        self.complete_links = True
+        '''
+
+        self._cache = {}
+        self.complete_links = True
+        self._collections = Resources[self.resource_name]["collections"]
+        self._models_index = {}
+        
+        for key, value in self._collections.items():
+            self._models_index[value["model_class"]] = key
+            
+        self.action = "POST"
+        
         try:
             self._validate_request(res_id)
         except ValueError as exp:
@@ -530,7 +579,7 @@ class ResourceHandler(BaseHandler):
         Insert resources
         """
         try:
-            self._insert(resources)
+            self._insert(resources, self.collection_name)
         except Exception as exp:
             message = "Could not process the POST request - {exp}".format(exp = exp)
             resp.status = falcon.HTTP_409
@@ -549,10 +598,10 @@ class ResourceHandler(BaseHandler):
         resp.status = falcon.HTTP_201
         resp.body = json.dumps(buf, indent=2)
 
-    def _insert(self, resources):
+    def _insert(self, resources, collection):
         
-        self.insert(resources)
-        self.publisher.publish(resources, self.collection_name, { "action": "POST" })
+        self.insert(resources, collection)
+        self.publisher.publish(resources, collection, { "action": "POST" })
     
     def _insert_id(self, data):
         if "_id" not in data and not self.capped:
@@ -560,7 +609,7 @@ class ResourceHandler(BaseHandler):
             timestamp = data.get(self.timestamp, int(time.time() * 1000000))
             data["_id"] = "%s:%s" % (res_id, timestamp)
     
-    def insert(self, data, callback=None, summarize=True, **kwargs):
+    def insert(self, data, collection, callback=None, summarize=True, **kwargs):
         """Inserts data to the collection."""
         
         self.capped = False
@@ -570,21 +619,21 @@ class ResourceHandler(BaseHandler):
         if isinstance(data, list) and not self.capped:
             for item in data:
                 if summarize:
-                    shards.append(self._create_manifest_shard(item))
+                    shards.append(self._create_manifest_shard(item, collection))
                 self._insert_id(item)
         elif not self.capped:
             if summarize:
-                shards.append(self._create_manifest_shard(data))
+                shards.append(self._create_manifest_shard(data, collection))
             self._insert_id(data)
 
-        futures = [self._mongo.unis_db[self.collection_name].insert(data, **kwargs)]
+        futures = [self._mongo.unis_db[collection].insert(data, **kwargs)]
         if summarize:
             futures.append(self._mongo.unis_db[self.manifests].insert(shards))
         results = futures
 
         return results
    
-    def _create_manifest_shard(self, resource):
+    def _create_manifest_shard(self, resource, collection):
         if "\\$collection" in resource:
             tmpResource = resource["properties"]
         else:
@@ -592,7 +641,7 @@ class ResourceHandler(BaseHandler):
         tmpResult = {}
         tmpResult["properties"] = self._flatten_shard(tmpResource)
         tmpResult["$shard"] = True
-        tmpResult["$collection"] = self.collection_name
+        tmpResult["$collection"] = collection
         return dict(ObjectDict(tmpResult)._to_mongoiter())
     
     def _flatten_shard(self, resource):

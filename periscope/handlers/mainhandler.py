@@ -11,6 +11,7 @@ class MainHandler(BaseHandler):
         
         for resource in resources:
             href = "%s://%s/%s" % (req.scheme, req.host, resource)
+            
             links.append({ "href": href, 
                            "rel": "full",
                            "targetschema": { "type": "array", "items": { "rel": "full", "href": Resources[resource]["schema"][MIME["PSJSON"]] } } })

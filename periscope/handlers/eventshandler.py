@@ -6,7 +6,7 @@ from periscope.handlers.resourcehandler import ResourceHandler
 
 class EventsHandler(ResourceHandler):
         
-    def _insert(self, resources):
+    def _insert(self, resources, collection):
         
         resource = resources[0]
         
@@ -23,9 +23,11 @@ class EventsHandler(ResourceHandler):
                                       capped      = True,
                                       size        = resource["collection_size"],
                                       autoIndexId = False)
+        
+        
             resource[self.timestamp] = int(time.time() * 1000000)
             resource[self.Id] = metadata_id
-            self.insert(resource, summarize = False)
+            self.insert(resource, collection, summarize = False)
             
         return
 
@@ -119,7 +121,7 @@ class EventsHandler(ResourceHandler):
             command={"collStats": mid,"scale":1}            
             generic = self._mongo.unis_db.command(command)
         except Exception as exp:
-            raise ValueError("At least one of the metadata ID is invalid.")
+            raise ValueError("At least one of the metadata ID is invalid. {}".format(exp))
             return
         
         
