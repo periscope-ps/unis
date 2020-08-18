@@ -12,11 +12,6 @@
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
 
-import json
-import time
-import functools
-import periscope.settings as settings
-from periscope.settings import MIME
 from periscope.handlers.collectionhandler import CollectionHandler
         
 class ExnodeHandler(CollectionHandler):
