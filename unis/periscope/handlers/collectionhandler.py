@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # =============================================================================
 #  periscope-ps (unis)
 #
@@ -10,20 +11,18 @@
 #  This software was created at the Indiana University Center for Research in
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
-#!/usr/bin/env python3
 
 import falcon
 import json
 import functools
 import jsonpointer
-import periscope.settings as settings
-import periscope.utils as utils
+from periscope import settings as settings
+from periscope import utils as utils
 from urllib.parse import urlparse
 from jsonpath import jsonpath
-from periscope.models import schemaLoader
 from requests import request
 from periscope.settings import MIME
-from periscope.handlers.resourcehandler import ResourceHandler
+from periscope.handlers.networkresourcehandler import NetworkResourceHandler
 from bson.json_util import dumps
 from periscope.models import NetworkResource
 from periscope.models import HyperLink
@@ -31,7 +30,7 @@ from periscope.models import Topology
 from periscope.models import schemaLoader
 
 
-class CollectionHandler(ResourceHandler):
+class CollectionHandler(NetworkResourceHandler):
 
     def _put_resource(self, resource):
         try:

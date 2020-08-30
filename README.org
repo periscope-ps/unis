@@ -7,9 +7,14 @@ find more information about all these components [[https://github.com/GENI-GEMIN
 
 ** Running the application
 
-You can attempt to run it as
+Run the setup script in top level of the repository. You can use --prefix or --install-dir to install it somewhere other than the default location. The default usually requires using sudo.
 #+BEGIN_SRC
-$ gunicorn --reload periscope:app
+$ python setup.py install
+#+END_SRC
+
+You can attempt to run the application as
+#+BEGIN_SRC
+$ periscoped
 #+END_SRC
 
 

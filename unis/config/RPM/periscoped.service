@@ -1,0 +1,15 @@
+[Unit]
+Description=Persicope Service
+After=network.target
+Requires=supervisord.service mongod.service redis.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/share/periscope/wait_sv_sock
+ExecStart=/usr/bin/supervisorctl start periscope-unis periscope-ms
+ExecReload=/usr/bin/supervisorctl reload periscope-unis periscope-ms
+ExecStop=/usr/bin/supervisorctl stop periscope-unis periscope-ms
+
+[Install]
+WantedBy=multi-user.target

@@ -12,8 +12,28 @@
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
 
+import falcon
 from periscope.handlers.collectionhandler import CollectionHandler
-        
+
+def initialize(req, resp, resource, params):
+    resource._dblayer = get_db_layer(resourceObj["collection_name"], 
+                                    resourceObj["id_field_name"],
+                                    resourceObj["timestamp_field_name"],
+                                    resourceObj["is_capped_collection"],
+                                    resourceObj["capped_collection_size"])
+
+class FolderHandler(object):
+    @falcon.before(initialize)
+    def on_get(self, req, resp, res_id=None):
+        par = req.get_param("parent", default=None)
+        val = self._dblayer.getRecParentNames(par)
+        #self.log.info("Getting recurrsive folder ids for: [" + self._dblayer._collection_name + "]" + " with Parent " + par)
+        buf = []
+        if (val != None):
+            buf = val
+        resp.set_header('Content-Type', 'application/json')        
+        resp.body = json.dumps(buf, indent=4)
+
 class ExnodeHandler(CollectionHandler):
     def _post_get(self, resource, inline=False):
         

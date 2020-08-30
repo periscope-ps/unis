@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # =============================================================================
 #  periscope-ps (unis)
 #
@@ -10,6 +11,7 @@
 #  This software was created at the Indiana University Center for Research in
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
+
 """
 General Periscope Settings.
 """
@@ -19,6 +21,8 @@ import logging.handlers
 import os
 import falcon_jsonify
 import sys
+from pymongo import MongoClient
+from periscope.db import DBLayer
 
 LIST_OPTIONS = ["unis.root_urls", "unis.communities"]
 SELF_LOOKUP_URLS = ["http://ident.me"]
@@ -183,6 +187,36 @@ def get_logger(namespace=LOGGER_NAMESPACE, level = None, filename = None):
         _log = config_logger(namespace, level, filename)
     return _log
 
+def get_db_layer(collection_name, id_field_name,
+                     timestamp_field_name, is_capped_collection, capped_collection_size):
+        
+        db = MongoClient('localhost', 27017).unis_db
+        
+        if collection_name == None:
+            return None
+        # Add capped collection if needed
+        if is_capped_collection:
+            db.create_collection(collection_name,
+                                 capped      = True,
+                                 size        = capped_collection_size,
+                                 autoIndexId = False)
+        
+        # Ensure indexes
+        if id_field_name != timestamp_field_name:
+            db[collection_name].create_index([ (id_field_name, 1), (timestamp_field_name, -1)],
+                                             unique = True)
+            db[collection_name].create_index([ (timestamp_field_name, 1)],
+                                             unique = False)
+        
+        # Create Layer
+        db_layer = DBLayer(db,
+                           collection_name,
+                           is_capped_collection,
+                           id_field_name,
+                           timestamp_field_name)
+        
+        return db_layer
+
 ######################################################################
 # NetworkResource Handlers settings
 ######################################################################
@@ -223,7 +257,7 @@ SCHEMAS = {
 # This is used to make writing `Resources` easier.
 default_resource_settings= {
     "base_url": "", # For additional URL extension, e.g. /mynetwork/unis will make /ports like /mynetwork/unis/ports
-    "handler_class": "periscope.handlers.NetworkResourceHandler", # The HTTP Request Handler class
+    "handler_class": "NetworkResourceHandler", # The HTTP Request Handler class
     "is_capped_collection": False,
     "capped_collection_size": 0,
     "id_field_name": "id",
@@ -239,7 +273,7 @@ default_resource_settings= {
 links = default_resource_settings.copy()
 links.update({
             "name": "links",
-            "pattern": "/links$", # The regex used to match the handler in URI
+            "uri_template": "/links", # The regex used to match the handler in URI
             "model_class": "periscope.models.Link", # The name of the database collection
             "collection_name": "links",
             "schema": {MIME['PSJSON']: SCHEMAS["link"], MIME['PSBSON']: SCHEMAS["link"]}, # JSON Schema fot this resource
@@ -249,7 +283,7 @@ link = default_resource_settings.copy()
 link.update(
         {
             "name": "link",
-            "pattern": "/links/(?P<res_id>[^\/]*)$",
+            "uri_template": "/links/{res_id}",
             "model_class": "periscope.models.Link",
             "collection_name": "links",
             "schema": {MIME['PSJSON']: SCHEMAS["link"], MIME['PSBSON']: SCHEMAS["link"]},
@@ -259,7 +293,7 @@ login = default_resource_settings.copy()
 login.update(
         {
             "name": "login",
-            "pattern": "/login$",
+            "uri_template": "/login",
             # "model_class": "periscope.models.Port",
             # "collection_name": "ports",
             # "schema": {MIME['PSJSON']: SCHEMAS["port"]},
@@ -269,7 +303,7 @@ ports = default_resource_settings.copy()
 ports.update(
         {
             "name": "ports",
-            "pattern": "/ports$",
+            "uri_template": "/ports",
             "model_class": "periscope.models.Port",
             "collection_name": "ports",
             "schema": {MIME['PSJSON']: SCHEMAS["port"], MIME['PSBSON']: SCHEMAS["port"]},
@@ -279,7 +313,7 @@ port = default_resource_settings.copy()
 port.update(
         {
             "name": "port",
-            "pattern": "/ports/(?P<res_id>[^\/]*)$",
+            "uri_template": "/ports/{res_id}",
             "model_class": "periscope.models.Port",
             "collection_name": "ports",
             "schema": {MIME['PSJSON']: SCHEMAS["port"], MIME['PSBSON']: SCHEMAS["port"]},
@@ -289,7 +323,7 @@ nodes = default_resource_settings.copy()
 nodes.update(
         {
             "name": "nodes",
-            "pattern": "/nodes$",
+            "uri_template": "/nodes",
             "model_class": "periscope.models.Node",
             "collection_name": "nodes",
             "schema": {MIME['PSJSON']: SCHEMAS["node"], MIME['PSBSON']: SCHEMAS["node"]},
@@ -299,7 +333,7 @@ node = default_resource_settings.copy()
 node.update(
         {
             "name": "node",
-            "pattern": "/nodes/(?P<res_id>[^\/]*)$",
+            "uri_template": "/nodes/{res_id}",
             "model_class": "periscope.models.Node",
             "collection_name": "nodes",
             "schema": {MIME['PSJSON']: SCHEMAS["node"], MIME['PSBSON']: SCHEMAS["node"]},
@@ -309,7 +343,7 @@ services = default_resource_settings.copy()
 services.update(
         {
             "name": "services",
-            "pattern": "/services$",
+            "uri_template": "/services",
             "model_class": "periscope.models.Service",
             "collection_name": "services",
             "schema": {MIME['PSJSON']: SCHEMAS["service"], MIME['PSBSON']: SCHEMAS["service"]},
@@ -319,7 +353,7 @@ service = default_resource_settings.copy()
 service.update(
         {
             "name": "service",
-            "pattern": "/services/(?P<res_id>[^\/]*)$",
+            "uri_template": "/services/{res_id}",
             "model_class": "periscope.models.Service",
             "collection_name": "services",
             "schema": {MIME['PSJSON']: SCHEMAS["service"], MIME['PSBSON']: SCHEMAS["service"]},
@@ -328,24 +362,24 @@ service.update(
 getSchema = dict( \
         {
             "name": "getSchema",
-            "pattern": "/getSchema$",
+            "uri_template": "/getSchema",
             "base_url":"",
-            "handler_class": "periscope.handlers.SchemaHandler",
+            "handler_class": "SchemaHandler",
         }.items()
 )
 getParent = dict( \
         {
             "name": "getFolder",
-            "pattern": "/getFolder$",
+            "uri_template": "/getFolder",
             "base_url":"",
-            "handler_class": "periscope.handlers.FolderHandler",
+            "handler_class": "FolderHandler",
         }.items()
 )
 paths = default_resource_settings.copy()
 paths.update(
         {
             "name": "paths",
-            "pattern": "/paths$",
+            "uri_template": "/paths",
             "model_class": "periscope.models.Path",
             "collection_name": "paths",
             "schema": {MIME['PSJSON']: SCHEMAS["path"], MIME['PSBSON']: SCHEMAS["path"]},
@@ -355,7 +389,7 @@ path = default_resource_settings.copy()
 path.update(
         {
             "name": "path",
-            "pattern": "/paths/(?P<res_id>[^\/]*)$",
+            "uri_template": "/paths/{res_id}",
             "model_class": "periscope.models.Path",
             "collection_name": "paths",
             "schema": {MIME['PSJSON']: SCHEMAS["path"], MIME['PSBSON']: SCHEMAS["path"]},
@@ -365,8 +399,8 @@ networks = default_resource_settings.copy()
 networks.update(
         {
             "name": "networks",
-            "pattern": "/networks$",
-            "handler_class": "periscope.handlers.CollectionHandler",
+            "uri_template": "/networks",
+            "handler_class": "CollectionHandler",
             "model_class": "periscope.models.Network",
             "collection_name": "networks",
             "schema": {MIME['PSJSON']: SCHEMAS["network"], MIME['PSBSON']: SCHEMAS["network"]},
@@ -377,8 +411,8 @@ network = default_resource_settings.copy()
 network.update(
         {
             "name": "network",
-            "pattern": "/networks/(?P<res_id>[^\/]*)$",
-            "handler_class": "periscope.handlers.CollectionHandler",
+            "uri_template": "/networks/{res_id}",
+            "handler_class": "CollectionHandler",
             "model_class": "periscope.models.Network",
             "collection_name": "networks",
             "schema": {MIME['PSJSON']: SCHEMAS["network"], MIME['PSBSON']: SCHEMAS["network"]},
@@ -389,8 +423,8 @@ domains = default_resource_settings.copy()
 domains.update(
         {
             "name": "domains",
-            "pattern": "/domains$",
-            "handler_class": "periscope.handlers.CollectionHandler",
+            "uri_template": "/domains",
+            "handler_class": "CollectionHandler",
             "model_class": "periscope.models.Domain",
             "collection_name": "domains",
             "schema": {MIME['PSJSON']: SCHEMAS["domain"], MIME['PSBSON']: SCHEMAS["domain"]},
@@ -401,8 +435,8 @@ domain = default_resource_settings.copy()
 domain.update(
         {
             "name": "domain",
-            "pattern": "/domains/(?P<res_id>[^\/]*)$",
-            "handler_class": "periscope.handlers.CollectionHandler",
+            "uri_template": "/domains/{res_id}",
+            "handler_class": "CollectionHandler",
             "model_class": "periscope.models.Domain",
             "collection_name": "domains",
             "schema": {MIME['PSJSON']: SCHEMAS["domain"], MIME['PSBSON']: SCHEMAS["domain"]},
@@ -413,8 +447,8 @@ topologies = default_resource_settings.copy()
 topologies.update(
         {
             "name": "topologies",
-            "pattern": "/topologies$",
-            "handler_class": "periscope.handlers.CollectionHandler",
+            "uri_template": "/topologies",
+            "handler_class": "CollectionHandler",
             "model_class": "periscope.models.Topology",
             "collection_name": "topologies",
             "schema": {MIME['PSJSON']: SCHEMAS["topology"], MIME['PSBSON']: SCHEMAS["topology"]},
@@ -425,8 +459,8 @@ topology = default_resource_settings.copy()
 topology.update(
         {
             "name": "topology",
-            "pattern": "/topologies/(?P<res_id>[^\/]*)$",
-            "handler_class": "periscope.handlers.CollectionHandler",
+            "uri_template": "/topologies/{res_id}",
+            "handler_class": "CollectionHandler",
             "model_class": "periscope.models.Topology",
             "collection_name": "topologies",
             "schema": {MIME['PSJSON']: SCHEMAS["topology"], MIME['PSBSON']: SCHEMAS["topology"]},
@@ -437,7 +471,7 @@ metadatas = default_resource_settings.copy()
 metadatas.update(
         {
             "name": "metadatas",
-            "pattern": "/metadata$", 
+            "uri_template": "/metadata", 
             "model_class": "periscope.models.Metadata",
             "collection_name": "metadata",
             "schema": {MIME['PSJSON']: SCHEMAS["metadata"], MIME['PSBSON']: SCHEMAS["metadata"]},
@@ -447,7 +481,7 @@ metadata = default_resource_settings.copy()
 metadata.update(
         {
             "name": "metadata",
-            "pattern": "/metadata/(?P<res_id>[^\/]*)$",
+            "uri_template": "/metadata/{res_id}",
             "model_class": "periscope.models.Metadata",
             "collection_name": "metadata",
             "schema": {MIME['PSJSON']: SCHEMAS["metadata"], MIME['PSBSON']: SCHEMAS["metadata"]},
@@ -457,8 +491,8 @@ events = default_resource_settings.copy()
 events.update(
         {
             "name": "events",
-            "pattern": "/events$", 
-            "handler_class" : "periscope.handlers.EventsHandler",
+            "uri_template": "/events", 
+            "handler_class" : "EventsHandler",
             "model_class": "periscope.models.Event",
             "collection_name": "events_cache",
             "schema": {MIME['PSJSON']: SCHEMAS["datum"], MIME['PSBSON']: SCHEMAS["datum"]},
@@ -468,8 +502,8 @@ event = default_resource_settings.copy()
 event.update(
         {
             "name": "event",
-            "pattern": "/events/(?P<res_id>[^\/]*)$",
-            "handler_class" : "periscope.handlers.EventsHandler",
+            "uri_template": "/events/{res_id}",
+            "handler_class" : "EventsHandler",
             "model_class": "periscope.models.Event",
             "collection_name": None,
             "schema": {MIME['PSJSON']: SCHEMAS["datum"], MIME['PSBSON']: SCHEMAS["datum"]},
@@ -479,8 +513,8 @@ datas = default_resource_settings.copy()
 datas.update(
         {
             "name": "datas",
-            "pattern": "/data$", 
-            "handler_class" : "periscope.handlers.DataHandler",
+            "uri_template": "/data", 
+            "handler_class" : "DataHandler",
             "model_class": "periscope.models.Data",
             "collection_name": "data",
             "schema": {MIME['PSJSON']: SCHEMAS["data"], MIME['PSBSON']: SCHEMAS["data"]},
@@ -490,8 +524,8 @@ data = default_resource_settings.copy()
 data.update(
         {
             "name": "data",
-            "pattern": "/data/(?P<res_id>[^\/]*)$",
-            "handler_class" : "periscope.handlers.DataHandler",
+            "uri_template": "/data/{res_id}",
+            "handler_class" : "DataHandler",
             "model_class": "periscope.models.Data",
             "collection_name": "data",
             "schema": {MIME['PSJSON']: SCHEMAS["data"], MIME['PSBSON']: SCHEMAS["data"]},
@@ -501,7 +535,7 @@ measurements = default_resource_settings.copy()
 measurements.update(
         {
             "name": "measurements",
-            "pattern": "/measurements$",
+            "uri_template": "/measurements",
             "model_class": "periscope.models.Measurement",
             "collection_name": "measurements",
             "schema": {MIME['PSJSON']: SCHEMAS["measurement"], MIME['PSBSON']: SCHEMAS["measurement"]},
@@ -511,7 +545,7 @@ measurement = default_resource_settings.copy()
 measurement.update(
         {
             "name": "measurement",
-            "pattern": "/measurements/(?P<res_id>[^\/]*)$",
+            "uri_template": "/measurements/{res_id}",
             "model_class": "periscope.models.Measurement",
             "collection_name": "measurements",
             "schema": {MIME['PSJSON']: SCHEMAS["measurement"], MIME['PSBSON']: SCHEMAS["measurement"]},
@@ -521,7 +555,7 @@ extents = default_resource_settings.copy()
 extents.update(
          {
              "name"                   : "extents",
-             "pattern"                : "/extents$",
+             "uri_template"           : "/extents",
              "model_class"            : "periscope.models.Extent",
              "collection_name"        : "extents",
              "schema": {MIME['PSJSON']: SCHEMAS["extent"], MIME['PSBSON']: SCHEMAS["extent"]}
@@ -531,7 +565,7 @@ extent = default_resource_settings.copy()
 extent.update(
          {
              "name"                   : "extent",
-             "pattern"                : "/extents/(?P<res_id>[^\/]*)$",
+             "uri_template"           : "/extents/{res_id}",
              "model_class"            : "periscope.models.Extent",
              "collection_name"        : "extents",
              "schema": {MIME['PSJSON']: SCHEMAS["extent"], MIME['PSBSON']: SCHEMAS["extent"]}
@@ -541,8 +575,8 @@ exnodes = default_resource_settings.copy()
 exnodes.update(
          {
              "name"                   : "exnodes",
-             "pattern"                : "/exnodes$",
-             "handler_class"          : "periscope.handlers.ExnodeHandler",
+             "uri_template"           : "/exnodes",
+             "handler_class"          : "ExnodeHandler",
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"], MIME['PSBSON']: SCHEMAS["exnode"]},
@@ -553,8 +587,8 @@ exnode = default_resource_settings.copy()
 exnode.update(
          {
              "name"                   : "exnode",
-             "pattern"                : "/exnodes/(?P<res_id>[^\/]*)$",
-             "handler_class"          : "periscope.handlers.ExnodeHandler",
+             "uri_template"           : "/exnodes/{res_id}",
+             "handler_class"          : "ExnodeHandler",
              "model_class"            : "periscope.models.Exnode",
              "collection_name"        : "exnodes",
              "schema": {MIME['PSJSON']: SCHEMAS["exnode"], MIME['PSBSON']: SCHEMAS["exnode"]},
@@ -565,9 +599,9 @@ reg_settings = default_resource_settings.copy()
 reg_settings.update(
         {
             "name": "register",
-            "pattern": "/register$",
+            "uri_template": "/register",
             "model_class": "periscope.models.Service",
-            "handler_class": "periscope.handlers.RegisterHandler",
+            "handler_class": "RegisterHandler",
             "collection_name": "register",
             "allow_get": False, "allow_delete": False, "allow_put": False,
             "schema": {MIME['PSJSON']: SCHEMAS["service"], MIME['PSBSON']: SCHEMAS["service"]},
@@ -577,22 +611,22 @@ reg_settings.update(
 itemSubscription = {
     "base_url"      : "",
     "name"          : "itemSubscription",
-    "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)/(?P<resource_id>[^\/]*)$",
-    "handler_class" : "periscope.handlers.SubscriptionHandler"
+    "uri_template"  : "/subscribe/{resource_type}/{resource_id})",
+    "handler_class" : "SubscriptionHandler"
 }
 
 catSubscription = {
     "base_url"      : "",
     "name"          : "categorySubscription",
-    "pattern"       : "/subscribe/(?P<resource_type>[^\/]*)$",
-    "handler_class" : "periscope.handlers.SubscriptionHandler"
+    "uri_template"  : "/subscribe/{resource_type})",
+    "handler_class" : "SubscriptionHandler"
 }
 
 querySubscription = {
     "base_url"      : "",
     "name"          : "querySubscription",
-    "pattern"       : "/subscribe",
-    "handler_class" : "periscope.handlers.SubscriptionHandler"
+    "uri_template"  : "/subscribe",
+    "handler_class" : "SubscriptionHandler"
 }
 
 collections = {
@@ -657,15 +691,15 @@ main_handler_settings = {
                   "networks", "domains", "topologies", "events", "datas", "metadatas", "measurements", "exnodes", "extents"],
     "name": "main",
     "base_url": "",
-    "pattern": "/$",
-    "handler_class": "periscope.handlers.MainHandler",
+    "uri_template": "/",
+    "handler_class": "MainHandler",
 }
 about_handler_settings = {
     "resources": [],
     "name": "about",
     "base_url": "",
-    "pattern": "/about$",
-    "handler_class": "periscope.handlers.AboutHandler"
+    "uri_template": "/about",
+    "handler_class": "AboutHandler"
 }
 
 ######################################################################
@@ -673,29 +707,29 @@ about_handler_settings = {
 ######################################################################
 PP_MODULES=[]
 #if (ENABLE_AUTH): 
-#    PP_MODULES.append(('periscope.filters.dataAuth','DataAuth')) #[('periscope.#gemini', 'Gemini')]
+#    PP_MODULES.append(('filters.dataAuth','DataAuth')) #[('#gemini', 'Gemini')]
 
 # Settings for the GEMINI-specific authentication handlers
 auth_user_settings= {
     "base_url": "",
-    "handler_class": "periscope.gemini.AuthUserCredHandler",
+    "handler_class": "gemini.AuthUserCredHandler",
     "name": "cred_geniuser",
-    "pattern": "/credentials/geniuser",
+    "uri_template": "/credentials/geniuser",
     "schema": [MIME['PLAIN']]
 }
 
 auth_slice_settings= {
     "base_url": "",
-    "handler_class": "periscope.gemini.AuthSliceCredHandler",
+    "handler_class": "gemini.AuthSliceCredHandler",
     "name": "cred_genislice",
-    "pattern": "/credentials/genislice",
+    "uri_template": "/credentials/genislice",
     "schema": [MIME['PLAIN']]
 }
 auth_login_settings= {
     "base_url": "",
-    "handler_class": "periscope.filters.dataAuth.UserCredHandler",
+    "handler_class": "filters.dataAuth.UserCredHandler",
     "name": "authenticate_user",
-    "pattern": "/login",
+    "uri_template": "/login",
     "schema": [MIME['PLAIN']]
 }
 AuthResources = {

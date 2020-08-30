@@ -1,0 +1,119 @@
+#!/bin/bash
+# =============================================================================
+#  periscope-ps (unis)
+#
+#  Copyright (c) 2012-2016, Trustees of Indiana University,
+#  All rights reserved.
+#
+#  This software may be modified and distributed under the terms of the BSD
+#  license.  See the COPYING file for details.
+#
+#  This software was created at the Indiana University Center for Research in
+#  Extreme Scale Technologies (CREST).
+# =============================================================================
+#
+# This script controls the periscoped service
+#
+# chkconfig: 2345 65 75
+# description: Periscope is a measurement and topological store
+#              for data logistics
+#
+# processname: periscoped
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+# source periscoped configuration
+if [ -f /etc/sysconfig/periscoped ]; then
+   . /etc/sysconfig/periscoped
+fi
+
+lockfile=/var/lock/subsys/periscoped
+
+RETVAL=0
+
+start() {
+    service mongod start
+    service redis start
+    service supervisord start
+    echo -n $"Starting periscope: "
+    status-unis 0 || timeout 2s supervisorctl start periscope-unis
+    status-ms 0 || timeout 2s supervisorctl start periscope-ms
+    echo "OK"
+    RETVAL=$?
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping periscope: "
+    timeout 2s supervisorctl stop periscope-unis
+    timeout 2s supervisorctl stop periscope-ms
+    echo "OK"
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    service redis stop
+    service mongod stop
+    return $RETVAL
+}
+
+restart() {
+    stop
+    sleep 1
+    start
+}
+
+status-ms() {
+    MS=`supervisorctl status periscope-ms`
+    [ $1 -gt 0 ] && echo $MS
+    mstat=0
+    !(echo $MS | grep -q RUNNING) || mstat=1
+    if [ $mstat -eq 1 ]; then
+        RETVAL=0
+    else
+        RETVAL=3
+    fi
+    return $RETVAL
+}
+
+status-unis() {
+    UNIS=`supervisorctl status periscope-unis`
+    [ $1 -gt 0 ] && echo $UNIS
+    ustat=0
+    !(echo $UNIS | grep -q RUNNING) || ustat=1
+    if [ $ustat -eq 1 ]; then
+        RETVAL=0
+    else
+        RETVAL=3
+    fi
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    restart|force-reload|reload)
+	restart
+	;;
+    condrestart)
+	[ -f $lockfile ] && restart
+	;;
+    status)
+	unis=1 && ms=1
+	status-unis 1 || unis=0
+	status-ms 1 || ms=0
+	if [ $unis -eq 1 ] && [ $ms -eq 1 ]; then
+	    RETVAL=0
+	else
+	    RETVAL=3
+	fi
+	;;
+    *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart}"
+	exit 1
+esac
+
+exit $RETVAL

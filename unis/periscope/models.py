@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # =============================================================================
 #  periscope-ps (unis)
 #
@@ -10,7 +11,7 @@
 #  This software was created at the Indiana University Center for Research in
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
-#!/usr/bin/env python
+
 """
 Database models.
 """
@@ -26,7 +27,7 @@ import re
 import functools
 import requests
 from periscope.utils import json_schema_merge_extends
-from periscope.settings import SCHEMA_CACHE_DIR,SCHEMAS
+from periscope.settings import SCHEMA_CACHE_DIR, SCHEMAS, get_logger
 from bson.objectid import ObjectId
 
 _CACHE = {}
@@ -399,7 +400,8 @@ for n in os.listdir(SCHEMA_CACHE_DIR):
             schema = json.load(f)
             _CACHE[schema['id']] = schema
         except:
-            print("Skipping invalid JSON schema: {}".format(n))
+            log = get_logger()
+            log.error("Skipping invalid JSON schema: {}".format(n))
         
 schemaLoader = SchemaCache()
 

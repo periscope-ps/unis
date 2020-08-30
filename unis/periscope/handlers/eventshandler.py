@@ -1,10 +1,24 @@
+#!/usr/bin/env python
+# =============================================================================
+#  periscope-ps (unis)
+#
+#  Copyright (c) 2012-2016, Trustees of Indiana University,
+#  All rights reserved.
+#
+#  This software may be modified and distributed under the terms of the BSD
+#  license.  See the COPYING file for details.
+#
+#  This software was created at the Indiana University Center for Research in
+#  Extreme Scale Technologies (CREST).
+# =============================================================================
+
 import json
 import time
 from periscope.settings import MIME
 from bson.json_util import dumps
-from periscope.handlers.resourcehandler import ResourceHandler
+from periscope.handlers.networkresourcehandler import NetworkResourceHandler
 
-class EventsHandler(ResourceHandler):
+class EventsHandler(NetworkResourceHandler):
         
     def _insert(self, resources, collection):
         

@@ -1,8 +1,21 @@
+#!/usr/bin/env python
+# =============================================================================
+#  periscope-ps (unis)
+#
+#  Copyright (c) 2012-2016, Trustees of Indiana University,
+#  All rights reserved.
+#
+#  This software may be modified and distributed under the terms of the BSD
+#  license.  See the COPYING file for details.
+#
+#  This software was created at the Indiana University Center for Research in
+#  Extreme Scale Technologies (CREST).
+# =============================================================================
+
 import json
 from periscope.settings import MIME, Resources
-from periscope.handlers.basehandler import BaseHandler
 
-class MainHandler(BaseHandler):
+class MainHandler(object):
         
     def on_get(self, req, resp):
 

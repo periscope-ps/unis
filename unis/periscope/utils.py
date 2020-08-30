@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # =============================================================================
 #  periscope-ps (unis)
 #
@@ -10,6 +11,7 @@
 #  This software was created at the Indiana University Center for Research in
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
+
 import copy
 import json
 import urllib.request
