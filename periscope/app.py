@@ -78,7 +78,6 @@ class PeriscopeApplication(tornado.web.Application):
             for key, option in tmpOptions.items():
                 if option not in [None, False]:
                     self._options[key.lstrip("--")] = option
-            print(self._options)
         return self._options
     
     
