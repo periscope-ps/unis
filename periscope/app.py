@@ -73,16 +73,14 @@ class PeriscopeApplication(tornado.web.Application):
             tmpConfig = configparser.RawConfigParser(allow_no_value = True)
             tmpConfig.read(tmpOptions["--config-file"])
             
-            print("Default configuration {}".format(self._options))
             for s in tmpConfig.sections():
-                sp = lambda k, p: [k] if p == 'general' else ([p] + [])
+                sp = lambda k, p: [k] if p == 'general' else ([p] + [k])
                 [_build_pair(sp(k.lower(), s.lower()), o) for k,o in tmpConfig.items(s)]
 
-            print("Configuration file {}".format(self._options))
             for key, option in tmpOptions.items():
                 if option not in [None, False]:
                     self._options[key.lstrip("--")] = option
-            print("Configuration flags {}".format(self._options))
+            self.log.debug("Configuration flags {}".format(self._options))
         return self._options
     
     
