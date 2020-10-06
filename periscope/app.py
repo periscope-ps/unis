@@ -58,7 +58,8 @@ class PeriscopeApplication(tornado.web.Application):
             
             if ".".join(keys) in settings.LIST_OPTIONS:
                 value = value.split(",")
-            value = {"true": True, "false": False}.get(value, value)
+            try: value = {"true": True, "false": False}.get(value, value)
+            except TypeError: pass
             
             d[keys[-1]] = value
 
