@@ -46,6 +46,8 @@ from periscope.handlers import DelegationHandler
 class PeriscopeApplication(tornado.web.Application):
     @property
     def log(self):
+        if not hasattr(self, "_log"):
+            self._log = settings.get_logger(level=self.options['log-level'], filename=self.options['log'])
         return self._log
 
     @property
@@ -78,6 +80,7 @@ class PeriscopeApplication(tornado.web.Application):
             for key, option in tmpOptions.items():
                 if option not in [None, False]:
                     self._options[key.lstrip("--")] = option
+            self.log.debug(self._options)
         return self._options
     
     
@@ -322,7 +325,6 @@ class PeriscopeApplication(tornado.web.Application):
         self._depth = 1 if bool(self.options["lookup"]) else 0
         self._db = None
         self._ppi_classes = []
-        self._log = settings.get_logger(level=self.options['log-level'], filename=self.options['log'])
         handlers = []
         
         try:
