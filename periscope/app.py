@@ -72,12 +72,13 @@ class PeriscopeApplication(tornado.web.Application):
             tmpConfig.read(tmpOptions["--config-file"])
             
             for s in tmpConfig.sections():
-                sp = lambda k, p: [k] if k == 'connection' else ([p] + [])
-                [_build_pair(sp(k.lower(), s.lower()), o) for k,o in tmpConfig.items(section)]
+                sp = lambda k, p: [k] if p == 'general' else ([p] + [])
+                [_build_pair(sp(k.lower(), s.lower()), o) for k,o in tmpConfig.items(s)]
 
             for key, option in tmpOptions.items():
-                if option is not None:
+                if option not in [None, False]:
                     self._options[key.lstrip("--")] = option
+            print(self._options)
         return self._options
     
     
