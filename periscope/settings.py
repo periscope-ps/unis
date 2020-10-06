@@ -61,7 +61,9 @@ DEFAULT_CONFIG = {
     },
     "port": "8888",
     "log": None,
-    "log-level": "INFO"
+    "log-level": "INFO",
+    "soft-start": False,
+    "soft-start-pollrate": 5,
 }
 
 

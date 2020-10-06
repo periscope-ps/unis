@@ -16,8 +16,8 @@ import copy
 import json
 import jsonschema
 import re
-import urllib.request
-from urllib.parse import urlparse
+import urllib3.request
+from urlparse import urlparse
 import time
 import traceback
 from tornado.httpclient import HTTPError
@@ -27,9 +27,8 @@ import tornado.gen
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
 from periscope.settings import MIME
-from .ssehandler import SSEHandler
-
-import periscope.handlers.subscriptionmanager as subscriptionmanager
+from periscope.handlers import subscriptionmanager
+from periscope.handlers.ssehandler import SSEHandler
 
 import bson
 if hasattr(bson, "dumps"):

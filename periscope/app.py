@@ -20,24 +20,18 @@ Options:
   -c FILE --config-file=FILE   File with extra configurations [default: /etc/periscope/unis.cfg]
   -p PORT --port=PORT          Run on PORT
   -r --lookup                  Run UNIS as a lookup service
+  -S --soft-start              Poll backend port for connection when set, defaults to fail-fast
+  --soft-start-pollrate=RATE   Rate of polling in seconds during soft start [default: 5]
 '''
 
-import configparser
-import docopt
-import functools
-import json
-import logging
-import motor
-import tornado.httpserver
-import tornado.web
-import tornado.ioloop
-import sys
-import socket
-import requests
+import configparser, docopt
+import motor, tornado.httpserver, tornado.web, tornado.ioloop
+import functools, json, logging, time, sys, collections
+import socket, requests
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
-from urllib.parse import urlparse
+from urlparse import urlparse
 from uuid import uuid4
 
 from .settings import MIME
@@ -56,44 +50,34 @@ class PeriscopeApplication(tornado.web.Application):
 
     @property
     def options(self):
+        def _build_pair(keys, value):
+            d = self._options
+            for k in keys[:-1]: d = d[k]
+            
+            if ".".join(keys) in settings.LIST_OPTIONS:
+                value = value.split(",")
+            value = {"true": True, "false": False}.get(value, value)
+            
+            d[keys[-1]] = value
+
         if not hasattr(self, "_options"):
-            class DefaultDict(dict):
+            class DefaultDict(collections.defaultdict):
                 def get(self, k, default=None):
                     val = super(DefaultDict, self).get(k, default)
                     return val or default
 
             tmpOptions = docopt.docopt(__doc__)
-            self._options = DefaultDict(settings.DEFAULT_CONFIG)
+            self._options = DefaultDict(dict, settings.DEFAULT_CONFIG)
             tmpConfig = configparser.RawConfigParser(allow_no_value = True)
             tmpConfig.read(tmpOptions["--config-file"])
             
-            for section in tmpConfig.sections():
-                if section.lower() == 'connection':
-                    for k, o in tmpConfig.items(section):
-                        self._options[k] = {'true': True, 'false': False}.get(o, o)
-                        if k in settings.LIST_OPTIONS:
-                            self._options[k] = [] if not o else o.split(',')
-                    continue
-                elif not section in self._options:
-                    self._options[section] = {}
-                
-                for key, option in tmpConfig.items(section):
-                    if "{s}.{k}".format(s = section, k = key) in settings.LIST_OPTIONS:
-                        if not option:
-                            self._options[section][key] = []
-                        else:
-                            self._options[section][key] = option.split(",")
-                    elif option == "true":
-                        self._options[section][key] = True
-                    elif option == "false":
-                        self._options[section][key] = False
-                    else:
-                        self._options[section][key] = option
-            
+            for s in tmpConfig.sections():
+                sp = lambda k, p: [k] if k == 'connection' else ([p] + [])
+                [_build_pair(sp(k.lower(), s.lower()), o) for k,o in tmpConfig.items(section)]
+
             for key, option in tmpOptions.items():
                 if option is not None:
                     self._options[key.lstrip("--")] = option
-        
         return self._options
     
     
@@ -466,17 +450,21 @@ class PeriscopeApplication(tornado.web.Application):
                                       "Accept": MIME['PSJSON'],
                                       "Connection": "close"},
                                   callback=callback)
-    
+
     @property
     def db(self):
         if not getattr(self, '_db', None):
             db_config = { "host": self.options["unis"]["db_host"], "port": int(self.options["unis"]["db_port"]) }
             conn = motor.MotorClient(**db_config)
-            try:
-                tornado.ioloop.IOLoop.current().run_sync(conn.open)
-            except Exception as exp:
-                self._log.error("Failed to connect to the MongoDB service - {e}".format(e = exp))
-                sys.exit()
+            while True:
+                try:
+                    tornado.ioloop.IOLoop.current().run_sync(conn.open)
+                    break
+                except Exception as exp:
+                    self._log.error("Failed to connect to the MongoDB service - {e}".format(e = exp))
+                    if not self.options["soft-start"]:
+                        sys.exit()
+                    time.sleep(int(self.options["soft-start-pollrate"]))
             self._db = conn[self.options.get("dbname", self.options["unis"]["db_name"])]
             
         return self._db

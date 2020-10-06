@@ -62,7 +62,9 @@ setup(
         "docopt",
         "jsonpointer>=0.2",
         "httplib2",
-        "requests"
+        "requests",
+        "urllib3",
+        "configparser"
     ],
     entry_points = {
         'console_scripts': [

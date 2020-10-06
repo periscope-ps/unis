@@ -12,7 +12,7 @@
 # =============================================================================
 import copy
 import json
-import urllib.request
+import urllib3.request
 import jsonschema
 import sys
 
