@@ -17,7 +17,7 @@ import json
 import jsonschema
 import re
 import urllib3.request
-from urlparse import urlparse
+from urllib.parse import urlparse
 import time
 import traceback
 from tornado.httpclient import HTTPError
@@ -635,6 +635,7 @@ class NetworkResourceHandler(SSEHandler):
             for index in range(len(resources)):
                 tmpResource = yield self._process_resource(resources[index], res_id, run_validate)
                 resources[index] = dict(tmpResource._to_mongoiter())
+                print(dict(tmpResource._to_mongoiter()))
         except Exception as exp:
             message="Not valid body - {exp}".format(exp = exp)
             self.send_error(400, message = message)

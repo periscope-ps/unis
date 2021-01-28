@@ -31,12 +31,12 @@ import socket, requests
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
-from urlparse import urlparse
+from urllib.parse import urlparse
 from uuid import uuid4
 
-from .settings import MIME
-from .settings import SCHEMAS
-from . import settings
+from periscope.settings import MIME
+from periscope.settings import SCHEMAS
+from periscope import settings
 from periscope.db import DBLayer
 from periscope.utils import load_class
 from periscope.models import Manifest, ObjectDict
@@ -81,7 +81,8 @@ class PeriscopeApplication(tornado.web.Application):
             for key, option in tmpOptions.items():
                 if option not in [None, False]:
                     self._options[key.lstrip("--")] = option
-            self.log.debug("Configuration flags {}".format(self._options))
+            self.log.debug("Configuration flags:")
+            {self.log.debug("  {}: {}".format(k, v)) for k,v in self._options.items()}
         return self._options
     
     
