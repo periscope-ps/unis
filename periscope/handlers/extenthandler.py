@@ -24,8 +24,7 @@ from periscope.db import dumps_mongo
 
 
 class ExtentHandler(NetworkResourceHandler):
-    @tornado.gen.coroutine
-    def _process_resource(self, resource, res_id = None, run_validate = True):
+    async def _process_resource(self, resource, res_id = None, run_validate = True):
         if self.Id in resource:
             raise ValueError("Extent may not include id field in POST, use PUT for updates")
         
@@ -38,5 +37,5 @@ class ExtentHandler(NetworkResourceHandler):
         ppi_classes = getattr(self.application, '_ppi_classes', [])
         for pp in ppi_classes:
             pp.pre_post(tmpResource, self.application, self.request, Handler = self)
-            
-        raise tornado.gen.Return(tmpResource)
+
+        return tmpResource

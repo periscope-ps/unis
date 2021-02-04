@@ -16,11 +16,11 @@ Databases related classes
 """
 import time
 import functools
-from . import settings
+from periscope import settings
 import tornado.gen
 import json
 from json import JSONEncoder
-from .settings import DB_AUTH
+from periscope.settings import DB_AUTH
 
 from periscope.models import ObjectDict
 
@@ -71,31 +71,34 @@ class DBLayer(object):
         """Returns a reference to the manifest collection"""
         return self._client["manifests"]
 
-    @tornado.gen.coroutine
-    def find_one(self, query = {}, **kwargs):
+    async def find_one(self, query = {}, **kwargs):
         self.log.debug("find one for Collection: [" + self._collection_name + "]")
         fields = kwargs.pop("fields", {})
         fields["_id"] = 0
-        result = yield self.collection.find_one(query, fields=fields, **kwargs)
+        result = await self.collection.find_one(query, fields=fields, **kwargs)
 
-        raise tornado.gen.Return(result)
-    
+        return result
+
+    async def count(self, query = {}, **kwargs):
+        skip = kwargs.get("skip", 0)
+        if "limit" in kwargs:
+            return await self.collection.count_documents(query, skip=skip, limit=kwargs['limit'])
+        return await self.collection.count_documents(query, skip=skip)
+
     def find(self, query = {}, **kwargs):
         """Finds one or more elements in the collection."""
         self.log.debug("find for Collection: [" + self._collection_name + "]")
         fields = kwargs.pop("fields", {})
         fields["_id"] = 0
-        cursor = self.collection.find(query, fields=fields, **kwargs)
-        return cursor
-    
+        return self.collection.find(query, fields, **kwargs)
+
     def _insert_id(self, data):
         if "_id" not in data and not self.capped:
             res_id = data.get(self.Id, str(ObjectId()))
             timestamp = data.get(self.timestamp, int(time.time() * 1000000))
             data["_id"] = "%s:%s" % (res_id, timestamp)
     
-    @tornado.gen.coroutine
-    def insert(self, data, callback=None, summarize=True, **kwargs):
+    async def insert(self, data, summarize=True, **kwargs):
         """Inserts data to the collection."""
         shards = []
         self.log.debug("insert for Collection: [" + self._collection_name + "]")
@@ -109,55 +112,45 @@ class DBLayer(object):
                 shards.append(self._create_manifest_shard(data))
             self._insert_id(data)
 
-        futures = [self.collection.insert(data, callback=callback, **kwargs)]
-        if summarize:
-            futures.append(self.manifest.insert(shards))
-        results = yield futures
-        raise tornado.gen.Return(results)
-    
-    
-    @tornado.gen.coroutine
-    def update(self, query, data, cert=None, replace=False, summarize=True, **kwargs):
+        if summarize and not self.capped:
+            await self.manifest.insert_many(shards)
+        results = await self.collection.insert_many(data, **kwargs)
+        return results
+
+    async def update(self, query, data, cert=None, replace=False, summarize=True, multi=True, **kwargs):
         """Updates data found by query in the collection."""
         self.log.debug("Update for Collection: [" + self._collection_name + "]")
         if not replace:
             data = { "$set": data }
-        futures =  [self.collection.find_and_modify(query, data, upsert=False, **kwargs)]
         if summarize:
             shard = self._create_manifest_shard(data)
-            sfut = self.manifest.insert(shard)
-            futures.append(sfut)
-        results = yield futures
-        for r in results:
-            if isinstance(r, dict) and not r.get("updatedExisting", True):
-                raise(LookupError("Resource ID does not exist"))
-        raise tornado.gen.Return(results)
-    
-    @tornado.gen.coroutine
-    def remove(self, query, callback=None, **kwargs):
+            sfut = await self.manifest.insert_one(shard)
+        if multi:
+            results = await self.collection.update_many(query, data)
+        else:
+            results = await self.collection.find_one_and_update(query, data, upsert=False, **kwargs)
+            for r in results:
+                if isinstance(r, dict) and not r.get("updatedExisting", True):
+                    raise(LookupError("Resource ID does not exist"))
+
+    async def remove(self, query, callback=None, **kwargs):
         """Remove objects from the database that matches a query."""
         self.log.debug("Delete for Collection: [" + self._collection_name + "]")
-        results = yield self.collection.remove(query, callback=callback, **kwargs)
-        raise tornado.gen.Return(results)
+        results = await self.collection.delete_many(query)
+        return results
     
-    @tornado.gen.coroutine
-    def getRecParentNames(self, par, pmap):
+    async def getRecParentNames(self, par, pmap):
         """ Gets all the child folder ids recursively for a given folder
             (exnode specific)"""
         if par:
-            cursor = self.collection.find({"name": par, "mode": "directory"})
             self.log.debug("find for Collection: [" + self._collection_name + "]")
+            resource = await self.collection.find_one({"name": par, "mode": "directory"})
             pmap[par] = 1
-            while (yield cursor.fetch_next):
-                resource = cursor.next_object()
-                if resource == None:
-                    pass
-                else:
-                    pmap[resource.get('id')] = 1
-                yield self.getRecParentNames(resource.get('id'), pmap)
-            raise tornado.gen.Return(pmap.keys())
-        else:          
-            raise tornado.gen.Return(None)
+            if resource:
+                await self.getRecParentNames(resource.get('id'), pmap)
+            return pmap.keys()
+        else:
+            return None
         
     def _create_manifest_shard(self, resource):
         if "\\$collection" in resource:

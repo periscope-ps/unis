@@ -35,11 +35,6 @@ class SubscriptionManager(object):
         global __manager__
         
         self.log = settings.get_logger()
-        try:
-            self.trc = tornadoredis.Client()
-            self.trc.connect()
-        except Exception as exp:
-            self.log.error("Failed to connect to Redis service")
         self.subscriptions = []
         
         if __manager__:
@@ -88,7 +83,7 @@ class SubscriptionManager(object):
                 return False
             
             return True
-        
+
         for query in self.subscriptions:
             is_member = True
             tmpConditions = query["conditions"]

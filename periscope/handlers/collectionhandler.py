@@ -30,7 +30,6 @@ from periscope.models import Topology
 from periscope.models import schemaLoader
 import periscope.utils as utils
 
-
 class CollectionHandler(NetworkResourceHandler):
     def initialize(self, collections, *args, **kwargs):
         self._collections = collections
@@ -49,8 +48,7 @@ class CollectionHandler(NetworkResourceHandler):
             self._dblayers_index[key] = dblayer
 
 
-    @tornado.gen.coroutine
-    def _put_resource(self, resource):
+    async def _put_resource(self, resource):
         try:
             for key in self._collections:
                 if key in resource:
@@ -60,8 +58,7 @@ class CollectionHandler(NetworkResourceHandler):
         except Exception as exp:
             raise exp
         
-    @tornado.gen.coroutine
-    def _process_resource(self, resource, res_id = None, run_validate = True):
+    async def _process_resource(self, resource, res_id = None, run_validate = True):
         tmpResource = self._model_class(resource, schemas_loader = schemaLoader)
         tmpResource = self._add_post_metadata(tmpResource)
         complete_links = (self.get_argument("complete_links", None) != 'false')
@@ -75,15 +72,13 @@ class CollectionHandler(NetworkResourceHandler):
             if self._complete_href_links(resource, resource) < 0:
                 raise ValueError("Invalid href in resource")
         
-        links = yield [ self._create_child(key, tmpResource) for key in self._collections.keys() if key in tmpResource ]
+        links = await [ self._create_child(key, tmpResource) for key in self._collections.keys() if key in tmpResource ]
         for values in links:
             tmpResource[values["collection"]] = values["hrefs"]
-            
-        raise tornado.gen.Return(tmpResource)
-        
-        
-    @tornado.gen.coroutine
-    def _create_child(self, key, resource):
+
+        return tmpResource
+
+    async def _create_child(self, key, resource):
         http_client = AsyncHTTPClient()
         url = "{protocol}://{host}{path}?validate=false&complete_links=false"
         links = []
@@ -91,7 +86,7 @@ class CollectionHandler(NetworkResourceHandler):
         for r in resource[key]:
             links.append(r) if "rel" in r and "href" in r else query.append(r)
         if query:
-            response = yield tornado.gen.Task(
+            response = await tornado.gen.Task(
                 http_client.fetch,
                 url.format(protocol = self.request.protocol, host = self.request.host, path = self.reverse_url(key)),
                 method          = "POST",
@@ -106,7 +101,7 @@ class CollectionHandler(NetworkResourceHandler):
             )
             if response.code >= 400:
                 raise Exception("Could not add child resource")
-                        
+
             response = json.loads(response.body)
             if not isinstance(response, list):
                 links.append({ "href": response["selfRef"], "rel": "full" })
@@ -114,7 +109,7 @@ class CollectionHandler(NetworkResourceHandler):
                 for r in response:
                     links.append({ "href": r["selfRef"], "rel": "full" })
 
-        raise tornado.gen.Return({ "collection": key, "hrefs": links })
+        return { "collection": key, "hrefs": links }
     
         
     def set_self_ref(self, resource):

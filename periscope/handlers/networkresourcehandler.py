@@ -12,17 +12,14 @@
 # =============================================================================
 #!/usr/bin/env python
 
-import copy
-import json
-import jsonschema
-import re
+import asyncio, copy, time, re
+import bson, json, jsonschema
 import urllib3.request
 from urllib.parse import urlparse
 import time
 import traceback
 from tornado.httpclient import HTTPError
 import tornado.web
-import tornado.gen
 
 from periscope.db import dumps_mongo
 from periscope.models import ObjectDict
@@ -30,8 +27,7 @@ from periscope.settings import MIME
 from periscope.handlers import subscriptionmanager
 from periscope.handlers.ssehandler import SSEHandler
 
-import bson
-if hasattr(bson, "dumps"):
+if hasattr(bson, 'dumps'):
     # standalone bson
     bson_decode = bson.loads
     bson_encode = bson.dumps
@@ -246,9 +242,8 @@ class NetworkResourceHandler(SSEHandler):
         # Headers to allow cross domains requests to UNIS
         self.set_header('Access-Control-Allow-Origin', '*')
         self.set_header('Access-Control-Allow-Headers', 'x-requested-with')
-        
-    @tornado.gen.coroutine
-    def _parse_get_arguments(self):
+
+    async def _parse_get_arguments(self):
         """Parses the HTTP GET areguments given by the user."""
         def convert_value_type(key, value, val_type):
             if val_type == "integer":
@@ -279,46 +274,38 @@ class NetworkResourceHandler(SSEHandler):
             raise HTTPError(400,
                         message="Unkown value type '%s' for '%s'." % (val_type, key))
 
-        @tornado.gen.coroutine
-        def process_value(key, value):
+        async def process_value(key, value):
             val = None
             in_split = value.split(",")
             if len(in_split) > 1:
-                raise tornado.gen.Return((yield process_in_query(key, in_split)[key]))
+                return await process_in_query(key, in_split)[key]
             operators = ["lt", "lte", "gt", "gte", "not", "eq", "null", "recfind", "reg"]
             for op in operators:
                 if value.startswith(op + "="):
                     if op == "not":
-                        tmpVal = re.compile("^"+(yield process_value(key, value.lstrip(op + "="))) + "$", re.IGNORECASE)
-                    elif op == "eq":                        
-                        tmpVal = yield process_value(key, value.lstrip(op + "="))
-                        tmpVal = float(tmpVal)
-                        raise tornado.gen.Return(tmpVal)
+                        tmpVal = re.compile("^"+(await process_value(key, value.lstrip(op + "="))) + "$", re.IGNORECASE)
+                    elif op == "eq":
+                        return float(await process_value(key, value.lstrip(op+"=")))
                     elif op == "null":
-                        raise tornado.gen.Return(None)
+                        return None
                     elif op == "reg":
-                        tmpVal = re.compile((yield process_value(key, value.lstrip(op + "="))), re.IGNORECASE)
-                        raise tornado.gen.Return(tmpVal)
+                        return re.compile((await process_value(key, value.lstrip(op + "="))), re.IGNORECASE)
                     elif op == "recfind":
-                        tmpVal = yield process_value(key, value.lstrip(op + "="))
-                        par = yield self.dblayer.getRecParentNames(tmpVal,{})
-                        raise tornado.gen.Return({"$in" : par})
+                        tmpVal = await process_value(key, value.lstrip(op + "="))
+                        return {"$in": await self.dblayer.getRecParentNames(tmpVal,{})}
                     else:
-                        tmpVal = yield process_value(key, value.lstrip(op + "="))
+                        tmpVal = await process_value(key, value.lstrip(op + "="))
                         if op in ["lt", "lte", "gt", "gte"]:
                             tmpVal = float(tmpVal)
 
-                    val = {"$"+ op : tmpVal}
-                    raise tornado.gen.Return(val)
+                    return {"$"+op: tmpVal}
             value_types = ["integer", "number", "string", "boolean"]
             for t in value_types:
                 if value.startswith(t + ":"):
-                    val = convert_value_type(key, value.split(t + ":")[1], t)
-                    raise tornado.gen.Return(val)
+                    return convert_value_type(key, value.split(t + ":")[1], t)
             if key in ["ts", "ttl"] or op in ["lt", "lte", "gt", "gte"]:
-                val = convert_value_type(key, value, "number")
-                raise tornado.gen.Return(val)
-            raise tornado.gen.Return(value)
+                return convert_value_type(key, value, "number")
+            return value
 
         def process_exists_query(key, value):
             value = value[7:]
@@ -327,46 +314,33 @@ class NetworkResourceHandler(SSEHandler):
             if value == "false":
                 or_q.append({ key: None })
             return  { "$or": or_q }
-                    
-        @tornado.gen.coroutine
-        def process_in_query(key, values):
-            in_q = [] 
-            for val in values:
-                tmpVal = yield process_value(key, val)
-                in_q.append(tmpVal)
-            raise tornado.gen.Return({key: {"$in": in_q}})
-                
-        @tornado.gen.coroutine
-        def process_or_query(key, values):
-            or_q = []
-            if key:
-                or_q.append({key: (yield process_value(key, values[0]))})
-                values = values[1:]
-            for val in values:
-                keys_split = val.split("=", 1)
-                if len(keys_split) != 2:
-                    raise HTTPError(400, message="Not valid OR query.")
-                k = keys_split[0]
-                v = keys_split[1]
-                or_q.append({k: (yield process_value(k, v))})
-            raise tornado.gen.Return({"$or": or_q})
-        
-        @tornado.gen.coroutine
-        def process_and_query(key, values):
+
+        async def process_in_query(key, values):
+            return {key: {"$in": [await process_value(key,v) for v in values]}}
+
+        async def process_or_query(key, values):
+            async def f(k,v): return {k: await process_value(k,v)}
+            or_q = {key: await process_value(key, values.pop(0))} if key else []
+            try:
+                or_q += [f(*v.split('=', 1)) for v in values]
+            except IndexError:
+                raise HTTPError(400, message="Not valid OR query.")
+            return {"$or": or_q}
+
+        async def process_and_query(key, values):
             and_q = []
             for val in values:
                 split_or = val.split("|")
                 if len(split_or) > 1:
-                    and_q.append((yield process_or_query(key, split_or)))
-                    continue
-                split = val.split(",")
-
-                if len(split) == 1:
-                    and_q.append({key: (yield process_value(key, split[0]))})
+                    and_q.append((await process_or_query(key, split_or)))
                 else:
-                    and_q.append((yield process_in_query(key, split)))
-            raise tornado.gen.Return({"$and": and_q})
-        
+                    split = val.split(",")
+                    if len(split) == 1:
+                        and_q.append({key: await process_value(key, split[0])})
+                    else:
+                        and_q.append(await process_in_query(key, split))
+            return {"$and": and_q}
+
         query = copy.copy(self.request.arguments)
         for k in query.keys():
             query[k] = list(map(lambda x: x.decode() if type(x) == bytes else x, query[k]))
@@ -420,13 +394,13 @@ class NetworkResourceHandler(SSEHandler):
         query_ret = []
         for arg in query:
             if isinstance(query[arg], list) and len(query[arg]) > 1:
-                and_q = yield process_and_query(arg, query[arg])
+                and_q = await process_and_query(arg, query[arg])
                 query_ret.append(and_q)
                 continue
             query[arg] = ",".join(query[arg])
             if query[arg].startswith("reg="):
                 param = decode(query[arg][4:])
-                val = re.compile((yield process_value(arg,param)), re.IGNORECASE)
+                val = re.compile((await process_value(arg,param)), re.IGNORECASE)
                 query_ret.append({arg: val})
                 continue
             if query[arg].startswith("exists="):
@@ -434,14 +408,14 @@ class NetworkResourceHandler(SSEHandler):
                 continue
             split_or = query[arg].split("|")
             if len(split_or) > 1:
-                query_ret.append((yield process_or_query(arg, split_or)))
+                query_ret.append((await process_or_query(arg, split_or)))
                 continue
             split = query[arg].split(",")
             if len(split) > 1:
-                in_q = yield process_in_query(arg, split)
+                in_q = await process_in_query(arg, split)
                 query_ret.append(in_q)
             else:
-                query_ret.append({arg: (yield process_value(arg, split[0]))})
+                query_ret.append({arg: await process_value(arg, split[0])})
         if query_ret:
             query_ret = {"list": True, "query": {"$and": query_ret}}
         else:
@@ -458,19 +432,16 @@ class NetworkResourceHandler(SSEHandler):
                 query_ret["query"].update({"$and": ret})        
         ret_val = {"fields": fields, "limit": limit, "query": query_ret, "skip": skip,
                    "sort": sort , "cert": cert, "inline": inline, "unique": unique}
-        raise tornado.gen.Return(ret_val)
+        return ret_val
 
     
     # Template Method for GET
-    @tornado.web.asynchronous
-    @tornado.web.removeslash
-    @tornado.gen.coroutine
-    def get(self, res_id = None, *args):
+    async def get(self, res_id = None, *args):
         super(NetworkResourceHandler, self).get(*args)
-        
+
         # Parse arguments and set up query
         try:
-            parsed = yield self._parse_get_arguments()
+            parsed = await self._parse_get_arguments()
             options = dict(query  = parsed["query"]["query"],
                            fields = parsed["fields"],
                            limit  = parsed["limit"],
@@ -499,7 +470,7 @@ class NetworkResourceHandler(SSEHandler):
             self._get_tailable(query = options["query"], fields = options["fields"])
         else:
             try:
-                cursor = self._find(**options)
+                count, cursor = await self._find(**options)
             except Exception as exp:
                 message = "Could not find resource - {exp}".format(exp = exp)
                 self.send_error(404, message = message)
@@ -507,107 +478,87 @@ class NetworkResourceHandler(SSEHandler):
                 return
             
             try:
-                count = yield self._write_get(cursor, is_list, inline, parsed['unique'])
+                await self._write_get(cursor, is_list or count > 1, inline, parsed['unique'], count)
             except Exception as exp:
                 message = "Failure during post processing - {exp}".format(exp = exp)
-                self.send_error(404, message = message)
+                self.send_error(500, message = message)
                 self.log.error(message)
                 return
-            
-            yield self._add_response_headers(count)
-            
+
+            await self._add_response_headers(count)
+
             self.set_status(200)
             self.finish()
             
-    def _find(self, **kwargs):
-        return self.dblayer.find(**kwargs)
+    async def _find(self, **kwargs):
+        return await self.dblayer.count(**kwargs), self.dblayer.find(**kwargs)
     
-    @tornado.gen.coroutine
-    def _add_response_headers(self, count):
+    async def _add_response_headers(self, count):
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + "; profile=" + self.schemas_single[accept])
         
         self.set_header('X-Count', count)
-        
-        raise tornado.gen.Return(count)
-    
-    @tornado.gen.coroutine
-    def _write_get(self, cursor, is_list=False, inline=False, unique=False):
-        seen = {}
-        count = yield cursor.count(with_limit_and_skip=True)
-        is_list = count != 1 or is_list
-        
-        if self.accept_content_type == MIME["PSBSON"]:
-            results = []
-            while (yield cursor.fetch_next):
-                resource = yield self._post_get(cursor.next_object(), inline)
-                if not unique or str(resource.get('id', resource)) not in seen:
-                    seen[str(resource.get('id', resource))] = True
-                    results.append(resource)
 
-            if results and not is_list: results = results[0]
-            results = bson_encode({'d': results})
+        return count
+    
+    async def _write_get(self, cursor, is_list=False, inline=False, unique=False, count=0):
+        results, seen = [], {}
+
+        if self.accept_content_type == MIME["PSBSON"]:
+            i, results = 0, {}
+            async for record in cursor:
+                record = await self._post_get(record, inline)
+                if not unique or str(record.get('id', record)) not in seen:
+                    seen[str(record.get('id', record))] = True
+                    results[i] = record
+                    i += 1
+            results = bson_encode(results)
             self.write(results)
         else:
             if not count:
                 self.write('[]')
-                raise tornado.gen.Return(count)
-            elif is_list:
-                self.write('[\n')
-                
-            # Write first entry
-            yield cursor.fetch_next
-            resource = cursor.next_object()
-            resource = yield self._post_get(resource, inline)
-            json_response = _render(resource)
-            seen[str(resource.get('id', resource))] = True
-            self.write(json_response)
+                return count
             
-            while (yield cursor.fetch_next):
-                resource = cursor.next_object()
-                resource = yield self._post_get(resource, inline)
-                if not unique or str(resource.get('id', resource)) not in seen:
-                    self.write(',\n')
-                    seen[str(resource.get('id', resource))] = True
-                    json_response = _render(resource)
+            first = True
+            if is_list: self.write('[\n')
+            async for record in cursor:
+                record = await self._post_get(record, inline)
+                if not unique or str(record.get('id', record)) not in seen:
+                    if not first:
+                        self.write(',\n')
+                    first = False
+                    seen[str(record.get('id', record))] = True
+                    json_response = _render(record)
                     self.write(json_response)
-            
-            if is_list:
-                self.write('\n]')
-            
-        raise tornado.gen.Return(count)
+            if is_list: self.write('\n]')
+        return count
 
-    @tornado.gen.coroutine
-    def _post_get(self, resource, inline=False):
-        raise tornado.gen.Return(resource)
+    async def _post_get(self, resource, inline=False):
+        return resource
     
-    @tornado.gen.coroutine
-    def _get_tailable(self, query, fields):
-        cursor = self._find(query      = query,
-                            fields     = fields,
-                            tailable   = True,
-                            await_data = True)
+    async def _get_tailable(self, query, fields):
+        count, cursor = await self._find(query      = query,
+                                         fields     = fields,
+                                         tailable   = True,
+                                         await_data = True)
         self.write('[')
         first = True
         while True:
             if not cursor.alive:
                 self.write(']')
                 self.finish()
-            if (yield cursor.fetch_next):
+            if (await cursor.fetch_next):
                 if not first:
                     self.write(',')
                 else:
                     first = False
                 resource = cursor.next_object()
-                json_resonse = dumps_mongo(response, indent=2).replace('\\\\$', '$').replace('$DOT$', '.')
+                json_resonse = _render(response)
                 self.write(json_response)
-                
-    
+
     # Template Method for POST
-    @tornado.web.asynchronous
     @tornado.web.removeslash
-    @tornado.gen.coroutine
-    def post(self, res_id=None):
+    async def post(self, res_id=None):
         try:
             self._validate_request(res_id)
         except ValueError as exp:
@@ -623,6 +574,7 @@ class NetworkResourceHandler(SSEHandler):
         """
         try:
             resources = self._get_documents()
+            print(resources)
         except ValueError as exp:
             self.send_error(400, message = exp)
             self.log.error("%s" % exp)
@@ -633,11 +585,11 @@ class NetworkResourceHandler(SSEHandler):
             
         try:
             for index in range(len(resources)):
-                tmpResource = yield self._process_resource(resources[index], res_id, run_validate)
+                tmpResource = await self._process_resource(resources[index], res_id, run_validate)
                 resources[index] = dict(tmpResource._to_mongoiter())
-                print(dict(tmpResource._to_mongoiter()))
         except Exception as exp:
             message="Not valid body - {exp}".format(exp = exp)
+            #traceback.print_tb(exp.__traceback__)
             self.send_error(400, message = message)
             self.log.error(message)
             return
@@ -646,9 +598,10 @@ class NetworkResourceHandler(SSEHandler):
         Insert resources
         """
         try:
-            yield self._insert(resources)
+            await self._insert(resources)
         except Exception as exp:
-            message = "Could not process the POST request - {exp}".format(exp = exp)
+            message = "Could not process the POST request - {exp}".format(exp = exp)  
+            traceback.print_tb(exp.__traceback__)
             self.send_error(409, message = message)
             self.log.error(message)
             return
@@ -656,7 +609,7 @@ class NetworkResourceHandler(SSEHandler):
         """
         Return new records
         """
-        yield self._post_return(resources)
+        await self._post_return(resources)
         
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + \
@@ -664,35 +617,30 @@ class NetworkResourceHandler(SSEHandler):
         self.set_status(201)
         self.finish()
 
-    @tornado.gen.coroutine
-    def _insert(self, resources):
-        yield self.dblayer.insert(resources)
+    async def _insert(self, resources):
+        await self.dblayer.insert(resources)
         self._subscriptions.publish(resources, self._collection_name, { "action": "POST" })
 
-    @tornado.gen.coroutine
-    def _process_resource(self, resource, res_id = None, run_validate = True):
+    async def _process_resource(self, resource, res_id = None, run_validate = True):
         tmpResource = self._model_class(resource)
         tmpResource = self._add_post_metadata(tmpResource)
-        
+
         if run_validate == True:
             tmpResource._validate()
-            
+
         ppi_classes = getattr(self.application, '_ppi_classes', [])
         for pp in ppi_classes:
             pp.pre_post(tmpResource, self.application, self.request, Handler = self)
-            
-        raise tornado.gen.Return(tmpResource)
 
-    @tornado.gen.coroutine
-    def _post_return(self, resources):
+        return tmpResource
+
+    async def _post_return(self, resources):
         query = {"$or": [ { self.Id: res[self.Id], self.timestamp: res[self.timestamp] } for res in resources ] }
-        yield self._return_resources(query)
+        await self._return_resources(query)
 
     # Template Method for PUT
-    @tornado.web.asynchronous
     @tornado.web.removeslash
-    @tornado.gen.coroutine
-    def put(self, res_id=None):
+    async def put(self, res_id=None):
         try:
             self._validate_request(res_id, require_id = True)
         except ValueError as exp:
@@ -723,7 +671,7 @@ class NetworkResourceHandler(SSEHandler):
         Update resources
         """
         try:
-            yield self._put_resource(resource)
+            await self._put_resource(resource)
         except Exception as exp:
             message = "Could not process the PUT request - {exp}".format(exp = exp)
             self.send_error(404, message = message)
@@ -736,29 +684,25 @@ class NetworkResourceHandler(SSEHandler):
         self.set_status(204)
         self.finish()
         
-    @tornado.gen.coroutine
-    def _update(self, query, resource):
+    async def _update(self, query, resource):
         try:
-            yield self.dblayer.update(query, resource, multi=False, sort={self.timestamp: -1})
+            await self.dblayer.update(query, resource, multi=False, sort=[(self.timestamp, -1)])
         except Exception as exp:
             raise exp
 
-    @tornado.gen.coroutine
-    def _put_resource(self, resource):
+    async def _put_resource(self, resource):
         try:
             publish = {}
             publish.update(resource)
             publish["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
             query = { self.Id: resource[self.Id] }
-            yield self._update(query, dict(resource._to_mongoiter()))
+            await self._update(query, dict(resource._to_mongoiter()))
             self._subscriptions.publish(publish, self._collection_name, { "action": "PUT" })
         except Exception as exp:
             raise exp
 
-    @tornado.web.asynchronous
     @tornado.web.removeslash
-    @tornado.gen.coroutine
-    def delete(self, res_id=None):
+    async def delete(self, res_id=None):
         try:
             self._validate_request(res_id, require_id = True)
         except ValueError as exp:
@@ -770,7 +714,7 @@ class NetworkResourceHandler(SSEHandler):
         update = { "\\$status": "DELETED" }
         query = { self.Id: res_id }
         try:
-            yield self.dblayer.update(query, update, summarize=False, multi=True)
+            await self.dblayer.update(query, update, summarize=False, multi=True)
             self.set_status(204)
         except LookupError:
             # handle case where object does not exist
@@ -831,12 +775,11 @@ class NetworkResourceHandler(SSEHandler):
         resource["selfRef"] = self.request.full_url().split('?')[0]
         return resource
 
-    @tornado.gen.coroutine
-    def _return_resources(self, query):
+    async def _return_resources(self, query):
         try:
-            cursor = self._find(query = query)
+            count, cursor = await self._find(query = query)
             response = []
-            while (yield cursor.fetch_next):
+            while (await cursor.fetch_next):
                 resource = ObjectDict._from_mongo(cursor.next_object())
                 response.append(resource)
         

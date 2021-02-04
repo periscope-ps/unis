@@ -27,19 +27,17 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
         self.channels = []
         self._manager = subscriptionmanager.GetManager()
     
-    @tornado.gen.coroutine
-    def open(self, resource_type = None, resource_id = None):
+    async def open(self, resource_type = None, resource_id = None):
         self.log.info("New websocket connection: {ip}".format(ip = self.request.remote_ip))
         
         # Wait for further subscription information
-        if not resource_type:
-            raise tornado.gen.Return()
+        if not resource_type: return None
         
         query_string = self.get_argument("query", None)
         fields_string = self.get_argument("fields", None)
         query = {}
         fields = None
-        
+
         try:
             if query_string:
                 query = json.loads(query_string)
@@ -47,7 +45,7 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
                 fields = fields_string.split(',')
             if resource_id:
                 query['id'] = resource_id
-            
+
             self._addSubscription(resource_type, query, fields)
         except ValueError as exp:
             self.write_message('Could not decode subscripition query: %s' % exp)
@@ -71,14 +69,14 @@ class SubscriptionHandler(tornado.websocket.WebSocketHandler):
             query["id"] = address[1]
         
         self._addSubscription(resource_type, query, fields)
-        
+
     def deliver(self, msg):
         self.write_message(str(msg))
-    
+
     def on_close(self):
         for channel in self.channels:
             self._manager.removeChannel(channel, self)
-            
+
     def check_origin(self, origin):
         return True
     

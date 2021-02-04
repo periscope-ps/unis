@@ -35,11 +35,9 @@ class DelegationHandler(NetworkResourceHandler):
         else:
             self._filter = True
 
-
         return self.dblayer.find()
-    
-    @tornado.gen.coroutine
-    def _write_get(self, cursor, is_list, inline=False, unique=False):
+
+    async def _write_get(self, cursor, is_list, inline=False, unique=False):
         exclude = [ "sort", "limit", "fields", "skip", "cert" ]
         interest_fields = [ key for key, val in self.request.arguments.items() if key not in exclude]
         interest_fields = [v.replace(".", "$DOT$") for v in interest_fields]
@@ -49,15 +47,15 @@ class DelegationHandler(NetworkResourceHandler):
             "instances": []
         }
         
-        count = yield cursor.count()
+        count = await cursor.count()
         if not count:
             self.write('[]')
-            raise tornado.gen.Return(count)
+            return count
         
         count = 0
         now = time.time()
         
-        while (yield cursor.fetch_next):
+        while (await cursor.fetch_next):
             add_member = True
             member = cursor.next_object()
             if "href" in member:
@@ -75,6 +73,6 @@ class DelegationHandler(NetworkResourceHandler):
                 if not self._filter or (add_member and properties):
                     manifest["instances"].append(member["href"])
                     count += 1
-                
+
         self.write(json.dumps(manifest, indent = 2))
-        raise tornado.gen.Return(count)
+        return count

@@ -21,7 +21,7 @@ import sys
 from tornado.log import LogFormatter, enable_pretty_logging
 
 LIST_OPTIONS = ["unis.root_urls", "unis.communities"]
-SELF_LOOKUP_URLS = ["http://ident.me"]
+SELF_LOOKUP_URLS = [] #["http://ident.me"]
 
 ######################################################################
 # Setting up path names.

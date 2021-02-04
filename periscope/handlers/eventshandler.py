@@ -24,11 +24,10 @@ from periscope.db import dumps_mongo
 
 
 class EventsHandler(NetworkResourceHandler):
-    @tornado.gen.coroutine
-    def _insert(self, resources):
+    async def _insert(self, resources):
         resource = resources[0]
         http_client = AsyncHTTPClient()
-        response = yield http_client.fetch(resource["metadata_URL"],
+        response = await http_client.fetch(resource["metadata_URL"],
                                            validate_cert=False,
                                            client_cert=settings.MS_CLIENT_CERT,
                                            client_key=settings.MS_CLIENT_KEY)
@@ -37,47 +36,42 @@ class EventsHandler(NetworkResourceHandler):
             self.send_error(400, message="metadata is not found '%s'." % response.error)
         else:
             body = json.loads(response.body)
-            collections = yield self.application.db.collection_names()
+            collections = await self.application.db.list_collection_names()
             if body[self.Id] not in collections:
-                self.application.get_db_layer(body[self.Id], "ts", "ts", True, resource["collection_size"])
+                await self.application.get_db_layer(body[self.Id], "ts", "ts", True, resource["collection_size"])
                 self.set_header("Location","%s/data/%s" % (self.request.full_url().split('?')[0], body[self.Id]))
                 resource[self.timestamp] = int(time.time() * 1000000)
                 resource[self.Id] = body[self.Id]
-                yield self.dblayer.insert(resource, summarize = False)
+                await self.dblayer.insert([resource], summarize = False)
             else:
                 raise ValueError("event collection exists already")
             
-    def _find(self, **options):
+    async def _find(self, **options):
         options["query"].pop("\\$status", None)
         if not options["query"]:
-            return self.dblayer.find()
+            return await self.dblayer.count(**options), self.dblayer.find()
         elif self.Id in options["query"] or "$or" in options["query"]:
-            return self.dblayer.find(**options)
+            return await self.dblayer.count(**options), self.dblayer.find(**options)
         else:
             self._query = options["query"]
             return None
-            
-    @tornado.gen.coroutine
-    def _add_response_headers(self, cursor):
+        
+    async def _add_response_headers(self, cursor):
         count = 1
         accept = self.accept_content_type
         self.set_header("Content-Type", accept + "; profile=" + self.schemas_single[accept])
-        
-        raise tornado.gen.Return(count)
 
-    @tornado.gen.coroutine
-    def _write_get(self, cursor, is_list = False, inline=False, unique=False):
+        return count
+
+    async def _write_get(self, cursor, is_list = False, inline=False, unique=False, count=0):
         response = []
         if cursor:
-            count = yield cursor.count()
-            while (yield cursor.fetch_next):
-                resource = cursor.next_object()
-                mid = resource["metadata_URL"].split('/')[resource["metadata_URL"].split('/').__len__() - 1]
+            async for resource in cursor:
                 try:
-                    res = yield self.generate_response(mid)
+                    mid = resource["metadata_URL"].split('/')[-1]
+                    response.insert(0, await self.generate_response(mid))
                 except ValueError as exp:
                     raise ValueError(exp)
-                response.insert(0, res)
         else:
             count = 0
             for d in self._query["$and"]:
@@ -85,14 +79,14 @@ class EventsHandler(NetworkResourceHandler):
                     if isinstance(d["mids"],dict):
                         for m in d['mids']['$in']:
                             try:
-                                res = yield self.generate_response(m)
+                                res = await self.generate_response(m)
                             except ValueError as exp:
                                 raise ValueError(exp)
                             count += 1
                             response.insert(0, res)
                     else:
                         try:
-                            res = yield self.generate_response(d['mids'])
+                            res = await self.generate_response(d['mids'])
                         except ValueError as exp:
                             raise ValueError(exp)
                         count += 1
@@ -103,19 +97,15 @@ class EventsHandler(NetworkResourceHandler):
         else:
             json_response = dumps_mongo(response, indent=2)
         self.write(json_response)
-        raise tornado.gen.Return(count)
+        return count
         
-    @tornado.gen.coroutine
-    def _return_resoures(self, query):
+    async def _return_resoures(self, query):
         try:
-            cursor = self.dblayer.find(query)
-            while (yield cursor.fetch_next):
-                resource = cursor.next_object()
+            async for record in self.dblayer.find(query):
                 self._subscriptions.publish(resource, self._collection_name)
         except Exception as exp:
             raise ValueError(exp)
-        
-        
+
     def del_stat_fields(self,generic):
         generic.pop("ns",None)
         generic.pop("numExtents",None)
@@ -131,22 +121,20 @@ class EventsHandler(NetworkResourceHandler):
             generic["capped"]="Yes"
         else:
             generic["capped"]="No"
-            
-    @tornado.gen.coroutine
-    def generate_response(self, mid):
+
+    async def generate_response(self, mid):
         tmpReponse = None
         try:
             command={"collStats": mid,"scale":1}
-            generic = yield self.application.db.command(command)
+            generic = await self.application.db.command(command)
         except Exception as exp:
             raise ValueError("At least one of the metadata ID is invalid.")
-            raise tornado.gen.Return(None)
-        
+
         self.del_stat_fields(generic)
         specific={}
         if 'ts' in self.request.arguments.keys():
             criteria = self.request.arguments['ts'][0].split('=')
-            
+
             if criteria[0] == 'gte':
                 specific["startTime"] = int(criteria[1])
             if criteria[0] == 'lte':
@@ -164,7 +152,7 @@ class EventsHandler(NetworkResourceHandler):
                 db_query["ts"]["$gte"] = specific["startTime"]
             if endTime  in specific:
                 db_query["ts"]["$lte"] = specific["endTime"]
-            specific["numRecords"] = yield self.application.db[mid].find(db_query).count()
-            
-        raise tornado.gen.Return({ "mid": mid, "generic": generic, "queried": specific })
+            specific["numRecords"] = await self.application.db[mid].count_documents(db_query)
+
+        return {"mid": mid, "generic": generic, "queried": specific}
     

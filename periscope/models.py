@@ -414,7 +414,7 @@ HyperLink = schemaLoader.get_class(
 NetworkResourceMeta = schemaMetaFactory("NetworkResourceMeta", schema=schemaLoader.get(SCHEMAS["networkresource"]))
 MetadataMeta = schemaMetaFactory("MetadataMeta", schema=schemaLoader.get(SCHEMAS["metadata"]))
 
-class NetworkResource(JSONSchemaModel):
+class NetworkResource(JSONSchemaModel, metaclass=NetworkResourceMeta):
     __metaclass__ = NetworkResourceMeta
     def __init__(self, data=None, set_defaults=True, schemas_loader=None,
         auto_id=True, auto_ts=True):
@@ -428,7 +428,7 @@ class NetworkResource(JSONSchemaModel):
         if auto_ts:
             self.ts = self.ts or int(time.time() * 1000000)
 
-class Metadata(JSONSchemaModel):
+class Metadata(JSONSchemaModel, metaclass=MetadataMeta):
     __metaclass__ = MetadataMeta
     def __init__(self, data=None, set_defaults=True, schemas_loader=None,
         auto_id=True, auto_ts=True):

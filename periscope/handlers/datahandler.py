@@ -16,12 +16,14 @@ import json
 import functools
 import tornado.web
 
-import periscope.settings as settings
-from periscope.db import dumps_mongo
-from periscope.settings import MIME
-from .networkresourcehandler import NetworkResourceHandler
+from urllib.parse import urlparse,urlunparse
 
-class DataHandler(NetworkResourceHandler):        
+import periscope.settings as settings
+from periscope.db import dumps_mongo, DBLayer
+from periscope.settings import MIME
+from periscope.handlers.networkresourcehandler import NetworkResourceHandler
+
+class DataHandler(NetworkResourceHandler):
     def _validate_request(self, res_id, allow_id = False, require_id = False):
         if self.accept_content_type not in self.schemas_single:
             message = "Schema is not defined for content of type '%s'" % \
@@ -34,17 +36,14 @@ class DataHandler(NetworkResourceHandler):
         return True
     
     def _add_post_metadata(self, resource, res_id = None):
-        if res_id:
-            resource["mid"] = res_id
-            
-        resource["selfRef"] = "{host}/{rid}".format(host = self.request.full_url().split('?')[0],
-                                                       rid  = resource[self.Id])
+        loc = urlparse(self.request.full_url())._replace(query=None, fragment=None)
+        resource["mid"] = res_id or resource["mid"]
+        resource["selfRef"] = loc._replace(path=f"{loc.path}/{resource['mid']}").geturl()
         resource["$schema"] = resource.get("$schema", self.schemas_single[MIME['PSJSON']])
         
         return resource
     
-    @tornado.gen.coroutine
-    def _insert(self, resources):
+    async def _insert(self, resources):
         mids = {}
         for resource in resources:
             if resource["mid"] not in mids:
@@ -55,59 +54,36 @@ class DataHandler(NetworkResourceHandler):
             push_data = { 'id': mid, 'data': data }
             self._subscriptions.publish(push_data, self._collection_name, { "action": "POST", "collection": "data/{}".format(mid) },
                                         self.trim_published_resource)
-            self.application.db[mid].insert(data)
-            
-    @tornado.gen.coroutine
-    def _post_return(self, resources):
-        # don't return data posts to measurement collectors
-        return
+            await DBLayer(self.application.db, mid, True).insert(data)
 
-        response = []
-        mids = {}
-        for resource in resources:
-            if resource["mid"] not in mids:
-                mids[resource["mid"]] = { "$or": [] }
-            mids[resource["mid"]]["$or"].append( { self.timestamp: resource[self.timestamp] } )
-            
-        results = []
-        for mid, query in mids.items():
-            results = yield self._return_resources(mid, query)
-            
-            for result in results:
-                response.extend(result)
-            
-        self.write(dumps_mongo(response, indent=2))
+    async def _post_return(self, resources):
+        return
     
-    @tornado.gen.coroutine
-    def _return_resources(self, mid, query):
-        cursor = self.application.db[mid].find(query)
-        response = []
-        while (yield cursor.fetch_next):
-            resource = cursor.next_object()
-            response.append(ObjectDict._from_mongo(resource))
-            
-        if len(response) == 1:
+    async def _return_resources(self, mid, query):
+        resp = []
+        async for record in DBLayer(self.application.db, mid, True).find(query):
+            resp.append(ObjectDict._from_mongo(record))
+
+        if len(resp) == 1:
             location = self.request.full_url().split('?')[0]
             if not location.endswith(response[0][self.Id]):
                 location = location + "/" + response[0][self.Id]
                 
             self.set_header("Location", location)
-            raise tornado.gen.Return(response(response[0]))
+            return resp[0]
         else:
-            raise tornado.gen.Return(response)
+            return resp
         
     
-    @tornado.web.asynchronous
     @tornado.web.removeslash
-    @tornado.gen.coroutine
-    def get(self, res_id=None):
+    async def get(self, res_id=None):
         if not res_id:
             self.write_error(403, message = "Data request must include a metadata id")
             return
         
         # Parse arguments and set up query
         try:
-            parsed = yield self._parse_get_arguments()
+            parsed = await self._parse_get_arguments()
             options = dict(query  = parsed["query"]["query"],
                            limit  = parsed["limit"],
                            sort   = parsed["sort"],
@@ -125,28 +101,22 @@ class DataHandler(NetworkResourceHandler):
         # we could have an SSE endpoint that implemented a hanging GET, allowing more data
         # over the HTTP connection as it arrived
         query = options.pop("query")
-        cursor = self.application.db[res_id].find(spec=query, tailable=False, await_data=False, **options)
-        count = yield cursor.count(with_limit_and_skip=True)
-        
+        count = await DBLayer(self.application.db, res_id, True).count(query, **options)
+
         if not count:
             self.write('[]')
             return
-        elif count >= 1:
-            self.write('[\n')
-            
-        citem = 0
-        while (yield cursor.fetch_next):
-            resource = cursor.next_object()
-            self.write(dumps_mongo(resource, indent = 2).replace('\\\\$', '$').replace('$DOT$', '.'))
-            citem = citem + 1
-            if citem == count:
-                self.write('\n]')
-            else:
-                self.write(',\n')
+
+        first = True
+        async for record in DBLayer(self.application.db, res_id, True).find(query):
+            self.write('[\n' if first else ',\n')
+            first = False
+            self.write(dumps_mongo(record, indent=2).replace('\\\\$', '$').replace('$DOT$', '.'))
+        self.write('\n]')
         
-        yield self._add_response_headers(count)
+        await self._add_response_headers(count)
         self.set_status(200)
         self.finish()
-    
+
     def trim_published_resource(self, resource, fields):
         return {resource['id']: resource['data']}
