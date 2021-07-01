@@ -21,6 +21,7 @@ import periscope.settings as settings
 from periscope.settings import MIME
 from .networkresourcehandler import NetworkResourceHandler
 from periscope.db import dumps_mongo
+from periscope.utils import DBError
 
 
 class EventsHandler(NetworkResourceHandler):
@@ -54,7 +55,7 @@ class EventsHandler(NetworkResourceHandler):
             return await self.dblayer.count(**options), self.dblayer.find(**options)
         else:
             self._query = options["query"]
-            return None
+            return None, None
         
     async def _add_response_headers(self, cursor):
         count = 1
@@ -71,7 +72,7 @@ class EventsHandler(NetworkResourceHandler):
                     mid = resource["metadata_URL"].split('/')[-1]
                     response.insert(0, await self.generate_response(mid))
                 except ValueError as exp:
-                    raise ValueError(exp)
+                    raise
         else:
             count = 0
             for d in self._query["$and"]:
@@ -81,17 +82,17 @@ class EventsHandler(NetworkResourceHandler):
                             try:
                                 res = await self.generate_response(m)
                             except ValueError as exp:
-                                raise ValueError(exp)
+                                raise
                             count += 1
                             response.insert(0, res)
                     else:
                         try:
                             res = await self.generate_response(d['mids'])
                         except ValueError as exp:
-                            raise ValueError(exp)
+                            raise
                         count += 1
                         response.insert(0, res)
-                        
+
         if self.accept_content_type == MIME["PSBSON"]:
             json_response = bson_encode(response)
         else:
@@ -128,7 +129,7 @@ class EventsHandler(NetworkResourceHandler):
             command={"collStats": mid,"scale":1}
             generic = await self.application.db.command(command)
         except Exception as exp:
-            raise ValueError("At least one of the metadata ID is invalid.")
+            raise DBError("At least one of the metadata ID is invalid.")
 
         self.del_stat_fields(generic)
         specific={}

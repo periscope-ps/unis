@@ -16,6 +16,8 @@ import urllib3.request
 import jsonschema
 import sys
 
+class DBError(Exception): pass
+
 def load_json_url(url, cache=None):
     """
     Loads a URL, if the url is already in cache it will load the cached 

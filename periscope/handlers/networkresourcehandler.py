@@ -26,6 +26,7 @@ from periscope.models import ObjectDict
 from periscope.settings import MIME
 from periscope.handlers import subscriptionmanager
 from periscope.handlers.ssehandler import SSEHandler
+from periscope.utils import DBError
 
 if hasattr(bson, 'dumps'):
     # standalone bson
@@ -429,7 +430,7 @@ class NetworkResourceHandler(SSEHandler):
                 if query_ret["list"]:
                     for item in query_ret["query"]["$and"]:
                         ret.append(item)
-                query_ret["query"].update({"$and": ret})        
+                query_ret["query"].update({"$and": ret})
         ret_val = {"fields": fields, "limit": limit, "query": query_ret, "skip": skip,
                    "sort": sort , "cert": cert, "inline": inline, "unique": unique}
         return ret_val
@@ -479,6 +480,10 @@ class NetworkResourceHandler(SSEHandler):
             
             try:
                 await self._write_get(cursor, is_list or count > 1, inline, parsed['unique'], count)
+            except DBError:
+                self.send_error(404, message="No resources match query.")
+                self.log.error("No resources match query.")
+                return
             except Exception as exp:
                 message = "Failure during post processing - {exp}".format(exp = exp)
                 self.send_error(500, message = message)
@@ -574,7 +579,6 @@ class NetworkResourceHandler(SSEHandler):
         """
         try:
             resources = self._get_documents()
-            print(resources)
         except ValueError as exp:
             self.send_error(400, message = exp)
             self.log.error("%s" % exp)

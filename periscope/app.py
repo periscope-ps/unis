@@ -113,23 +113,23 @@ class PeriscopeApplication(tornado.web.Application):
         return db_layer
 
     async def make_resource_handler(self, name,
-                              pattern,
-                              base_url,
-                              handler_class,
-                              model_class,
-                              collection_name,
-                              schema,
-                              is_capped_collection,
-                              capped_collection_size,
-                              id_field_name,
-                              timestamp_field_name,
-                              allow_get,
-                              allow_post,
-                              allow_put,
-                              allow_delete,
-                              accepted_mime,
-                              content_types_mime,
-                              **kwargs):
+                                    pattern,
+                                    base_url,
+                                    handler_class,
+                                    model_class,
+                                    collection_name,
+                                    schema,
+                                    is_capped_collection,
+                                    capped_collection_size,
+                                    id_field_name,
+                                    timestamp_field_name,
+                                    allow_get,
+                                    allow_post,
+                                    allow_put,
+                                    allow_delete,
+                                    accepted_mime,
+                                    content_types_mime,
+                                    **kwargs):
 
         # Prepare the DBlayer
         db_layer = await self.get_db_layer(collection_name, id_field_name, timestamp_field_name, is_capped_collection, capped_collection_size)
