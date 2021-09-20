@@ -12,11 +12,10 @@
 # =============================================================================
 #!/usr/bin/env python
 
-import asyncio, copy, time, re
-import bson, json, jsonschema
+import copy, re
+import bson, json
 import urllib3.request
 from urllib.parse import urlparse
-import time
 import traceback
 from tornado.httpclient import HTTPError
 import tornado.web
@@ -41,7 +40,7 @@ else:
 
 def decode(str):
     while True:
-        dec = urllib.request.unquote(str)
+        dec = urllib3.request.unquote(str)
         if dec == str:
             break
         str = dec
@@ -593,7 +592,7 @@ class NetworkResourceHandler(SSEHandler):
                 resources[index] = dict(tmpResource._to_mongoiter())
         except Exception as exp:
             message="Not valid body - {exp}".format(exp = exp)
-            #traceback.print_tb(exp.__traceback__)
+            traceback.print_tb(exp.__traceback__)
             self.send_error(400, message = message)
             self.log.error(message)
             return

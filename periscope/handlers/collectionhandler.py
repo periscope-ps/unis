@@ -12,17 +12,14 @@
 # =============================================================================
 #!/usr/bin/env python
 
-import json
-import functools
-import jsonpointer
-from jsonpath import jsonpath
-from periscope.models import schemaLoader
+import asyncio, json, jsonpointer
 import tornado.web
+from jsonpath import jsonpath
 from tornado.httpclient import AsyncHTTPClient
 
 import periscope.settings as settings
 from periscope.settings import MIME
-from .networkresourcehandler import NetworkResourceHandler
+from periscope.handlers.networkresourcehandler import NetworkResourceHandler
 from periscope.db import dumps_mongo
 from periscope.models import NetworkResource
 from periscope.models import HyperLink
@@ -67,12 +64,12 @@ class CollectionHandler(NetworkResourceHandler):
         ppi_classes = getattr(self.application, '_ppi_classes', [])
         for pp in ppi_classes:
             pp.pre_post(tmpResource, self.application, self.request)
-            
+
         if complete_links:
             if self._complete_href_links(resource, resource) < 0:
                 raise ValueError("Invalid href in resource")
-        
-        links = await [ self._create_child(key, tmpResource) for key in self._collections.keys() if key in tmpResource ]
+
+        links = await asyncio.gather(*[self._create_child(k, tmpResource) for k in self._collections.keys() if k in tmpResource])
         for values in links:
             tmpResource[values["collection"]] = values["hrefs"]
 
