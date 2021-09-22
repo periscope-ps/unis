@@ -34,16 +34,6 @@ class CollectionHandler(NetworkResourceHandler):
         self._models_index = {}
         self._dblayers_index = {}
         self._cache = {}
-        for key, value in self._collections.items():
-            self._models_index[value["model_class"]] = key
-            dblayer = self.application.get_db_layer(value["collection_name"],
-                                                    value["id_field_name"],
-                                                    value["timestamp_field_name"],
-                                                    value["is_capped_collection"],
-                                                    value["capped_collection_size"]
-            )
-            self._dblayers_index[key] = dblayer
-
 
     async def _put_resource(self, resource):
         try:
