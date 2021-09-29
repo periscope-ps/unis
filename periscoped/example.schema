@@ -1,0 +1,16 @@
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/topology/networkresource#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/topology/link#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/topology/node#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/topology/computenode#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/topology/physicalnode#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/topology/port#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/topology/service#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/topology/switchnode#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/measurements/measurement#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/measurements/metadata#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/measurements/datum#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/data/exnode#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/data/allocation#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/data/ibp#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/data/ceph#
+http://unis.open.sice.indiana.edu/schema/2.0.0/entities/data/rdma#

@@ -1,0 +1,4 @@
+[submodule "unis-schema"]
+	path = unis-schema
+	url = git@github.iu.edu:OPEN/unis
+	branch = 2.0.0
