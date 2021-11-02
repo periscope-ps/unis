@@ -3,7 +3,7 @@ import pymongo, time
 from bson import ObjectId
 from pymongo.collection import Collection
 
-from mundus.utils import getLogger
+from unis.utils import getLogger
 
 class DatabaseError(Exception): pass
 class AccessError(DatabaseError): pass
@@ -124,7 +124,7 @@ class DBLayer(object):
     def find_one(self, f:dict, proj:dict, loc:str, user:int=None, history:bool=False, limit:int=None) -> list:
         """
         Returns a list of records for a filter from the collection.  All arguments are described in
-        :meth:`DBLayer.find <mundus.db.DBLayer.find>`.
+        :meth:`DBLayer.find <unis.db.DBLayer.find>`.
         """
         if history:
             return list(self.find(f, proj, loc, None, 0, limit, user, False, True))
@@ -138,7 +138,7 @@ class DBLayer(object):
                   user:int=None, sort:dict=None, **kwargs) -> list:
         """
         Returns a left-join of a set of relations.  All arguments are described in
-        :meth:`DBLayer.find <mundus.db.DBLayer.find>`.
+        :meth:`DBLayer.find <unis.db.DBLayer.find>`.
         """
         reverse = "target" if d == "subject" else "subject"
         sort = {f"{self.ts}": -1} if sort is None else {k:s for k,s in sort}
@@ -230,7 +230,7 @@ class DBLayer(object):
 
         .. warning::
         This function overrites the existing content in the record.
-        Unless specifically needed, use :meth:`DBLayer.insert <mundus.db.DBLayer.insert>`
+        Unless specifically needed, use :meth:`DBLayer.insert <unis.db.DBLayer.insert>`
         instead.
         """
         data = {"$set": {"v":  data}}

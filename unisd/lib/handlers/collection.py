@@ -2,7 +2,7 @@ import falcon, jsonschema, time
 
 from bson.objectid import ObjectId
 
-from mundus.handlers.abc import Handler
+from unis.handlers.abc import Handler
 
 class CollectionHandler(Handler):
     def _get_args(self, req):

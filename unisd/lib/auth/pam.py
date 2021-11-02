@@ -1,6 +1,6 @@
 import pam
 
-from mundus.auth import UndefinedAuthError, InvalidAuthError, UnknownAuthType
+from unis.auth import UndefinedAuthError, InvalidAuthError, UnknownAuthType
 
 def validate(ident, config):
     """
@@ -10,11 +10,11 @@ def validate(ident, config):
     :param ident: Identifying token, taken from the authorization field of the originating request
     :type ident: string
     
-    :param config: Contains mundus configuration dictionary for optional parameters
+    :param config: Contains unis configuration dictionary for optional parameters
     :type config: dict
 
-    :raises InvalidAuthError: Raises :class:`mundus.auth.InvalidAuthError` if invalid credentials are provided
-    :raises UndefinedAuthError: Raises :class:`mundus.auth.UndefinedAuthError` if no credentials are provided
+    :raises InvalidAuthError: Raises :class:`unis.auth.InvalidAuthError` if invalid credentials are provided
+    :raises UndefinedAuthError: Raises :class:`unis.auth.UndefinedAuthError` if no credentials are provided
 
     :return: Filter token used by mongodb to identify record and group membership.
     :rtype: string

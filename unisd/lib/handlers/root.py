@@ -1,11 +1,11 @@
 import falcon
 
-from mundus import utils
-from mundus.handlers.abc import Handler
-from mundus.handlers.relation import RelationHandler
-from mundus.handlers.collection import CollectionHandler
-from mundus.handlers.resource import ResourceHandler
-from mundus.settings import RELATION_SCHEMA
+from unis import utils
+from unis.handlers.abc import Handler
+from unis.handlers.relation import RelationHandler
+from unis.handlers.collection import CollectionHandler
+from unis.handlers.resource import ResourceHandler
+from unis.settings import RELATION_SCHEMA
 
 tys = {
     CollectionHandler: 'collection',

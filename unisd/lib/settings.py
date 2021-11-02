@@ -4,9 +4,10 @@ def _expandvar(x, default=None):
     v = os.path.expandvars(x)
     return default if v == x else v
 
-CONF_FILE_VAR, CONF_FILE_PATH = "$MUNDUS_CONFIG", "/etc/mundus.conf"
-MUNDUS_ROOT = _expandvar("$MUNDUS_ROOT") or os.path.expanduser("~/.mundus")
-SSL_PATH = os.path.join(MUNDUS_ROOT, "ssl")
+CONF_FILE_VAR = "$UNIS_CONFIG"
+UNIS_ROOT = _expandvar("$UNIS_ROOT") or os.path.expanduser("~/.unis")
+CONF_FILE_PATH = os.path.join(UNIS_ROOT, "unis.conf")
+SSL_PATH = os.path.join(UNIS_ROOT, "ssl")
 
 MASTER_SCHEMA_URL = "http://unis.open.sice.indiana.edu/schema/2.0.0"
 
@@ -15,7 +16,7 @@ CMD_DEFAULTS = {
     "port": 8888,
     "plugin": [],
     "schema": None,
-    "cache": os.path.join(MUNDUS_ROOT, ".cache"),
+    "cache": os.path.join(UNIS_ROOT, ".cache"),
     "verbose": 0,
     "logfile": None,
     "lookupip": False,
@@ -26,12 +27,12 @@ CMD_DEFAULTS = {
         "period": 60 * 60,
     },
     "auth": {
-        "engine": "mundus.auth.none"
+        "engine": "unis.auth.none"
     },
     "db": {
         "port": 27017,
         "host": "127.0.0.1",
-        "name": "mundus_db",
+        "name": "unis_db",
         "username": None,
         "password": None,
         "login": False

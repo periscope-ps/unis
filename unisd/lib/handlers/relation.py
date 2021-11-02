@@ -2,9 +2,9 @@ import falcon, time
 
 from bson.objectid import ObjectId
 
-from mundus import model
-from mundus.handlers.collection import CollectionHandler
-from mundus.settings import RELATION_SCHEMA
+from unis import model
+from unis.handlers.collection import CollectionHandler
+from unis.settings import RELATION_SCHEMA
 
 class RelationHandler(CollectionHandler):
     def __init__(self, *args, **kwargs):

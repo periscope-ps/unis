@@ -3,11 +3,11 @@ import argparse
 from lace import logging
 from wsgiref import simple_server
 
-from mundus import api, config, model, utils
-from mundus.settings import CMD_DEFAULTS, CONF_FILE_VAR, CONF_FILE_PATH
+from unis import api, config, model, utils
+from unis.settings import CMD_DEFAULTS, CONF_FILE_VAR, CONF_FILE_PATH
 
 description="""
-RESTful daemon for creating, accessing, and modifying mundus records.  mundd adopts the mundus data model
+RESTful daemon for creating, accessing, and modifying unis records.  unisd adopts the unis data model
 and exposes relationships as described in linked schema.
 """
 
@@ -15,15 +15,15 @@ def _build_command():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--interface", help="Bind interface for listening to incoming connections.")
     parser.add_argument("-p", "--port", type=int, help="TCP port for incoming connections.")
-    parser.add_argument("-P", "--plugin", action="append", help='Add a mundus plugin (Ex. "mundus.plugins.authorization" '
-                        'must inherit from mundus.plugin.Plugin)')
+    parser.add_argument("-P", "--plugin", action="append", help='Add a unis plugin (Ex. "unis.plugins.authorization" '
+                        'must inherit from unis.plugin.Plugin)')
     parser.add_argument("-s", "--schema", help="Path to an index file containing a JSON list of model URIs.")
     parser.add_argument("--cache", help="Path to model cache directory")
     parser.add_argument("--nopub", action="store_true", help="Disable publication/subscription events for agent.")
     parser.add_argument("--lookupip", action="store_true", help="Request external facing IP address for record reference generation")
 
     reg = parser.add_argument_group('Registration')
-    reg.add_argument("-R", "--reg.community", action="append", help="Add mundus collection to a community.")
+    reg.add_argument("-R", "--reg.community", action="append", help="Add unis collection to a community.")
     reg.add_argument("-r", "--reg.parent", action="append", help="Add an upstream parent to register records.")
     reg.add_argument("-U", "--reg.pub", action="append", help="Add a public key for connecting to an upstream parent.")
     reg.add_argument("-u", "--reg.period", type=int, help="Set the time between checkin with root instances.")
@@ -56,7 +56,7 @@ def main():
     conf.add_loglevel(logging.TRACE_ALL)
     args = conf.from_parser(_build_command(), include_logging=True)
     log = utils.getLogger("config")
-    log.info("Starting mundd...")
+    log.info("Starting unisd...")
     log.debug("--Configuration--")
     conf.display(log)
 

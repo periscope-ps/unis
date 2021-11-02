@@ -1,8 +1,8 @@
 import copy, json, jsonschema, os, requests
 
-from mundus import utils
-from mundus.settings import SCHEMA_INDEX
-from mundus.config import ConfigError
+from unis import utils
+from unis.settings import SCHEMA_INDEX
+from unis.config import ConfigError
 
 _CACHE, _REFS = {}, {}
 log = utils.getLogger("model")

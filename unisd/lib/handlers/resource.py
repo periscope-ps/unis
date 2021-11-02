@@ -1,7 +1,7 @@
 import falcon, time
 
-from mundus.db import DBLayer, AccessError
-from mundus.handlers.abc import Handler
+from unis.db import DBLayer, AccessError
+from unis.handlers.abc import Handler
 
 class ResourceHandler(Handler):
     def _get_args(self, rid, req, args=None):

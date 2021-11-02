@@ -1,17 +1,17 @@
 import importlib, logging
 
 _log_namespace = [
-    "mundd",
-    "mundd.app",
-    "mundd.config",
-    "mundd.db",
-    "mundd.root",
-    "mundd.model",
-    "mundd.handler"
+    "unisd",
+    "unisd.app",
+    "unisd.config",
+    "unisd.db",
+    "unisd.root",
+    "unisd.model",
+    "unisd.handler"
 ]
 
 def getLogger(ns):
-    if not ns.startswith("mundd"): ns = "mundd." + ns
+    if not ns.startswith("unisd"): ns = "unisd." + ns
     if ns not in _log_namespace:
         raise KeyError(f"'{ns}' is not a known logger namespace.")
     return logging.getLogger(ns)

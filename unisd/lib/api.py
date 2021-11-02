@@ -4,10 +4,10 @@ from getpass import getpass
 from urllib.parse import urlparse
 from lace import logging
 
-from mundus import utils, model, handlers
-from mundus.config import MultiConfig
-from mundus.middleware import ContentTypeNegotiator, BSONHandler
-from mundus.settings import CMD_DEFAULTS, CONF_FILE_VAR, CONF_FILE_PATH, IPLOOKUP_SERVICE, SCHEMA_INDEX
+from unis import utils, model, handlers
+from unis.config import MultiConfig
+from unis.middleware import ContentTypeNegotiator, BSONHandler
+from unis.settings import CMD_DEFAULTS, CONF_FILE_VAR, CONF_FILE_PATH, IPLOOKUP_SERVICE, SCHEMA_INDEX
 
 log = utils.getLogger("app")
 def _query_remote(host):

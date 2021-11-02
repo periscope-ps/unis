@@ -42,10 +42,10 @@ class tester(Command):
         return tests.main(True, True, 2)
 
 setup(
-    name="mundd",
+    name="unisd",
     version=version,
-    packages=["mundus", "mundus.auth", "mundus.handlers", "mundus.plugins"],
-    package_dir={'': 'lib'},
+    packages=["unis", "unis.auth", "unis.handlers", "unis.plugins"],
+    package_dir={'unis': 'lib'},
     #package_data={ 'unis': ['schemas/*']},
     author="Jeremy Musser",
     author_email="jemusser@iu.edu",
@@ -65,7 +65,7 @@ setup(
     cmdclass={'test': tester },
     entry_points = {
         'console_scripts': [
-            'mundd = mundus:main',
+            'unisd = unis:main',
         ]
     },
 )

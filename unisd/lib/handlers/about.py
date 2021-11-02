@@ -1,6 +1,6 @@
-from mundus.handlers.abc import Handler
-from mundus.handlers.collection import CollectionHandler
-from mundus.handlers.relation import RelationHandler
+from unis.handlers.abc import Handler
+from unis.handlers.collection import CollectionHandler
+from unis.handlers.relation import RelationHandler
 
 class AboutHandler(Handler):
     def __init__(self, hdls, config, db):

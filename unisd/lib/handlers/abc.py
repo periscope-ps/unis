@@ -3,11 +3,11 @@ import falcon, jsonschema
 from functools import wraps
 from pymongo import MongoClient
 
-from mundus import model
-from mundus.auth import none as noauth
-from mundus.db import DBLayer
-from mundus.settings import ID_FIELD, TS_FIELD
-from mundus.utils import getLogger
+from unis import model
+from unis.auth import none as noauth
+from unis.db import DBLayer
+from unis.settings import ID_FIELD, TS_FIELD
+from unis.utils import getLogger
 
 class Handler(object):
     def __init__(self, schemas:dict, path:str, conf:dict, allow:list, db:MongoClient, id_field:str=None, ts_field:str=None, auth=None):
