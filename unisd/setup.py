@@ -15,9 +15,13 @@
 from __future__ import print_function 
 from setuptools import setup, Command
 
-import sys
+import sys, os
 
-version = "1.0.0"
+PACKAGE="lib"
+with open(os.path.join(f"{PACKAGE}", "version.py")) as f:
+    code = compile(f.read(), f"version.py", 'exec')
+    exec(code)
+
 
 sys.path.append(".")
 if sys.version_info[0] < 3 or sys.version_info[1] < 5:
@@ -43,7 +47,7 @@ class tester(Command):
 
 setup(
     name="unisd",
-    version=version,
+    version=__version__,
     packages=["unis", "unis.auth", "unis.handlers", "unis.plugins"],
     package_dir={'unis': 'lib'},
     #package_data={ 'unis': ['schemas/*']},

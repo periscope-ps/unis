@@ -1,8 +1,8 @@
 import copy, json, jsonschema, os, requests
 
 from unis import utils
-from unis.settings import SCHEMA_INDEX
 from unis.config import ConfigError
+from unis.exceptions import UnisSchemaError
 
 _CACHE, _REFS = {}, {}
 log = utils.getLogger("model")
@@ -85,23 +85,26 @@ def cache(path, index):
         log.debug("Cache exists, using internal models")
         return _CACHE
     os.makedirs(path, exist_ok=True)
-    for n in os.listdir(path):
-        fp = os.path.join(path, n)
-        with open(fp, 'r') as f:
+    for dname, _, ls in os.walk(path):
+        for n in ls:
+            fp = os.path.join(dname, n)
             if os.path.isfile(fp):
-                try:
-                    log.debug(f"  Loading model '{fp}'")
-                    schema = json.load(f)
-                    log.debug(f"    +- '{schema['$id']}'")
-                    log.debug("    |- Adding to references")
-                    _REFS[schema['$id']] = schema
-                    if schema['$id'] in index:
-                        log.debug("    |- Adding to cache")
-                        _CACHE[schema['$id']] = schema
-                except json.JSONDecodeError:
-                    log.warn(f"Unable to parse schema file '{fp}'")
+                with open(fp, 'r') as f:
+                    try:
+                        log.debug(f"  Loading model '{fp}'")
+                        schema = json.load(f)
+                        log.debug(f"    +- '{schema['$id']}'")
+                        log.debug("    |- Adding to references")
+                        _REFS[schema['$id']] = schema
+                        if schema['$id'] in index:
+                            log.debug("    |- Adding to cache")
+                            _CACHE[schema['$id']] = schema
+                    except json.JSONDecodeError:
+                        log.warn(f"Unable to parse schema file '{fp}'")
+
     for s in index:
         if s not in _CACHE:
             log.debug(f"  Cache miss on '{s}'")
-            _get_remote(s, path)
+            if not _get_remote(s, path):
+                raise UnisSchemaError(f"Failed to load schema '{s}'")
     return _CACHE

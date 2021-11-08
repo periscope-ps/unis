@@ -33,7 +33,7 @@ def _update_parents(config):
     #  TODO Generate service record
     log = utils.getLogger("app")
     remote_record = {}
-    while True:
+    while config['reg']['parent']:
         for i in enumerate(config['reg']['parent']):
             h = config['reg']['parent'][i]
             try: v = config['reg']['pub'][i]

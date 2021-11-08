@@ -13,9 +13,6 @@ class MultiConfig(object):
     def __init__(self, defaults, desc=None, *, filevar=None, defaultpath=""):
         self.confpath = _expandvar(filevar or self.CONFIG_FILE_VAR, defaultpath)
         self.defaults, self._desc = defaults, (desc or "")
-        #self.loglevels = {'NOTSET': logging.NOTSET, 'ERROR': logging.ERROR,
-        #                  'WARN': logging.WARNING, 'INFO': logging.INFO,
-        #                  'DEBUG': logging.DEBUG}
         self.loglevels = [logging.WARN, logging.INFO, logging.DEBUG]
 
     def _from_file(self, path):
@@ -87,6 +84,7 @@ class MultiConfig(object):
 
         args = internal.parse_args()
         result = copy.deepcopy(self.defaults)
+        result.setdefault('version', False)
         for section,body in self._from_file(args.configfile or self.confpath).items():
             if section == general_tag:
                 [result.__setitem__(k, self._unify(result.get(k, None),v)) for k,v in body.items()]
