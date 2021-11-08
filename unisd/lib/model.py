@@ -83,7 +83,7 @@ def cache(path, index):
     log.info("Constructing schema cache...")
     if _CACHE:
         log.debug("Cache exists, using internal models")
-        return _CACHE
+        return _CACHE.copy()
     os.makedirs(path, exist_ok=True)
     for dname, _, ls in os.walk(path):
         for n in ls:
@@ -107,4 +107,4 @@ def cache(path, index):
             log.debug(f"  Cache miss on '{s}'")
             if not _get_remote(s, path):
                 raise UnisSchemaError(f"Failed to load schema '{s}'")
-    return _CACHE
+    return _CACHE.copy()
