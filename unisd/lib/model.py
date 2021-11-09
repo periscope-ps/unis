@@ -86,6 +86,7 @@ def _get_remote(s, path):
         fp = os.path.join(path, schema['$id'].replace('/', ''))
         with open(fp, 'w') as f:
             json.dump(schema, f)
+    return schema
 
 def _get_remote_cache(path, index, cache):
     for s in filter(lambda x: x not in cache, index):
