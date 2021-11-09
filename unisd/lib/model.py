@@ -48,7 +48,7 @@ def get_links(schema, path):
                 links[l['href']] = l
     return list(links.values())
 
-def _get_local(path, index):
+def _get_local_cache(path, index):
     os.makedirs(path, exist_ok=True)
     for dname, _, ls in os.walk(path):
         for n in ls:
@@ -67,7 +67,7 @@ def _get_local(path, index):
                         log.debug("    |- Adding to cache")
                         yield schema
 
-def _get_remote(path, index, cache):
+def _get_remote(s, path)
     def _get(s):
         log.info(f"Requesting remote schema '{s}'")
         try:
@@ -80,16 +80,17 @@ def _get_remote(path, index, cache):
         except json.JSONDecodeError:
             log.warn(f"Unable to parse schema file '{s}' from source")
             raise UnisSchemaError(f"Unable to read schema '{s}'") from None
+    schema = _get(s)
+    _REFS[schema['$id']] = schema
+    if path is not None:
+        fp = os.path.join(path, schema['$id'].replace('/', ''))
+        with open(fp, 'w') as f:
+            json.dump(schema, f)
 
+def _get_remote_cache(path, index, cache):
     for s in filter(lambda x: x not in cache, index):
         log.debug(f"  Cache miss on '{s}'")
-        schema = _get(s)
-        _REFS[schema['$id']] = schema
-        if path is not None:
-            path = os.path.join(path, schema['$id'].replace('/', ''))
-            with open(path, 'w') as f:
-                json.dump(schema, f)
-        yield schema
+        yield _get_remote(s, path)
 
 def cache(path, index):
     """
@@ -111,6 +112,6 @@ def cache(path, index):
     if _CACHE:
         log.debug("Cache exists, using internal models")
         return _CACHE.copy()
-    _CACHE.update({v['$id']: (True, v) for v in _get_local(path, index)})
-    _CACHE.update({v['$id']: (False, v) for v in _get_remote(path, index, _CACHE)})
+    _CACHE.update({v['$id']: (True, v) for v in _get_local_cache(path, index)})
+    _CACHE.update({v['$id']: (False, v) for v in _get_remote_cache(path, index, _CACHE)})
     return _CACHE.copy()

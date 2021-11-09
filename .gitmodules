@@ -2,7 +2,3 @@
 	path = unis-schema
 	url = git@github.iu.edu:OPEN/unis
 	branch = 2.0.0
-[submodule "unisd/unis-schema"]
-	path = unisd/unis-schema
-	url = git@github.iu.edu:OPEN/unis.git
-	branch = entity-relation
