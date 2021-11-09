@@ -4,10 +4,10 @@ class DataHandler(object):
         self.schemas = []
 
     def on_get(self, req, resp, id):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def on_post(self, req, resp, id):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def get_routes(self, as_template=True):
         return [("/data/{id}", "")] if as_template else []

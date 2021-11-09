@@ -147,7 +147,7 @@ class Handler(object):
         return result
 
     def on_get(self, req, resp):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def get_routes(self, as_tempate:bool=True):
         """
@@ -159,7 +159,7 @@ class Handler(object):
         :return: List of routes expected by the handler
         :rtype: list[str]
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def publish(self, event, body):
         #TODO

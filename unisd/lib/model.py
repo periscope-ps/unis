@@ -6,24 +6,6 @@ from unis.exceptions import UnisSchemaError
 
 _CACHE, _REFS = {}, {}
 log = utils.getLogger("model")
-def _get_remote(s, path=None):
-    log.info(f"Requesting remote schema '{s}'")
-    schema = None
-    try:
-        r = requests.get(s)
-        r.raise_for_status()
-        schema = r.json()
-        _CACHE[schema['$id']] = _REFS[schema['$id']] = schema
-        if path is not None:
-            path = os.path.join(path, schema['$id'].replace('/', ''))
-            with open(path, 'w') as f:
-                json.dump(schema, f)
-    except requests.ConnectionError:
-        log.warn(f"Unable to retrieve schema '{s}' from source")
-    except json.JSONDecodeError:
-        log.warn(f"Unable to parse schema file '{s}' from source")
-    return schema
-
 def validate(record, schema):
     resolver = jsonschema.RefResolver(schema['$id'], schema, store=_REFS)
     try: jsonschema.validate(record, schema, resolver=resolver)
@@ -66,6 +48,49 @@ def get_links(schema, path):
                 links[l['href']] = l
     return list(links.values())
 
+def _get_local(path, index):
+    os.makedirs(path, exist_ok=True)
+    for dname, _, ls in os.walk(path):
+        for n in ls:
+            fp = os.path.join(dname, n)
+            if os.path.isfile(fp):
+                with open(fp, 'r') as f:
+                    log.debug(f"  Loading model '{fp}'")
+                    try: schema = json.load(f)
+                    except json.JSONDecodeError:
+                        log.warn(f"Unable to parse schema file '{fp}'")
+                        raise UnisSchemaError(f"Invalid schema file '{fp}'") from None
+                    log.debug(f"    +- '{schema['$id']}'")
+                    log.debug("    |- Adding to references")
+                    _REFS[schema['$id']] = schema
+                    if schema['$id'] in index:
+                        log.debug("    |- Adding to cache")
+                        yield schema
+
+def _get_remote(path, index, cache):
+    def _get(s):
+        log.info(f"Requesting remote schema '{s}'")
+        try:
+            r = requests.get(s)
+            r.raise_for_status()
+            return r.json()
+        except requests.ConnectionError:
+            log.warn(f"Unable to retrieve schema '{s}' from source")
+            raise UnisSchemaError(f"Unable to retrieve schema '{s}'") from None
+        except json.JSONDecodeError:
+            log.warn(f"Unable to parse schema file '{s}' from source")
+            raise UnisSchemaError(f"Unable to read schema '{s}'") from None
+
+    for s in filter(lambda x: x not in cache, index):
+        log.debug(f"  Cache miss on '{s}'")
+        schema = _get(s)
+        _REFS[schema['$id']] = schema
+        if path is not None:
+            path = os.path.join(path, schema['$id'].replace('/', ''))
+            with open(path, 'w') as f:
+                json.dump(schema, f)
+        yield schema
+
 def cache(path, index):
     """
     :param path: Path to the local schema cache
@@ -75,36 +100,17 @@ def cache(path, index):
     :type index: list[str]
 
     :return: List of JSON schemas
-    :rtype: list[dict]
+    :rtype: dict[str,tuple[bool, dict]]
 
     Generates and returns an internal cache of schema for each
-    model used by the server.
+    model used by the server. Result keys map to the schema
+    '$id' field while the value tuple represents the 
+    (FOUND_LOCAL, SCHEMA) values.
     """
     log.info("Constructing schema cache...")
     if _CACHE:
         log.debug("Cache exists, using internal models")
         return _CACHE.copy()
-    os.makedirs(path, exist_ok=True)
-    for dname, _, ls in os.walk(path):
-        for n in ls:
-            fp = os.path.join(dname, n)
-            if os.path.isfile(fp):
-                with open(fp, 'r') as f:
-                    try:
-                        log.debug(f"  Loading model '{fp}'")
-                        schema = json.load(f)
-                        log.debug(f"    +- '{schema['$id']}'")
-                        log.debug("    |- Adding to references")
-                        _REFS[schema['$id']] = schema
-                        if schema['$id'] in index:
-                            log.debug("    |- Adding to cache")
-                            _CACHE[schema['$id']] = schema
-                    except json.JSONDecodeError:
-                        log.warn(f"Unable to parse schema file '{fp}'")
-
-    for s in index:
-        if s not in _CACHE:
-            log.debug(f"  Cache miss on '{s}'")
-            if not _get_remote(s, path):
-                raise UnisSchemaError(f"Failed to load schema '{s}'")
+    _CACHE.update({v['$id']: (True, v) for v in _get_local(path, index)})
+    _CACHE.update({v['$id']: (False, v) for v in _get_remote(path, index, _CACHE)})
     return _CACHE.copy()

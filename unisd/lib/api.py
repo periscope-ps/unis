@@ -51,7 +51,7 @@ def _create_handlers(app, config, db, auth):
         'data': handlers.DataHandler
     }
     insts, hdls = [], {}
-    for schema in model.cache(config['cache'], config['schema']).values():
+    for _, schema in model.cache(config['cache'], config['schema']).values():
         for link in model.get_links(schema, config['cache']):
             ref = urlparse(link['href']).path.strip('/').split('/')
             if len(ref) > 4:
@@ -72,7 +72,10 @@ def _create_handlers(app, config, db, auth):
         for r,s in hdl.get_routes():
             yield (r,s), hdl
 
-    ah = handlers.AboutHandler(insts, config, db=db)
+    info = {
+        "schema_load_miss": sum([not v for v,_ in model.cache(config['cache'], config['schema']).values()])
+    }
+    ah = handlers.AboutHandler(insts, config, info=info, db=db)
     for r,s in ah.get_routes():
         yield (r,s), ah
     yield ("/", None), handlers.RootHandler(insts, config, db=db)
@@ -96,6 +99,7 @@ def build(config=None):
     app.resp_options.media_handlers.update(media)
 
     args = {k: config['db'][k] for k in ["host", "port", "username", "password"]}
+    print(args)
     if config['db']['login']:
         args['username'] = input("DB Username: ")
         args['password'] = getpass("DB Password: ")
