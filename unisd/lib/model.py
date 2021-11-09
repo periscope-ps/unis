@@ -67,7 +67,7 @@ def _get_local_cache(path, index):
                         log.debug("    |- Adding to cache")
                         yield schema
 
-def _get_remote(s, path)
+def _get_remote(s, path):
     def _get(s):
         log.info(f"Requesting remote schema '{s}'")
         try:
