@@ -19,6 +19,7 @@ import logging.handlers
 import os
 import sys
 from tornado.log import LogFormatter, enable_pretty_logging
+from periscope.config import Argument
 
 LIST_OPTIONS = ["unis.root_urls", "unis.communities"]
 SELF_LOOKUP_URLS = [] #["http://ident.me"]
@@ -40,34 +41,32 @@ AUTH_STORE_DIR = os.path.join(os.path.dirname(__file__), "abac")
 ######################################################################
 # Configuration options
 ######################################################################
-DEFAULT_CONFIG = {
-    "unis_ssl": {
-        "enable": False,
-    },
-    "unis": {
-        "url": "",
-        "summary_collection_period": 60 * 60,
-        "root_urls": [],
-        "communities": [],
-        "summary_size": 10,
-        "use_ms": True,
-        "ms_url": "",
-        "db_host": "127.0.0.1",
-        "db_port": 27017,
-        "db_name": "unis_db"
-    },
-    "auth": {
-        "enabled": False
-    },
-    "port": "8888",
-    "log": None,
-    "log-level": "INFO",
-    "soft-start": False,
-    "soft-start-pollrate": 5,
-}
+SSL_ENABLED=False
 
-
-
+CONFIG_TEMPLATE = [
+    Argument("-H", "--host", "", str, "Override automatice hostname generation"),
+    Argument("-i", "--interface", "0.0.0.0", str, "Interface to bind port to"),
+    Argument("-p", "--port", "8888", int, "Port to attach service to"),
+    Argument("-s", "--softstart.enable", False, bool, "Poll backend port for connection when set, defaults to fail-fast"),
+    Argument(None, "--softstart.pollrate", 5, int, "Rate for polling in seconds during soft start"),
+    Argument(None, "--ssl.enable", SSL_ENABLED, bool, "Enable ssl connections"),
+    Argument(None, "--ssl.cert", os.path.join(PERISCOPE_ROOT, "ssl/server.pem"), str, "Certificate file"),
+    Argument(None, "--ssl.key", os.path.join(PERISCOPE_ROOT, "ssl/server.key"), str, "Keyfile for ssl"),
+    Argument(None, "--ssl.cert_reqs", ssl.CERT_REQUIRED, bool, "Certificates required"),
+    Argument(None, "--ssl.ca_certs", os.path.join(PERISCOPE_ROOT, "ssl/genica.bundle"), str, "Certificate bundle file"),
+    Argument("-r", "--lookup", False, bool, "Change operation mode to parent directory server"),
+    Argument("-D", "--db.engine", "motor.motor_tornado.MotorClient", str, "Define the interface module for the backend data store"),
+    Argument(None, "--db.host", "127.0.0.1", str, "Hostname for the backend database"),
+    Argument(None, "--db.port", 27017, int, "Port for the backend database"),
+    Argument(None, "--db.name", "unis_db", str, "Name for the backend databas"),
+    Argument("-M", "--ms.disable", True, bool, "Disable measurement store functionality"),
+    Argument(None, "--ms.path", "", str, "Path to measurement store"),
+    Argument(None, "--register.period", 3600, int, "Period of update to upstream"),
+    Argument(None, "--register.paths", [], list, "Address(es) of upstream directory server(s)"),
+    Argument("-C", "--register.communities", [], list, "Labels of communities data registers to"),
+    Argument("-L", "--register.limitsize", 10, int, "Maximum number of records to report verbatim before aggregation"),
+    Argument("-a", "--auth.enabled", False, bool, "Enable authentication")
+]
 
 ######################################################################
 # Tornado settings.
@@ -120,56 +119,6 @@ DB_AUTH = {
     'auth_default' : None,
     'attrib_list' : ("landsat","unauth"),
 }
-
-######################################################################
-# Netlogger settings
-######################################################################
-LOGGER_NAMESPACE = "periscope"
-
-_log = None
-def config_logger(namespace=LOGGER_NAMESPACE, level = None, filename = None):
-    tmpLog = logging.getLogger(LOGGER_NAMESPACE)
-    tmpLog.propagate = False
-
-    if filename:
-        add_filehandler(tmpLog, filename)
-    else:
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(LogFormatter("%(message)s"))
-        tmpLog.addHandler(handler)
-
-    if level == "WARN":
-        tmpLog.setLevel(logging.WARNING)
-    elif level == "ERROR":
-        tmpLog.setLevel(logging.ERROR)
-    elif level == "DEBUG":
-        tmpLog.setLevel(logging.DEBUG)
-        if not filename:
-            enable_pretty_logging()
-    elif level == "CONSOLE":
-        tmpLog.setLevel(25)
-    else:
-        tmpLog.setLevel(logging.INFO)
-        
-    return tmpLog
-
-def add_filehandler(log, logfile):
-    log.handlers = []
-    
-    try:
-        fileHandler = logging.handlers.RotatingFileHandler(logfile, maxBytes = 500000, backupCount = 5)
-        fileHandler.setFormatter(logging.Formatter("%(message)s"))
-        log.addHandler(fileHandler)
-    except AttributeError as exp:
-        log.error("Could not attach File Logger: {exp}".format(exp = exp))
-
-def get_logger(namespace=LOGGER_NAMESPACE, level = None, filename = None):
-    """Return logger object"""
-    # Test if netlloger is initialized
-    global _log
-    if not _log:
-        _log = config_logger(namespace, level, filename)
-    return _log
 
 ######################################################################
 # NetworkResource Handlers settings
@@ -694,7 +643,7 @@ AuthResources = {
     
 
 if GEMINI_NODE_INFO is not None:
-    logger = get_logger()
+    logger = logging.getLogger("periscope")
     nconf = {}
     with open(GEMINI_NODE_INFO, 'r') as cfile:
         for line in cfile:
@@ -709,11 +658,11 @@ if GEMINI_NODE_INFO is not None:
 else:
     AUTH_UUID = None
 
-if DEFAULT_CONFIG["unis_ssl"]["enable"]:
+if SSL_ENABLED:
     try:
         from M2Crypto import X509
         SERVER_CERT_FINGERPRINT = X509.load_cert(SSL_OPTIONS['certfile'], X509.FORMAT_PEM).get_fingerprint('sha1')
     except Exception as e:
         SERVER_CERT_FINGERPRINT = ''
-        logger = get_logger()
+        logger = logging.getLogger("periscope")
         logger.warning("read_settings", msg="Could not open SSL CERTFILE: %s" % e)

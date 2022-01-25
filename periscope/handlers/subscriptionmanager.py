@@ -12,9 +12,7 @@
 # =============================================================================
 #!/usr/bin/env python
 
-import json
-import uuid
-import re
+import json, uuid, re, logging
 import tornado.web
 
 import periscope.settings as settings
@@ -34,7 +32,7 @@ class SubscriptionManager(object):
     def __init__(self):
         global __manager__
         
-        self.log = settings.get_logger()
+        self.log = logging.getLogger("periscope.subman")
         self.subscriptions = []
         
         if __manager__:

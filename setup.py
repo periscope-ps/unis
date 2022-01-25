@@ -68,7 +68,7 @@ class TestingCommand(distutils.cmd.Command):
 setup(
     name="periscope",
     version=version,
-    packages=["periscope", "periscope.test", "periscope.filters", "periscope.handlers"],
+    packages=["periscope", "periscope.test", "periscope.filters", "periscope.handlers", "periscope.dblayers"],
     package_data = {
         'periscope': ['ssl/*', 'schemas/*', 'abac/*']
     },

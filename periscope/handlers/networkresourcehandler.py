@@ -260,7 +260,7 @@ class NetworkResourceHandler(SSEHandler):
                         message="'%s' is not of type '%s'" % (key, val_type))
             if val_type == "string":
                 try:
-                    return unicode(value)
+                    return str(value)
                 except:
                     raise HTTPError(400,
                         message="'%s' is not of type '%s'" % (key, val_type))

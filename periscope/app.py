@@ -10,33 +10,18 @@
 #  This software was created at the Indiana University Center for Research in
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
-'''
-Usage:
-  periscoped [options]
-
-Options:
-  -l FILE --log=FILE           File to store log information
-  -d LEVEL --log-level=LEVEL   Select log verbosity [ERROR, DEBUG, CONSOLE]
-  -c FILE --config-file=FILE   File with extra configurations [default: /etc/periscope/unis.cfg]
-  -p PORT --port=PORT          Run on PORT
-  -r --lookup                  Run UNIS as a lookup service
-  -S --soft-start              Poll backend port for connection when set, defaults to fail-fast
-  --soft-start-pollrate=RATE   Rate of polling in seconds during soft start [default: 5]
-'''
-
-import configparser, docopt
 import asyncio, motor, tornado.httpserver, tornado.web, tornado.ioloop
-import functools, json, logging, time, sys, collections
+import functools, json, logging, time, sys, collections, importlib
 import socket, requests
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse, ParseResult
 from uuid import uuid4
 
 from periscope.settings import MIME
-from periscope.settings import SCHEMAS
-from periscope import settings
+from periscope.settings import SCHEMAS, CONFIG_TEMPLATE
+from periscope import settings, config
 from periscope.db import DBLayer
 from periscope.utils import load_class
 from periscope.models import Manifest, ObjectDict
@@ -47,46 +32,45 @@ class PeriscopeApplication(tornado.web.Application):
     @property
     def log(self):
         if not hasattr(self, "_log"):
-            self._log = settings.get_logger(level=self.options['log-level'], filename=self.options['log'])
+            self._log = logging.getLogger("periscope")
         return self._log
 
     @property
+    def fullpath(self):
+        if not hasattr(self, "_fullpath"):
+            host = socket.getfqdn()
+            for url in settings.SELF_LOOKUP_URLS:
+                try:
+                    res = requests.get(url)
+                    res.raise_for_status()
+                    host = res.text
+                except requests.exception.ConnectionError: pass
+            scheme = "https" if self.options['ssl']['enable'] else "http"
+            netloc = f"{self.options['host'] or host}:{self.options['port']}"
+            self._fullpath = urlunparse(ParseResult(scheme, netloc, "", "", "", ""))
+        return self._fullpath
+
+    @property
     def options(self):
-        def _build_pair(keys, value):
-            d = self._options
-            for k in keys[:-1]: d = d[k]
-            
-            if ".".join(keys) in settings.LIST_OPTIONS:
-                value = value.split(",")
-            try: value = {"true": True, "false": False}.get(value, value)
-            except TypeError: pass
-            
-            d[keys[-1]] = value
-
+        def _blocklog(b, pad):
+            for k,v in b.items():
+                if isinstance(v, dict):
+                    self.log.debug(f"{pad}{k}:")
+                    _blocklog(v, pad + "  ")
+                else:
+                    self.log.debug(f"{pad}{k}: {v}")
         if not hasattr(self, "_options"):
-            class DefaultDict(collections.defaultdict):
-                def get(self, k, default=None):
-                    val = super(DefaultDict, self).get(k, default)
-                    return val or default
-
-            tmpOptions = docopt.docopt(__doc__)
-            self._options = DefaultDict(dict, settings.DEFAULT_CONFIG)
-            tmpConfig = configparser.RawConfigParser(allow_no_value = True)
-            tmpConfig.read(tmpOptions["--config-file"])
-
-            for s in tmpConfig.sections():
-                sp = lambda k, p: [k] if p == 'general' else ([p] + [k])
-                [_build_pair(sp(k.lower(), s.lower()), o) for k,o in tmpConfig.items(s)]
-
-            for key, option in tmpOptions.items():
-                if option not in [None, False]:
-                    self._options[key.lstrip("--")] = option
+            self._options = config.from_template(CONFIG_TEMPLATE,
+                                                 filevar="$PERISCOPE_CONFPATH",
+                                                 include_logging=True)
+            if 'logfile' not in self._options:
+                logging.basicConfig(format="[%(levelname)s] %(message)s")
             self.log.debug("Configuration flags:")
-            {self.log.debug("  {}: {}".format(k, v)) for k,v in self._options.items()}
+            _blocklog(self._options, "  ")
         return self._options
 
     async def get_db_layer(self, collection_name, id_field_name,
-                     timestamp_field_name, is_capped_collection, capped_collection_size):
+                           timestamp_field_name, is_capped_collection, capped_collection_size):
         if collection_name == None:
             return None
         # Add capped collection if needed
@@ -195,7 +179,7 @@ class PeriscopeApplication(tornado.web.Application):
             )
         )
         return main_handler
-    
+
     async def _generate_uuid(self):
         async for record in self.db['about'].find():
             self.options['uuid'] = record['uuid']
@@ -210,17 +194,17 @@ class PeriscopeApplication(tornado.web.Application):
 
         import time
         service = {
-            u"id": u"unis_" + urlparse(self.options['unis']['url']).hostname,
+            u"id": f"unis_{self.options['host']}",
             u"ts": int(time.time() * 1e6),
             u"\$schema": str(SCHEMAS["service"]),
-            u"accessPoint": u"%s/" % (self.options['unis']['url']),
-            u"name": u"unis_" + urlparse(self.options['unis']['url']).hostname,
+            u"accessPoint": self.fullpath,
+            u"name": f"unis_{self.options['host']}",
             u"status": u"ON",
             u"serviceType": u"ps:tools:unis",
-            u"ttl": int(self.options["unis"]["summary_collection_period"]),
-            u"communities": self.options["unis"]["communities"],
+            u"ttl": int(self.options["register"]["period"]),
+            u"communities": self.options["register"]["communities"],
             u"runningOn": {
-                u"href": u"%s/nodes/%s" % (self.options['unis']['url'], socket.gethostname()),
+                u"href": f"{self.fullpath}/nodes/{socket.gethostname()}",
                 u"rel": u"full"
             },
             u"properties": {
@@ -228,12 +212,12 @@ class PeriscopeApplication(tornado.web.Application):
                 u"depth": self._depth
             }
         }
-        
-        for lookup in self.options["unis"]["root_urls"]:
-            service_url = lookup + '/register'
+
+        for lookup in self.options["register"]["paths"]:
+            service_url = f"{lookup}/register"
             http_client = AsyncHTTPClient()
 
-            content_type = MIME['PSJSON'] + '; profile=' + SCHEMAS['service']
+            content_type = f"{MIME['PSJON']};profile={SCHEMAS['service']}"
             resp = await http_client.fetch(service_url,
                                            method="POST",
                                            body=json.dumps(service),
@@ -246,7 +230,7 @@ class PeriscopeApplication(tornado.web.Application):
 
     def registered(self, response, fatal = True):
         if response.error:
-            self._log.error("Couldn't connect to Client: ERROR {e}  {b}".format(e = response.error, b = response.body))
+            self.log.error("Couldn't connect to Client: ERROR {e}  {b}".format(e = response.error, b = response.body))
             if fatal:
                 import sys
                 sys.exit()
@@ -260,15 +244,11 @@ class PeriscopeApplication(tornado.web.Application):
         return handler
 
     async def _aggregate_manifests(self):
-        def _trim_fields(resource, fields):
-            resource.pop("_id", None)
-            return resource
-
         def add_key(key, value, manifest):
             if key not in ["ts", "id", "_id", "\\$shard", "\\$collection"]:
                 try:
                     prev = manifest["properties"][key] if key in manifest["properties"] else []
-                    if prev == "*" or value == "*" or len(value) + len(prev) > self.options["unis"]["summary_size"]:
+                    if prev == "*" or value == "*" or len(value) + len(prev) > self.options["register"]["limitsize"]:
                         prev = "*"
                     elif len(value) > 0 and type(value[0]) == dict:
                         prev += value
@@ -276,10 +256,10 @@ class PeriscopeApplication(tornado.web.Application):
                         prev = list(set(prev) | set(value))
                     manifest["properties"][key] = prev
                 except Exception as exp:
-                    self._log.error("Bad value in shard - {exp}".format(exp = exp))
+                    self.log.error("Bad value in shard - {exp}".format(exp = exp))
                     
         while True:
-            await asyncio.sleep(float(self.options["unis"]["summary_collection_period"]))
+            await asyncio.sleep(float(self.options["register"]["period"]))
             m = self.db["manifests"]
             collections = set()
             for key, collection in settings.Resources.items():
@@ -298,18 +278,18 @@ class PeriscopeApplication(tornado.web.Application):
                 await m.update_one({"\\$collection": collection}, manifest, upsert=True)
 
             await m.remove({ "\\$shard": True })
-            if self.options["unis"]["root_urls"]:
+            if self.options["register"]["paths"]:
                 self._report_to_root()
-    
+
     async def initialize(self):
         # Init Locals
         hdl = []
         # Create Handlers
-        if 'auth' in self.options and self.options["auth"]["enabled"]:
+        if self.options["ssl"]["enable"]:
             from periscope.auth import ABACAuthService
 
-            self._auth = ABACAuthService(settings.SSL_OPTIONS['certfile'],
-                                         settings.SSL_OPTIONS['keyfile'],
+            self._auth = ABACAuthService(self.options['ssl']['cert'],
+                                         self.options['ssl']['key'],
                                          settings.AUTH_STORE_DIR,
                                          self.get_db_layer("authNZ",
                                                            "id", "ts", False, 0))
@@ -335,23 +315,21 @@ class PeriscopeApplication(tornado.web.Application):
         # Register measurement store
         self.add_handlers(".*", hdl)
 
-        if self.options["unis"]["use_ms"] and not bool(self.options["lookup"]):
+        if not self.options["ms"]["disable"] and not bool(self.options["lookup"]):
             import time
-            if self.options["unis_ssl"]["enable"]:
-                http_str = "https"
-            else:
-                http_str = "http"
             service = {
                 u"id": u"ms_" + socket.gethostname(),
+                u"selfRef": f"{self.options['ms']['path']}/services/{socket.gethostname()}",
                 u"ts": int(time.time() * 1e6),
                 u"\$schema": str(SCHEMAS["service"]),
-                u"accessPoint": u"%s://%s:%d/" % (http_str, socket.getfqdn(), int(self.options["port"])),
+                u"\$status": "READY",
+                u"accessPoint": self.fullpath,
                 u"name": u"ms_" + socket.gethostname(),
                 u"status": u"ON",
                 u"serviceType": u"ps:tools:ms",
                 u"ttl": 600,
                 u"runningOn": {
-                    u"href": u"%s/nodes/%s" % (self.options["unis"]["ms_url"], socket.gethostname()),
+                    u"href": f"{self.options['ms']['path']}/nodes/{socket.gethostname()}",
                     u"rel": u"full"
                 },
                 u"properties": {
@@ -368,15 +346,12 @@ class PeriscopeApplication(tornado.web.Application):
             if settings.AUTH_UUID:
                 service['properties'].update({"geni": {"slice_uuid": settings.AUTH_UUID}})
 
-            if socket.getfqdn() in self.options['unis']['ms_url']:
-                asyncio.ensure_future(self.db["services"].insert_one(service))
+            if socket.getfqdn() in self.options['ms']['path']:
+                asyncio.ensure_future(DBLayer(self.db, "services").insert([service]))
             else:
-                service_url = self.options["unis"]["ms_url"]+'/services'
-                print(self.options['unis'])
-
+                service_url = f"{self.options['ms']['path']}/services"
                 http_client = AsyncHTTPClient()
-
-                content_type = MIME['PSJSON'] + '; profile=' + SCHEMAS['service']
+                content_type = f"{MIME['PSJSON']};profile={SCHEMAS['service']}"
                 resp =  await http_client.fetch(service_url,
                                                method="POST",
                                                body=json.dumps(service),
@@ -390,59 +365,53 @@ class PeriscopeApplication(tornado.web.Application):
                                                    "Connection": "close"})
                 self.registered(resp)
 
-        
     def __init__(self):
         self.cookie_secret="S19283u182u3j12j3k12n3u12i3nu12i3n12ui3"
         self._depth = 1 if bool(self.options["lookup"]) else 0
         self._db = None
         self._ppi_classes = []
-
-        host = socket.getfqdn()
-        for url in settings.SELF_LOOKUP_URLS:
-            try:
-                res = requests.get(url)
-                res.raise_for_status()
-                host = res.text
-            except requests.exception.ConnectionError: pass
-        ref = "http{}://{}:{}".format('s' if self.options['unis_ssl']['enable'] else '',
-                                      host, self.options['port'])
-
-        self.options['unis']['url'] = self._options['unis']['url'] or ref
-        self.options['unis']['ms_url'] = self._options['unis']['ms_url'] or ref
+        self.options['ms']['path'] = self.options['ms']['path'] or self.fullpath
 
         # import and initialize pre/post content processing modules
         for pp in settings.PP_MODULES:
             mod = __import__(pp[0], fromlist=pp[1])
             c = getattr(mod, pp[1])
             if issubclass(c, PPI):
-                if not self.options["auth"]["enabled"] and c.pp_type is PPI.PP_TYPES[PPI.PP_AUTH]:
+                if not self.options["ssl"]["enable"] and c.pp_type is PPI.PP_TYPES[PPI.PP_AUTH]:
                     pass
                 else:
                     self._ppi_classes.append(c())
             else:
-                self._log.error("Not a valid PPI class: {name}".format(name = c.__name__))
+                self.log.error("Not a valid PPI class: {name}".format(name = c.__name__))
 
         # Setup hierarchy
         tornado.ioloop.IOLoop.current().add_callback(self._aggregate_manifests)
-        if self.options["unis"]["root_urls"]:
+        if self.options["register"]["paths"]:
             self._report_to_root()
 
         tornado.web.Application.__init__(self, [], default_host="localhost", **settings.APP_SETTINGS)
 
     @property
     def db(self):
+        modpath = self.options['db']['engine'].split('.')
+        try:
+            Client = getattr(importlib.import_module('.'.join(modpath[:-1])), modpath[-1])
+        except ImportError:
+            self.log.error("Failed to import database client module")
+            exit(-1)
         if not getattr(self, '_db', None):
-            db_config = { "host": self.options["unis"]["db_host"], "port": int(self.options["unis"]["db_port"]) }
+            db_config = { "host": self.options["db"]["host"],
+                          "port": int(self.options["db"]["port"]) }
             while True:
                 try:
-                    conn = motor.motor_tornado.MotorClient(**db_config)
+                    conn = Client(**db_config)
                     break
                 except Exception as exp:
-                    self._log.error("Failed to connect to the MongoDB service - {e}".format(e = exp))
-                    if not self.options["soft-start"]:
+                    self.log.error("Failed to connect to the MongoDB service - {e}".format(e = exp))
+                    if not self.options["softstart"]["enabled"]:
                         sys.exit()
-                    time.sleep(int(self.options["soft-start-pollrate"]))
-            self._db = conn[self.options.get("dbname", self.options["unis"]["db_name"])]
+                    time.sleep(int(self.options["softstart"]["pollrate"]))
+            self._db = conn[self.options["db"]["name"]]
         return self._db
 
 def run():
@@ -451,9 +420,10 @@ def run():
 
     app.log.info('periscope.start')
     settings.app = app
-    
-    if app.options["unis_ssl"]["enable"]:
-        ssl_opts = settings.SSL_OPTIONS
+
+    if app.options["ssl"]["enable"]:
+        ssl_opts = {k:v for k,v in app.options['ssl'].items()}
+        del ssl_opts['enable']
 
     http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_opts)
 
@@ -465,9 +435,7 @@ def run():
     app.log.info("periscope.end")
 
 def main():
-    tmpOptions = docopt.docopt(__doc__)    
     run()
-        
-    
+
 if __name__ == "__main__":
     main()

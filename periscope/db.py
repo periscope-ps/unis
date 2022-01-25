@@ -14,7 +14,7 @@
 """
 Databases related classes
 """
-import time
+import time, logging
 import functools
 from periscope import settings
 import tornado.gen
@@ -54,7 +54,7 @@ class DBLayer(object):
     def __init__(self, client, collection_name, capped=False, Id="id", \
         timestamp="ts"):
         """Intializes with a reference to the mongodb collection."""
-        self.log = settings.get_logger()
+        self.log = logging.getLogger("periscope.db")
         self.Id = Id
         self.timestamp = timestamp
         self.capped = capped
