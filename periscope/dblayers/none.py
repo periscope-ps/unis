@@ -62,7 +62,8 @@ class Collection(object):
                     '$gt': lambda x,y: y > x,
                     '$gte': lambda x,y: y >= x,
                     '$lt': lambda x,y: y < x,
-                    '$lte': lambda x,y: y <= x }
+                    '$lte': lambda x,y: y <= x,
+                    '$in': lambda x,y: y in x}
             def r(q, ctx=None):
                 if not isinstance(q, dict): return mop["$eq"](ctx, q)
                 vals = []
@@ -125,30 +126,38 @@ class Collection(object):
             try: d["_id"] = f"{d['id']:d['ts']}"
             except KeyError: d["_id"] = str(uuid4())
         self._v.append(copy.deepcopy(d))
+        return d
 
-    async def insert_one(self, document): self._insert(document)
+    async def insert_one(self, document): return self._insert(document)
     async def insert_many(self, documents):
-        for d in documents: self._insert(d)
+        return [self._insert(d) for d in documents]
 
     async def update_many(self, query, document):
+        result = []
         for v in filter(self._filter(query), self._v):
+            if "$set" in document: document = document["$set"]
             v.update(document)
+            result.append(v)
+        return result
 
     async def find_one_and_update(self, query, document, upsert=True, **kwargs):
         try:
             v = next(filter(self._filter(query), self._v))
+            if "$set" in document: document = document["$set"]
             v.update(document)
         except StopIteration:
             if upsert:
                 self._v.append(document)
+        return [v]
 
     async def delete_many(self, query):
-        todo = []
+        todo,result = [], []
         f = self._filter(query)
         for i, v in enumerate(self._v):
             if f(v): todo.append(i)
         for idx in reversed(todo):
-            self._v.pop(idx)
+            result.append(self._v.pop(idx))
+        return result
 
     async def count_documents(self, query, skip=0, limit=None):
         v = list(filter(self._filter(query), self._v))
