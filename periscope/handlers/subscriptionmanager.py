@@ -32,7 +32,7 @@ class SubscriptionManager(object):
     def __init__(self):
         global __manager__
         
-        self.log = logging.getLogger("periscope.subman")
+        self.log = logging.getLogger("unis.subman")
         self.subscriptions = []
         
         if __manager__:

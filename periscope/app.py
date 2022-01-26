@@ -32,7 +32,7 @@ class PeriscopeApplication(tornado.web.Application):
     @property
     def log(self):
         if not hasattr(self, "_log"):
-            self._log = logging.getLogger("periscope")
+            self._log = logging.getLogger("unis")
         return self._log
 
     @property

@@ -642,7 +642,7 @@ AuthResources = {
     
 
 if GEMINI_NODE_INFO is not None:
-    logger = logging.getLogger("periscope")
+    logger = logging.getLogger("unis")
     nconf = {}
     with open(GEMINI_NODE_INFO, 'r') as cfile:
         for line in cfile:
@@ -663,5 +663,5 @@ if SSL_ENABLED:
         SERVER_CERT_FINGERPRINT = X509.load_cert(SSL_OPTIONS['certfile'], X509.FORMAT_PEM).get_fingerprint('sha1')
     except Exception as e:
         SERVER_CERT_FINGERPRINT = ''
-        logger = logging.getLogger("periscope")
+        logger = logging.getLogger("unis")
         logger.warning("read_settings", msg="Could not open SSL CERTFILE: %s" % e)

@@ -53,7 +53,7 @@ class MultiConfig(object):
         levels = sorted([v for v in self.loglevels.values()], reverse=True)
         level = levels[min(level, len(levels) - 1)]
         if filename: logging.config.fileConfig(filename)
-        else: logging.getLogger().setLevel(level)
+        else: logging.getLogger("unis").setLevel(level)
         return level
 
     def add_loglevel(self, n, v): self.loglevels[n] = v

@@ -54,7 +54,7 @@ class DBLayer(object):
     def __init__(self, client, collection_name, capped=False, Id="id", \
         timestamp="ts"):
         """Intializes with a reference to the mongodb collection."""
-        self.log = logging.getLogger("periscope.db")
+        self.log = logging.getLogger("unis.db")
         self.Id = Id
         self.timestamp = timestamp
         self.capped = capped
