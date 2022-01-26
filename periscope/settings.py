@@ -65,7 +65,6 @@ CONFIG_TEMPLATE = [
     Argument(None, "--register.paths", [], list, "Address(es) of upstream directory server(s)"),
     Argument("-C", "--register.communities", [], list, "Labels of communities data registers to"),
     Argument("-L", "--register.limitsize", 10, int, "Maximum number of records to report verbatim before aggregation"),
-    Argument("-a", "--auth.enabled", False, bool, "Enable authentication")
 ]
 
 ######################################################################

@@ -11,7 +11,7 @@
 #  Extreme Scale Technologies (CREST).
 # =============================================================================
 import asyncio, motor, tornado.httpserver, tornado.web, tornado.ioloop
-import functools, json, logging, time, sys, collections, importlib
+import functools, json, logging, time, sys, collections, importlib, copy
 import socket, requests
 
 from tornado import gen
@@ -184,7 +184,7 @@ class PeriscopeApplication(tornado.web.Application):
         async for record in self.db['about'].find():
             self.options['uuid'] = record['uuid']
         if self.options.get('uuid', None) is None:
-            self.options['uuid'] = uuid4()
+            self.options['uuid'] = str(uuid4())
             await self.db['about'].insert_one({'uuid': self.options['uuid']})
 
     async def _report_to_root(self):
@@ -400,14 +400,15 @@ class PeriscopeApplication(tornado.web.Application):
             self.log.error("Failed to import database client module")
             exit(-1)
         if not getattr(self, '_db', None):
-            db_config = { "host": self.options["db"]["host"],
-                          "port": int(self.options["db"]["port"]) }
+            db_config = copy.deepcopy(self.options["db"])
+            del db_config["name"]
+            del db_config["engine"]
             while True:
                 try:
                     conn = Client(**db_config)
                     break
                 except Exception as exp:
-                    self.log.error("Failed to connect to the MongoDB service - {e}".format(e = exp))
+                    self.log.error("Failed to connect to the client service - {e}".format(e = exp))
                     if not self.options["softstart"]["enabled"]:
                         sys.exit()
                     time.sleep(int(self.options["softstart"]["pollrate"]))

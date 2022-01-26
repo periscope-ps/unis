@@ -1,11 +1,51 @@
-import copy, re
+import copy, re, time, os, pathlib, json, logging
 from collections import defaultdict
+from collections.abc import MutableSequence
 from uuid import uuid4
+from threading import Thread,RLock
+
+class LockedList(MutableSequence):
+    def __init__(self, *args):
+        self.lock = RLock()
+        self._ls = list(args)
+
+    def __getitem__(self, k):
+        with self.lock:
+            return self._ls[k]
+
+    def __setitem__(self, k, v):
+        with self.lock:
+            self._ls[k] = v
+
+    def __delitem__(self, k):
+        with self.lock:
+            del self._ls[k]
+
+    def __len__(self):
+        with self.lock:
+            return len(self._ls)
+
+    def insert(self, k, v):
+        with self.lock:
+            self._ls.insert(k,v)
 
 class Collection(object):
     def __init__(self, name):
-        self._v = []
+        self._v = LockedList()
         self.name = name
+
+    @classmethod
+    def load(cls, filepath, name):
+        filepath = os.path.join(filepath, name)
+        col = Collection(name)
+        with col._v.lock:
+            with open(filepath) as f:
+                for v in json.load(f):
+                    try:
+                        col._v.append(v)
+                    except Exception:
+                        logging.getLogger("unis.db").warn(f"Failed to load records for {os.path.join(filepath, col.name)}")
+        return col
 
     async def create_index(self, *args, **kwargs): pass
 
@@ -103,8 +143,6 @@ class Collection(object):
                 self._v.append(document)
 
     async def delete_many(self, query):
-        print(f"DELETE_MANY [{self.name}]: {self._v}")
-        print(f"delete [{name}]: {query}")
         todo = []
         f = self._filter(query)
         for i, v in enumerate(self._v):
@@ -150,8 +188,23 @@ class Cursor(object):
             raise StopAsyncIteration
 
 class Database(object):
+    @classmethod
+    def load(cls, filepath, name, *args, **kwargs):
+        filepath = os.path.join(filepath, name)
+        db = Database(*args, **kwargs)
+        pathlib.Path(filepath).mkdir(parents=True, exist_ok=True)
+        cols = next(os.walk(filepath))[2]
+        for c in cols:
+            if c.startswith("__capped__"):
+                c, _cls = c.strip("__capped__"), CappedCollection
+            else:
+                _cls = Collection
+            db._cols[c] = _cls.load(filepath, c)
+        return db
+
     def __init__(self, *args, **kwargs):
         self._cols = {}
+
 
     async def create_collection(self, name, size=0, capped=False, **kwargs):
         self._cols[name] = CappedCollection(name, size) if capped else Collection(name)
@@ -162,8 +215,33 @@ class Database(object):
         return self._cols[k]
 
 class Client(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, snapshot=None, interval=30, **kwargs):
         self._args, self._kwargs, self._dbs = args, kwargs, {}
+
+        if snapshot is not None:
+            self._load_db(snapshot)
+            t = Thread(target=self._snap, kwargs={'p': snapshot, 's':int(interval)}, daemon=True)
+            t.start()
+
+    def _snap(self, p, s):
+        log = logging.getLogger("unis.db")
+        while True:
+            time.sleep(s)
+            log.debug("--Snapshot--")
+            for n,db in self._dbs.items():
+                _p = os.path.join(p, n)
+                pathlib.Path(_p).mkdir(parents=True, exist_ok=True)
+                for k,c in db._cols.items():
+                    with c._v.lock:
+                        with open(os.path.join(_p, k), 'w') as f:
+                            json.dump(c._v._ls, f)
+            log.debug("============")
+
+    def _load_db(self, filepath):
+        pathlib.Path(filepath).mkdir(parents=True, exist_ok=True)
+        dbs = next(os.walk(filepath))[1]
+        for p in dbs:
+            self._dbs[p] = Database.load(filepath, p, *self._args, **self._kwargs)
 
     def __getitem__(self, k):
         if k not in self._dbs:
