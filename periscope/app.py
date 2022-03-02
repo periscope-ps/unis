@@ -28,6 +28,9 @@ from periscope.models import Manifest, ObjectDict
 from periscope.pp_interface import PP_INTERFACE as PPI
 from periscope.handlers import DelegationHandler
 
+try: from systemd.daemon import notify
+except: notify = lambda x,y=0,z=0,a=0: True
+
 class PeriscopeApplication(tornado.web.Application):
     @property
     def log(self):
@@ -416,6 +419,11 @@ class PeriscopeApplication(tornado.web.Application):
         return self._db
 
 def run():
+    async def on_ready():
+        notify("READY=1")
+        while True:
+            notify("WATCHDOG=1")
+            await asyncio.sleep(5)
     ssl_opts = None
     app = PeriscopeApplication()
 
@@ -432,6 +440,8 @@ def run():
 
     loop = tornado.ioloop.IOLoop.instance()
     asyncio.ensure_future(app.initialize())
+    if app.options["sdnotify"]:
+        asyncio.ensure_future(on_ready())
     loop.start()
     app.log.info("periscope.end")
 

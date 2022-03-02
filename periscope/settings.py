@@ -49,6 +49,7 @@ CONFIG_TEMPLATE = [
     Argument("-p", "--port", "8888", int, "Port to attach service to"),
     Argument("-s", "--softstart.enable", False, bool, "Poll backend port for connection when set, defaults to fail-fast"),
     Argument(None, "--softstart.pollrate", 5, int, "Rate for polling in seconds during soft start"),
+    Argument("-N", "--sdnotify", False, bool, "Enable notifications and watchdog for systemd integration"),
     Argument(None, "--ssl.enable", SSL_ENABLED, bool, "Enable ssl connections"),
     Argument(None, "--ssl.cert", os.path.join(PERISCOPE_ROOT, "ssl/server.pem"), str, "Certificate file"),
     Argument(None, "--ssl.key", os.path.join(PERISCOPE_ROOT, "ssl/server.key"), str, "Keyfile for ssl"),
