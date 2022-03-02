@@ -28,9 +28,6 @@ from periscope.models import Manifest, ObjectDict
 from periscope.pp_interface import PP_INTERFACE as PPI
 from periscope.handlers import DelegationHandler
 
-try: from systemd.daemon import notify
-except: notify = lambda x,y=0,z=0,a=0: True
-
 class PeriscopeApplication(tornado.web.Application):
     @property
     def log(self):
@@ -420,6 +417,11 @@ class PeriscopeApplication(tornado.web.Application):
 
 def run():
     async def on_ready():
+        try:
+            from sdnotify import SystemdNotifier
+            notify = SystemdNotifier().notify
+        except: notify = lambda x,y=0,z=0,a=0: True
+
         notify("READY=1")
         while True:
             notify("WATCHDOG=1")
