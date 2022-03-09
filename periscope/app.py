@@ -92,7 +92,8 @@ class PeriscopeApplication(tornado.web.Application):
                            collection_name,
                            is_capped_collection,
                            id_field_name,
-                           timestamp_field_name)
+                           timestamp_field_name,
+                           history=not self.options["nohistory"])
 
         return db_layer
 

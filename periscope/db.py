@@ -52,12 +52,12 @@ class DBLayer(object):
     """
     
     def __init__(self, client, collection_name, capped=False, Id="id", \
-        timestamp="ts"):
+                 timestamp="ts", *, history=True):
         """Intializes with a reference to the mongodb collection."""
         self.log = logging.getLogger("unis.db")
         self.Id = Id
         self.timestamp = timestamp
-        self.capped = capped
+        self.history, self.capped = history, capped
         self._collection_name = collection_name
         self._client = client
     
@@ -96,7 +96,7 @@ class DBLayer(object):
         if "_id" not in data and not self.capped:
             res_id = data.get(self.Id, str(ObjectId()))
             timestamp = data.get(self.timestamp, int(time.time() * 1000000))
-            data["_id"] = "%s:%s" % (res_id, timestamp)
+            data["_id"] = "%s:%s" % (res_id, timestamp) if self.history else res_id
     
     async def insert(self, data, summarize=True, **kwargs):
         """Inserts data to the collection."""
@@ -114,7 +114,13 @@ class DBLayer(object):
 
         if summarize and not self.capped:
             await self.manifest.insert_many(shards)
-        results = await self.collection.insert_many(data, **kwargs)
+        if self.history:
+            results = await self.collection.insert_many(data, **kwargs)
+        else:
+            results = []
+            for item in data:
+                rid = item.get(self.Id, str(ObjectId()))
+                results.append(await self.collection.replace_one({'id':rid},item,upsert=True))
         return results
 
     async def update(self, query, data, cert=None, replace=False, summarize=True, multi=True, **kwargs):
