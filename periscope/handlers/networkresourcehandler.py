@@ -514,7 +514,7 @@ class NetworkResourceHandler(SSEHandler):
                 record = await self._post_get(record, inline)
                 if not unique or str(record.get('id', record)) not in seen:
                     seen[str(record.get('id', record))] = True
-                    results[i] = record
+                    results[str(i)] = record
                     i += 1
             results = bson_encode(results)
             self.write(results)
