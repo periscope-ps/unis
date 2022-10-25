@@ -124,7 +124,8 @@ class Collection(object):
     async def replace_one(self, filter, data, upsert=False):
         for i, x in enumerate(self._v):
             if self._filter(filter)(x):
-                return self._v[i] = data
+                self._v[1] = data
+                return data
         self._insert(data)
 
     def _insert(self, d):
